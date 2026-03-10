@@ -1,0 +1,295 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, X, Check, Calendar, Clock, AlertCircle, Info } from 'lucide-react';
+import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
+import { ScrollArea } from './ui/scroll-area';
+import { toast } from 'sonner';
+import { API_ENDPOINTS } from '../utils/api';
+
+interface Notification {
+  notificacionid: string;
+  tipo: 'cita' | 'recordatorio' | 'sistema' | 'info';
+  titulo: string;
+  descripcion: string;
+  fechacreacion: string;
+  leida: boolean;
+}
+
+interface NotificationCenterProps {
+  userType: 'psicologo' | 'paciente';
+}
+
+export function NotificationCenter({ userType }: NotificationCenterProps) {
+  const [mostrarPanel, setMostrarPanel] = useState(false);
+  const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNotificaciones = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No estás autenticado.');
+        }
+
+        const response = await fetch(API_ENDPOINTS.NOTIFICACIONES, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener las notificaciones.');
+        }
+
+        const data = await response.json();
+        setNotificaciones(data);
+      } catch (err: any) {
+        setError(err.message);
+        toast.error(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (mostrarPanel) {
+      fetchNotificaciones();
+    }
+  }, [mostrarPanel]);
+
+
+  const notificacionesNoLeidas = notificaciones.filter((n) => !n.leida).length;
+
+  const marcarComoLeida = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/notificaciones/${id}/leida`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setNotificaciones(
+        notificaciones.map((n) => (n.notificacionid === id ? { ...n, leida: true } : n))
+      );
+    } catch (err) {
+      toast.error('Error al marcar la notificación como leída.');
+    }
+  };
+
+  const marcarTodasComoLeidas = async () => {
+    const idsNoLeidas = notificaciones.filter(n => !n.leida).map(n => n.notificacionid);
+    try {
+      const token = localStorage.getItem('token');
+      await Promise.all(idsNoLeidas.map(id =>
+        fetch(`/api/notificaciones/${id}/leida`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ));
+      setNotificaciones(notificaciones.map((n) => ({ ...n, leida: true })));
+    } catch (err) {
+      toast.error('Error al marcar todas las notificaciones como leídas.');
+    }
+  };
+
+  const eliminarNotificacion = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/notificaciones/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setNotificaciones(notificaciones.filter((n) => n.notificacionid !== id));
+    } catch (err) {
+      toast.error('Error al eliminar la notificación.');
+    }
+  };
+
+  const getIcono = (tipo: Notification['tipo']) => {
+    switch (tipo) {
+      case 'cita':
+        return <Calendar className="w-5 h-5 stroke-2 text-teal-400" />;
+      case 'recordatorio':
+        return <Clock className="w-5 h-5 stroke-2 text-violet-400" />;
+      case 'sistema':
+        return <AlertCircle className="w-5 h-5 stroke-2 text-orange-400" />;
+      case 'info':
+        return <Info className="w-5 h-5 stroke-2 text-blue-400" />;
+      default:
+        return <Bell className="w-5 h-5 stroke-2 text-slate-400" />;
+    }
+  };
+
+  return (
+    <>
+      {/* Botón de notificaciones */}
+      <motion.button
+        onClick={() => setMostrarPanel(!mostrarPanel)}
+        className="relative p-2 rounded-lg hover:bg-slate-700 transition-colors"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <Bell className="w-6 h-6 stroke-2 text-slate-300" />
+        {notificacionesNoLeidas > 0 && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+          >
+            {notificacionesNoLeidas}
+          </motion.div>
+        )}
+      </motion.button>
+
+      {/* Panel de notificaciones */}
+      <AnimatePresence>
+        {mostrarPanel && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setMostrarPanel(false)}
+            />
+
+            {/* Panel lateral */}
+            <motion.div
+              initial={{ x: 400 }}
+              animate={{ x: 0 }}
+              exit={{ x: 400 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="fixed right-0 top-0 h-screen w-[360px] bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col"
+            >
+              {/* Header */}
+              <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 stroke-2 text-teal-400" />
+                    <h2 className="text-slate-100 text-sm">Notificaciones</h2>
+                    {notificacionesNoLeidas > 0 && (
+                      <Badge className="bg-teal-500 text-white text-xs px-1.5 py-0 h-4">
+                        {notificacionesNoLeidas}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {notificacionesNoLeidas > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={marcarTodasComoLeidas}
+                        className="text-teal-400 hover:text-teal-300 hover:bg-slate-700 text-[10px] h-6 px-2"
+                      >
+                        Marcar leídas
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMostrarPanel(false)}
+                      className="hover:bg-slate-700 h-6 w-6 p-0"
+                    >
+                      <X className="w-4 h-4 stroke-2 text-slate-300" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de notificaciones */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {loading ? (
+                  <div className="text-center py-12">
+                    <p className="text-slate-400">Cargando...</p>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-12">
+                    <p className="text-red-400">{error}</p>
+                  </div>
+                ) : notificaciones.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Bell className="w-12 h-12 stroke-2 text-slate-600 mx-auto mb-3" />
+                    <p className="text-slate-400">No tienes notificaciones</p>
+                  </div>
+                ) : (
+                  notificaciones.map((notificacion, index) => (
+                    <motion.div
+                      key={notificacion.notificacionid}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <Card
+                        className={`bg-slate-700/50 border-slate-600 hover:bg-slate-700 transition-all cursor-pointer ${
+                          !notificacion.leida ? 'border-l-4 border-l-teal-500' : ''
+                        }`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex gap-3">
+                            <div className="flex-shrink-0">
+                              {getIcono(notificacion.tipo)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <h3 className="text-slate-100 text-sm">
+                                  {notificacion.titulo}
+                                </h3>
+                                {!notificacion.leida && (
+                                  <Badge className="bg-teal-500 text-white text-xs px-1.5 py-0 h-5 flex-shrink-0">
+                                    Nueva
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-slate-400 text-sm mb-2">
+                                {notificacion.descripcion}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-500 text-xs">
+                                  {new Date(notificacion.fechacreacion).toLocaleString()}
+                                </span>
+                                <div className="flex gap-1">
+                                  {!notificacion.leida && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => marcarComoLeida(notificacion.notificacionid)}
+                                      className="h-7 px-2 text-teal-400 hover:text-teal-300 hover:bg-slate-600"
+                                    >
+                                      <Check className="w-4 h-4 stroke-2" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => eliminarNotificacion(notificacion.notificacionid)}
+                                    className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-slate-600"
+                                  >
+                                    <X className="w-4 h-4 stroke-2" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="py-1 border-t border-slate-700 bg-slate-900/50 flex-shrink-0">
+                <p className="text-center text-slate-500 text-[9px]">
+                  RF_US_020
+                </p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
