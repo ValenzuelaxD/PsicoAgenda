@@ -25,7 +25,7 @@ import { Paciente, HistorialClinico } from '../utils/types';
 import { API_ENDPOINTS } from '../utils/api';
 
 interface BuscarPacienteProps {
-  onNavigate: (view: ViewType) => void;
+  onNavigate: (view: ViewType, pacienteId?: number) => void;
 }
 
 interface HistorialPaciente {
@@ -101,16 +101,42 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
           });
           if (response.ok) {
             const data = await response.json();
-            // This is a placeholder, you should adapt this to your data structure
+            
+            // Calcular estadísticas desde los datos reales
+            const totalSesiones = data.length;
+            const ultimaSesion = data.length > 0 ? new Date(data[0].fechaentrada).toLocaleDateString('es-ES') : 'N/A';
+            
+            // Calcular tiempo en terapia (desde la primera sesión hasta ahora)
+            let tiempoEnTerapia = 'N/A';
+            if (data.length > 0) {
+              const primeraFecha = new Date(data[data.length - 1].fechaentrada);
+              const ahora = new Date();
+              const diferenciaDias = Math.floor((ahora.getTime() - primeraFecha.getTime()) / (1000 * 60 * 60 * 24));
+              
+              if (diferenciaDias < 30) {
+                tiempoEnTerapia = `${diferenciaDias} días`;
+              } else if (diferenciaDias < 365) {
+                const meses = Math.floor(diferenciaDias / 30);
+                tiempoEnTerapia = `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+              } else {
+                const años = Math.floor(diferenciaDias / 365);
+                tiempoEnTerapia = `${años} ${años === 1 ? 'año' : 'años'}`;
+              }
+            }
+            
+            // Calcular progreso general basado en cantidad de sesiones (escala 0-100)
+            // Considerando 10 sesiones como 100% de progreso esperado
+            const progresoGeneral = Math.min(Math.round((totalSesiones / 10) * 100), 100);
+            
             setHistorialActual({
               sesiones: data,
               estadisticas: {
-                totalSesiones: data.length,
-                progresoGeneral: 75, // Placeholder
-                ultimaSesion: data.length > 0 ? new Date(data[0].fechaentrada).toLocaleDateString() : 'N/A',
-                tiempoEnTerapia: '4 meses', // Placeholder
+                totalSesiones,
+                progresoGeneral,
+                ultimaSesion,
+                tiempoEnTerapia,
               },
-              objetivosTerapeuticos: [], // Placeholder
+              objetivosTerapeuticos: [],
             });
           } else {
             throw new Error('Error al cargar el historial');
@@ -128,12 +154,6 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
     p.email.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const handleExportarHistorial = () => {
-    toast.success('Historial exportado exitosamente', {
-      description: 'El archivo PDF ha sido descargado'
-    });
-  };
-
   const handleAbrirModalActualizar = () => {
     if (pacienteSeleccionado) {
       setFormActualizar({
@@ -147,19 +167,48 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
     }
   };
 
-  const handleActualizarPaciente = () => {
-    toast.success('Paciente actualizado correctamente', {
-      description: 'La información del paciente ha sido actualizada exitosamente'
-    });
-    setMostrarModalActualizar(false);
+  const handleActualizarPaciente = async () => {
+    if (!pacienteSeleccionado) return;
+    try {
+      const response = await fetch(`${API_ENDPOINTS.PACIENTES}/${pacienteSeleccionado.pacienteid}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nombre: formActualizar.nombre.split(' ')[0],
+          apellidoPaterno: formActualizar.nombre.split(' ')[1] || '',
+          telefono: formActualizar.telefono,
+          motivoConsulta: formActualizar.motivoConsulta,
+        })
+      });
+      if (!response.ok) throw new Error('Error al actualizar');
+      toast.success('Paciente actualizado correctamente');
+      setMostrarModalActualizar(false);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
 
-  const handleEliminarPaciente = () => {
-    toast.success('Paciente eliminado correctamente', {
-      description: 'El paciente ha sido eliminado del sistema'
-    });
-    setPacienteSeleccionado(null);
-    setMostrarConfirmacionEliminar(false);
+  const handleEliminarPaciente = async () => {
+    if (!pacienteSeleccionado) return;
+    try {
+      const response = await fetch(`${API_ENDPOINTS.PACIENTES}/${pacienteSeleccionado.pacienteid}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Error al eliminar');
+      toast.success('Paciente eliminado correctamente');
+      setPacientes(pacientes.filter(p => p.pacienteid !== pacienteSeleccionado.pacienteid));
+      setPacienteSeleccionado(null);
+      setMostrarConfirmacionEliminar(false);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
 
 
@@ -305,17 +354,13 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                       </Card>
         
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Button onClick={() => onNavigate('bitacora')} className="w-full">
+                        <Button onClick={() => onNavigate('bitacora', pacienteSeleccionado!.pacienteid)} className="w-full">
                           <FileText className="w-4 h-4 mr-2" />
                           Ver Bitácora
                         </Button>
-                        <Button onClick={() => onNavigate('programar-cita')} variant="outline" className="w-full">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          Programar Cita
-                        </Button>
                         <Button 
-                          variant="outline" 
-                          className="w-full"
+                          variant="outline"
+                          className="w-full md:col-span-2"
                           onClick={() => setMostrarHistorial(true)}
                         >
                           Historial Completo
@@ -444,15 +489,6 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
                               <h3 className="text-white">Sesiones Anteriores</h3>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={handleExportarHistorial} 
-                                className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                              >
-                                <Download className="w-4 h-4 mr-2" />
-                                Exportar Historial
-                              </Button>
                             </div>
         
                             {historialActual.sesiones.map((sesion: any) => (

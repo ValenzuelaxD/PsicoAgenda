@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { FileText, Download, Calendar, TrendingUp, Clock } from 'lucide-react';
+import { FileText, Calendar, TrendingUp, Clock } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
@@ -52,12 +51,6 @@ export function Historial() {
 
     fetchHistorial();
   }, []);
-
-  const handleExportarHistorial = () => {
-    toast.success('Historial exportado exitosamente', {
-      description: 'El archivo PDF ha sido descargado'
-    });
-  };
 
   const calcularTiempoEnTerapia = () => {
     if (!estadisticas?.primera_sesion) return 'N/A';
@@ -139,16 +132,6 @@ export function Historial() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-white">Sesiones Anteriores ({historial.length})</h2>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleExportarHistorial} 
-            className="border-slate-600 text-slate-200 hover:bg-slate-700"
-            disabled={historial.length === 0}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Exportar Historial
-          </Button>
         </div>
 
         {historial.length === 0 ? (

@@ -5,7 +5,7 @@ import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { User, Mail, Phone, Calendar, MapPin, Bell, Shield, CheckCircle } from 'lucide-react';
+import { User, Mail, Phone, Calendar, MapPin, Shield, CheckCircle } from 'lucide-react';
 import { Switch } from './ui/switch';
 import {
   Dialog,
@@ -36,7 +36,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
   const [genero, setGenero] = useState('');
   const [contactoEmergencia, setContactoEmergencia] = useState('');
   const [telefonoEmergencia, setTelefonoEmergencia] = useState('');
-  const [notasPersonales, setNotasPersonales] = useState('');
   
   // Campos específicos para psicólogo
   const [cedula, setCedula] = useState('');
@@ -44,13 +43,8 @@ export function Perfil({ userName, userType }: PerfilProps) {
   const [descripcionProfesional, setDescripcionProfesional] = useState('');
   const [consultorio, setConsultorio] = useState('');
 
-  const [notificacionesEmail, setNotificacionesEmail] = useState(true);
-  const [notificacionesWhatsApp, setNotificacionesWhatsApp] = useState(false);
-  const [recordatorios, setRecordatorios] = useState(true);
-
   // Estados para modales
   const [mostrarCambiarPassword, setMostrarCambiarPassword] = useState(false);
-  const [mostrar2FA, setMostrar2FA] = useState(false);
   const [mostrarExitoPassword, setMostrarExitoPassword] = useState(false);
   const [mostrarExitoGuardado, setMostrarExitoGuardado] = useState(false);
   const [passwordActual, setPasswordActual] = useState('');
@@ -68,14 +62,10 @@ export function Perfil({ userName, userType }: PerfilProps) {
     genero: '',
     contactoEmergencia: '',
     telefonoEmergencia: '',
-    notasPersonales: '',
     cedula: '',
     especialidad: '',
     descripcionProfesional: '',
     consultorio: '',
-    notificacionesEmail: true,
-    notificacionesWhatsApp: false,
-    recordatorios: true,
   });
 
   useEffect(() => {
@@ -117,14 +107,10 @@ export function Perfil({ userName, userType }: PerfilProps) {
           genero: profile.genero || '',
           contactoEmergencia: profile.contactoEmergencia || '',
           telefonoEmergencia: profile.telefonoEmergencia || '',
-          notasPersonales: profile.notasPersonales || '',
           cedula: profile.cedula || '',
           especialidad: profile.especialidad || '',
           descripcionProfesional: profile.descripcionProfesional || '',
           consultorio: profile.consultorio || '',
-          notificacionesEmail,
-          notificacionesWhatsApp,
-          recordatorios,
         };
 
         setNombre(siguientesValores.nombre);
@@ -136,7 +122,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
         setGenero(siguientesValores.genero);
         setContactoEmergencia(siguientesValores.contactoEmergencia);
         setTelefonoEmergencia(siguientesValores.telefonoEmergencia);
-        setNotasPersonales(siguientesValores.notasPersonales);
         setCedula(siguientesValores.cedula);
         setEspecialidad(siguientesValores.especialidad);
         setDescripcionProfesional(siguientesValores.descripcionProfesional);
@@ -181,7 +166,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
           direccion,
           contactoEmergencia,
           telefonoEmergencia,
-          notasPersonales,
           cedula,
           especialidad,
           descripcionProfesional,
@@ -204,14 +188,10 @@ export function Perfil({ userName, userType }: PerfilProps) {
         genero,
         contactoEmergencia,
         telefonoEmergencia,
-        notasPersonales,
         cedula,
         especialidad,
         descripcionProfesional,
         consultorio,
-        notificacionesEmail,
-        notificacionesWhatsApp,
-        recordatorios,
       });
 
       const userRaw = localStorage.getItem('user');
@@ -240,14 +220,10 @@ export function Perfil({ userName, userType }: PerfilProps) {
     setGenero(valoresOriginales.genero);
     setContactoEmergencia(valoresOriginales.contactoEmergencia);
     setTelefonoEmergencia(valoresOriginales.telefonoEmergencia);
-    setNotasPersonales(valoresOriginales.notasPersonales);
     setCedula(valoresOriginales.cedula);
     setEspecialidad(valoresOriginales.especialidad);
     setDescripcionProfesional(valoresOriginales.descripcionProfesional);
     setConsultorio(valoresOriginales.consultorio);
-    setNotificacionesEmail(valoresOriginales.notificacionesEmail);
-    setNotificacionesWhatsApp(valoresOriginales.notificacionesWhatsApp);
-    setRecordatorios(valoresOriginales.recordatorios);
     toast.info('Cambios cancelados', {
       description: 'Se han restaurado los valores originales'
     });
@@ -306,12 +282,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
     }
   };
 
-  const handleHabilitar2FA = () => {
-    toast.success('Correo de verificación enviado', {
-      description: 'Hemos enviado un código de verificación a tu correo electrónico. Por favor revisa tu bandeja de entrada.'
-    });
-    setMostrar2FA(false);
-  };
+
 
   if (isLoading) {
     return (
@@ -330,7 +301,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
       <div>
         <h1 className="text-slate-100 mb-2">Mi Perfil</h1>
         <p className="text-slate-300 text-sm sm:text-base">
-          Gestiona tu información personal y preferencias
+          Gestiona tu información personal
         </p>
       </div>
 
@@ -545,79 +516,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
           </Card>
         )}
 
-        {/* Preferencias de Notificaciones */}
-        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-100">
-              <Bell className="w-5 h-5" />
-              Notificaciones
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Configura cómo deseas recibir notificaciones
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-slate-200">Notificaciones por Email</Label>
-                <p className="text-slate-400">
-                  Recibe confirmaciones y recordatorios por correo
-                </p>
-              </div>
-              <Switch
-                checked={notificacionesEmail}
-                onCheckedChange={setNotificacionesEmail}
-              />
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-slate-200">Notificaciones por WhatsApp</Label>
-                <p className="text-slate-400">
-                  Recibe mensajes de texto con recordatorios
-                </p>
-              </div>
-              <Switch
-                checked={notificacionesWhatsApp}
-                onCheckedChange={setNotificacionesWhatsApp}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-slate-200">Recordatorios de Citas</Label>
-                <p className="text-slate-400">
-                  Recordatorios 24 horas antes de tu cita
-                </p>
-              </div>
-              <Switch
-                checked={recordatorios}
-                onCheckedChange={setRecordatorios}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notas Personales */}
-        {userType === 'paciente' && (
-          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-slate-100">Notas Personales</CardTitle>
-              <CardDescription className="text-slate-400">
-                Información adicional que quieras compartir con tu terapeuta
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={notasPersonales}
-                onChange={(e) => setNotasPersonales(e.target.value)}
-                placeholder="Alergias, medicamentos, condiciones médicas, etc."
-                rows={4}
-                className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
-              />
-            </CardContent>
-          </Card>
-        )}
 
         {/* Seguridad */}
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
@@ -638,14 +537,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
               onClick={() => setMostrarCambiarPassword(true)}
             >
               Cambiar Contraseña
-            </Button>
-            <Button
-              variant="outline"
-              type="button"
-              className="w-full border-slate-600 text-white hover:bg-slate-700 hover:text-white"
-              onClick={() => setMostrar2FA(true)}
-            >
-              Habilitar Autenticación de Dos Factores
             </Button>
           </CardContent>
         </Card>
@@ -715,36 +606,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
             </Button>
             <Button type="button" onClick={handleCambiarPassword} className="bg-teal-600 hover:bg-teal-700">
               Cambiar Contraseña
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Habilitar 2FA */}
-      <Dialog open={mostrar2FA} onOpenChange={setMostrar2FA}>
-        <DialogContent className="sm:max-w-[425px] bg-slate-800 border-slate-700">
-          <DialogHeader>
-            <DialogTitle className="text-slate-100">Habilitar Autenticación de Dos Factores</DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Habilita la autenticación de dos factores para una mayor seguridad
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-slate-300">
-              Se te enviará un código de verificación a tu correo electrónico o número de teléfono.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setMostrar2FA(false)}
-              className="border-slate-600 text-slate-200 hover:bg-slate-700"
-            >
-              Cancelar
-            </Button>
-            <Button type="button" onClick={handleHabilitar2FA} className="bg-teal-600 hover:bg-teal-700">
-              Habilitar 2FA
             </Button>
           </DialogFooter>
         </DialogContent>

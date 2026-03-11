@@ -9,8 +9,7 @@ import { Historial } from './Historial';
 import { RegistroPaciente } from './RegistroPaciente';
 import { BuscarPaciente } from './BuscarPaciente';
 import { BitacoraPaciente } from './BitacoraPaciente';
-import { ProgramarCita } from './ProgramarCita';
-import { ReportesCitas } from './ReportesCitas';
+import { VerificarDisponibilidad } from './VerificarDisponibilidad';
 import { NotificationCenter } from './NotificationCenter';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../utils/api';
@@ -22,10 +21,11 @@ interface DashboardProps {
 }
 
 export type ViewType = 'inicio' | 'agendar' | 'citas' | 'historial' | 'perfil' | 
-  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'programar-cita' | 'reportes';
+  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda';
 
 export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
   const [currentView, setCurrentView] = useState<ViewType>('inicio');
+  const [selectedPacienteId, setSelectedPacienteId] = useState<number | undefined>(undefined);
   const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -70,8 +70,9 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
     fetchUnreadNotifications();
   }, []);
 
-  const handleNavigate = (view: ViewType) => {
+  const handleNavigate = (view: ViewType, pacienteId?: number) => {
     setCurrentView(view);
+    if (pacienteId !== undefined) setSelectedPacienteId(pacienteId);
   };
 
   const renderView = () => {
@@ -91,11 +92,9 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
       case 'buscar-paciente':
         return <BuscarPaciente onNavigate={handleNavigate} />;
       case 'bitacora':
-        return <BitacoraPaciente />;
-      case 'programar-cita':
-        return <ProgramarCita onNavigate={handleNavigate} />;
-      case 'reportes':
-        return <ReportesCitas />;
+        return <BitacoraPaciente pacienteId={selectedPacienteId} />;
+      case 'mi-agenda':
+        return <VerificarDisponibilidad onNavigate={handleNavigate} />;
       default:
         return <Inicio userName={userName} userType={userType} onNavigate={handleNavigate} />;
     }

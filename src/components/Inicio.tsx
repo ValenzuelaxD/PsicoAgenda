@@ -224,7 +224,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                 <div>
                   <h3 className="text-white mb-1">Mi Perfil</h3>
                   <p className="text-slate-300">
-                    Actualiza tu información personal y preferencias
+                    Actualiza tu información personal
                   </p>
                 </div>
               </div>
@@ -311,8 +311,8 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
           <CardHeader className="bg-gradient-to-r from-teal-900/50 to-violet-900/50">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="text-slate-100">Agenda de Hoy - {new Date().toLocaleDateString()}</CardTitle>
-              <Button onClick={() => onNavigate('programar-cita')} size="sm" className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
-                Programar Nueva Cita
+              <Button onClick={() => onNavigate('citas')} size="sm" className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
+                Gestionar Citas
               </Button>
             </div>
           </CardHeader>
@@ -375,22 +375,6 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                   <h3 className="text-slate-100 mb-1">Buscar Paciente</h3>
                   <p className="text-slate-300">
                     Consulta información de tus pacientes
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-xl transition-all border-slate-600 bg-slate-800/50 backdrop-blur-sm" onClick={() => onNavigate('reportes')}>
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <FileText className="w-6 h-6 text-slate-200 stroke-2" />
-                </div>
-                <div>
-                  <h3 className="text-slate-100 mb-1">Generar Reportes</h3>
-                  <p className="text-slate-300">
-                    Estadísticas y reportes de citas
                   </p>
                 </div>
               </div>

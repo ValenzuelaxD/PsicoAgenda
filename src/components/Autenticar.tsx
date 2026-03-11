@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { UserCircle, Lock, Mail, FileCheck, ArrowLeft, Check } from 'lucide-react';
+import { UserCircle, Lock, Mail, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '../assets/8073927aac7f277f9a509202fa2f1e9e38c58702.png';
 import { LoadingSplash } from './LoadingSplash';
@@ -26,11 +26,6 @@ export function Autenticar({ onLogin }: AutenticarProps) {
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerUserType, setRegisterUserType] = useState<'psicologo' | 'paciente'>('paciente');
   const [cedulaProfesional, setCedulaProfesional] = useState('');
-
-  // Estados para recuperación de contraseña
-  const [mostrarRecuperacion, setMostrarRecuperacion] = useState(false);
-  const [recuperacionEmail, setRecuperacionEmail] = useState('');
-  const [emailEnviado, setEmailEnviado] = useState(false);
 
   // Estado para splash de login
   const [mostrarLoginSplash, setMostrarLoginSplash] = useState(false);
@@ -188,25 +183,6 @@ export function Autenticar({ onLogin }: AutenticarProps) {
     }
   };
 
-  const handleRecuperacionSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!recuperacionEmail) {
-      toast.error('Por favor ingresa tu correo electrónico');
-      return;
-    }
-    // Simulación de envío de email
-    setEmailEnviado(true);
-    toast.success('Correo de recuperación enviado', {
-      description: 'Revisa tu bandeja de entrada para restablecer tu contraseña'
-    });
-  };
-
-  const handleVolverLogin = () => {
-    setMostrarRecuperacion(false);
-    setEmailEnviado(false);
-    setRecuperacionEmail('');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-violet-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md" style={{ opacity: 1, transform: 'scale(1)' }}>
@@ -304,16 +280,6 @@ export function Autenticar({ onLogin }: AutenticarProps) {
                     <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
                       Iniciar Sesión
                     </Button>
-
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        className="text-teal-400 hover:text-teal-300 transition-colors"
-                        onClick={() => setMostrarRecuperacion(true)}
-                      >
-                        ¿Olvidaste tu contraseña?
-                      </button>
-                    </div>
                   </form>
                 </TabsContent>
 
@@ -441,66 +407,6 @@ export function Autenticar({ onLogin }: AutenticarProps) {
           Al autenticarte, aceptas nuestros términos de servicio y política de privacidad
         </p>
       </div>
-
-      {/* Formulario de recuperación de contraseña */}
-      {mostrarRecuperacion && (
-        <div
-          className="absolute top-0 left-0 right-0 bottom-0 bg-black bg-opacity-70 flex items-center justify-center p-4"
-          style={{ display: mostrarRecuperacion ? 'flex' : 'none', opacity: 1 }}
-        >
-          <Card className="shadow-xl border-slate-700 bg-slate-800/95 backdrop-blur-sm w-full max-w-md">
-              <CardHeader className="space-y-1 bg-gradient-to-r from-teal-900/50 to-violet-900/50">
-                <CardTitle className="text-slate-100">Recuperar Contraseña</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Ingresa tu correo electrónico para recuperar tu contraseña
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <form onSubmit={handleRecuperacionSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="recuperacion-email" className="text-slate-200">Correo Electrónico</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-400 stroke-2" />
-                      <Input
-                        id="recuperacion-email"
-                        type="email"
-                        placeholder="tu@email.com"
-                        value={recuperacionEmail}
-                        onChange={(e) => setRecuperacionEmail(e.target.value)}
-                        className="pl-10 border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {emailEnviado ? (
-                    <div className="bg-green-900/30 border border-green-700/50 rounded-lg p-3">
-                      <p className="text-green-300">
-                        <Check className="w-4 h-4 stroke-2 inline-block mr-2" />
-                        Correo de recuperación enviado
-                      </p>
-                    </div>
-                  ) : (
-                    <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
-                      Enviar Correo
-                    </Button>
-                  )}
-
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      className="text-teal-400 hover:text-teal-300 transition-colors"
-                      onClick={handleVolverLogin}
-                    >
-                      <ArrowLeft className="w-4 h-4 stroke-2 inline-block mr-2" />
-                      Volver a Iniciar Sesión
-                    </button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-        </div>
-      )}
 
       {/* Splash de login */}
       {mostrarLoginSplash && (

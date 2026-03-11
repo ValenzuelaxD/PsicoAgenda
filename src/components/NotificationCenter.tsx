@@ -66,7 +66,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
   const marcarComoLeida = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`/api/notificaciones/${id}/leida`, {
+      await fetch(`${API_ENDPOINTS.NOTIFICACIONES}/${id}/leida`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -83,7 +83,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
     try {
       const token = localStorage.getItem('token');
       await Promise.all(idsNoLeidas.map(id =>
-        fetch(`/api/notificaciones/${id}/leida`, {
+        fetch(`${API_ENDPOINTS.NOTIFICACIONES}/${id}/leida`, {
           method: 'PUT',
           headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -97,7 +97,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
   const eliminarNotificacion = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`/api/notificaciones/${id}`, {
+      await fetch(`${API_ENDPOINTS.NOTIFICACIONES}/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -39,8 +39,6 @@ const getDisponibilidad = async (req, res) => {
       return res.json([]); // No hay disponibilidad para ese día
     }
 
-    const { horainicio, horafin } = agendaResult.rows[0];
-
     // 2. Obtener las citas ya agendadas para esa fecha
     const citasAgendadasQuery = `
       SELECT fechahora, duracionmin
@@ -51,34 +49,37 @@ const getDisponibilidad = async (req, res) => {
     const citasAgendadas = citasAgendadasResult.rows;
 
     // 3. Generar los horarios disponibles
-    const horariosDisponibles = [];
-    let horaActual = new Date(`${fecha}T${horainicio}`);
-    const horaFin = new Date(`${fecha}T${horafin}`);
+    const horariosDisponibles = new Set();
     const duracionCita = 60; // Asumimos citas de 60 minutos
 
-    while (horaActual < horaFin) {
-      const horaPotencialFin = new Date(horaActual.getTime() + duracionCita * 60000);
+    for (const bloque of agendaResult.rows) {
+      let horaActual = new Date(`${fecha}T${String(bloque.horainicio).slice(0, 5)}:00`);
+      const horaFin = new Date(`${fecha}T${String(bloque.horafin).slice(0, 5)}:00`);
 
-      let ocupado = false;
-      for (const cita of citasAgendadas) {
-        const citaInicio = new Date(cita.fechahora);
-        const citaFin = new Date(citaInicio.getTime() + cita.duracionmin * 60000);
+      while (horaActual < horaFin) {
+        const horaPotencialFin = new Date(horaActual.getTime() + duracionCita * 60000);
 
-        // Comprobar si hay solapamiento
-        if (horaActual < citaFin && horaPotencialFin > citaInicio) {
-          ocupado = true;
-          break;
+        let ocupado = false;
+        for (const cita of citasAgendadas) {
+          const citaInicio = new Date(cita.fechahora);
+          const citaFin = new Date(citaInicio.getTime() + cita.duracionmin * 60000);
+
+          // Comprobar si hay solapamiento
+          if (horaActual < citaFin && horaPotencialFin > citaInicio) {
+            ocupado = true;
+            break;
+          }
         }
-      }
 
-      if (!ocupado) {
-        horariosDisponibles.push(horaActual.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }));
-      }
+        if (!ocupado && horaPotencialFin <= horaFin) {
+          horariosDisponibles.add(horaActual.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }));
+        }
 
-      horaActual.setMinutes(horaActual.getMinutes() + duracionCita);
+        horaActual.setMinutes(horaActual.getMinutes() + duracionCita);
+      }
     }
 
-    res.json(horariosDisponibles);
+    res.json(Array.from(horariosDisponibles).sort());
 
   } catch (error) {
     console.error("Error al obtener disponibilidad:", error);

@@ -9,7 +9,7 @@ import { Check, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { motion, AnimatePresence } from 'motion/react';
-import { API_ENDPOINTS } from '../utils/api';
+import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
 interface AgendarCitaProps {
   onNavigate: (view: ViewType) => void;
@@ -18,6 +18,13 @@ interface AgendarCitaProps {
 export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
+
+  const formatearFechaLocal = (fecha: Date) => {
+    const year = fecha.getFullYear();
+    const month = `${fecha.getMonth() + 1}`.padStart(2, '0');
+    const day = `${fecha.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [psicologo, setPsicologo] = useState('');
@@ -34,11 +41,10 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      const token = localStorage.getItem('token');
       try {
         const [psicologosRes, tiposCitaRes] = await Promise.all([
-          fetch(API_ENDPOINTS.PSICOLOGAS, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(API_ENDPOINTS.CITAS_TIPOS, { headers: { 'Authorization': `Bearer ${token}` } })
+          apiFetch(API_ENDPOINTS.PSICOLOGAS),
+          apiFetch(API_ENDPOINTS.CITAS_TIPOS)
         ]);
 
         if (psicologosRes.ok) {
@@ -62,16 +68,18 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   useEffect(() => {
     if (psicologo && date) {
       const fetchHorarios = async () => {
-        const token = localStorage.getItem('token');
         setLoadingHorarios(true);
         try {
-          const response = await fetch(`${API_ENDPOINTS.PSICOLOGAS}/${psicologo}/disponibilidad?fecha=${date.toISOString().split('T')[0]}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const fechaSeleccionada = formatearFechaLocal(date);
+          const response = await apiFetch(`${API_ENDPOINTS.PSICOLOGAS}/${psicologo}/disponibilidad?fecha=${fechaSeleccionada}`);
           if (response.ok) {
             const data = await response.json();
             setHorarios(data);
           } else {
+            const errorData = await response.json().catch(() => null);
+            if (errorData?.message) {
+              toast.error(errorData.message);
+            }
             setHorarios([]);
           }
         } catch (error) {
@@ -90,18 +98,13 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(API_ENDPOINTS.CITAS, {
+      const response = await apiFetch(API_ENDPOINTS.CITAS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           psicologaId: psicologo,
-          fecha: date?.toISOString().split('T')[0],
+          fecha: date ? formatearFechaLocal(date) : undefined,
           hora,
           modalidad: tipo,
           notas,
@@ -109,11 +112,12 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Error al agendar la cita.');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Error al agendar la cita.');
       }
 
       toast.success('Cita solicitada exitosamente', {
-        description: 'Recibirás una confirmación por correo electrónico y WhatsApp'
+        description: 'Podrás revisar el estado de la solicitud desde Mis Citas y tus notificaciones.'
       });
       setMostrarExito(true);
       setTimeout(() => {
@@ -146,7 +150,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
               </motion.div>
               <h2 className="text-white mb-3">¡Cita Agendada Exitosamente!</h2>
               <p className="text-teal-300 mb-2">
-                Recibirás una confirmación por correo electrónico y WhatsApp
+                Revisa Mis Citas y el centro de notificaciones para ver actualizaciones
               </p>
               <p className="text-slate-400 text-sm">
                 Redirigiendo a tus citas...

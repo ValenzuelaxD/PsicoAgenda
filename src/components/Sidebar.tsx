@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Home, Calendar, CalendarCheck, FileText, User, LogOut, Users, Search, BookOpen, CalendarPlus, BarChart3 } from 'lucide-react';
+import { Home, Calendar, CalendarCheck, FileText, User, LogOut, Users, Search, BookOpen, CalendarDays } from 'lucide-react';
 import { ViewType } from './Dashboard';
 import { toast } from 'sonner';
 import logo from '../assets/8073927aac7f277f9a509202fa2f1e9e38c58702.png';
@@ -37,12 +37,11 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout }: Sidebar
   // RF_US_004, RF_US_005/024, RF_US_006, RF_US_008, RF_US_009/011/012, RF_US_015, RF_US_002
   const psicologoMenuItems = [
     { id: 'inicio' as ViewType, label: 'Inicio', icon: Home },
+    { id: 'mi-agenda' as ViewType, label: 'Mi Agenda', icon: CalendarDays },
     { id: 'registro-paciente' as ViewType, label: 'Registrar Paciente', icon: Users },
     { id: 'buscar-paciente' as ViewType, label: 'Buscar Paciente', icon: Search },
-    { id: 'programar-cita' as ViewType, label: 'Programar Cita', icon: CalendarPlus },
     { id: 'citas' as ViewType, label: 'Gestionar Citas', icon: CalendarCheck },
     { id: 'bitacora' as ViewType, label: 'Bitácora de Pacientes', icon: BookOpen },
-    { id: 'reportes' as ViewType, label: 'Reportes de Citas', icon: BarChart3 },
     { id: 'perfil' as ViewType, label: 'Mi Perfil', icon: User },
   ];
 

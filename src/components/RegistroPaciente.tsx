@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { validarNombre, validarEmail, validarTelefono, validarFecha } from '../utils/validators';
 import { motion, AnimatePresence } from 'motion/react';
+import { API_ENDPOINTS, apiFetch } from '../utils/api';
 
 interface RegistroPacienteProps {
   onNavigate: (view: ViewType) => void;
@@ -26,50 +27,70 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
   const [contactoEmergencia, setContactoEmergencia] = useState('');
   const [telefonoEmergencia, setTelefonoEmergencia] = useState('');
   const [motivoConsulta, setMotivoConsulta] = useState('');
-  const [antecedentes, setAntecedentes] = useState('');
   const [mostrarExito, setMostrarExito] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validar campos obligatorios
     if (!nombre.trim()) {
       toast.error('Campo requerido', { description: 'Por favor ingresa el nombre del paciente' });
       return;
     }
-
     if (!apellidos.trim()) {
       toast.error('Campo requerido', { description: 'Por favor ingresa los apellidos del paciente' });
       return;
     }
-
     if (!email.trim()) {
       toast.error('Campo requerido', { description: 'Por favor ingresa el correo electrónico' });
       return;
     }
-
     if (!telefono.trim()) {
       toast.error('Campo requerido', { description: 'Por favor ingresa el teléfono' });
       return;
     }
-
     if (!fechaNacimiento) {
       toast.error('Campo requerido', { description: 'Por favor selecciona la fecha de nacimiento' });
       return;
     }
-
     if (!genero) {
       toast.error('Campo requerido', { description: 'Por favor selecciona el género' });
       return;
     }
-
     if (!motivoConsulta.trim()) {
       toast.error('Campo requerido', { description: 'Por favor ingresa el motivo de consulta' });
       return;
     }
-    
-    // Mostrar modal de éxito
-    setMostrarExito(true);
+
+    try {
+      const response = await apiFetch(API_ENDPOINTS.PACIENTES, {
+        method: 'POST',
+        body: JSON.stringify({
+          nombre,
+          apellidoPaterno: apellidos.split(' ')[0],
+          apellidoMaterno: apellidos.split(' ').slice(1).join(' ') || null,
+          correo: email.toLowerCase(),
+          telefono,
+          fechaNacimiento,
+          genero: genero.charAt(0).toUpperCase() + genero.slice(1),
+          direccion,
+          motivoConsulta,
+          contactoEmergencia,
+          telefonoEmergencia,
+          password: email.split('@')[0] + Math.random().toString(36).slice(-6), // Password temporal
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Error al registrar el paciente');
+      }
+
+      toast.success('Paciente registrado exitosamente');
+      setMostrarExito(true);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al registrar el paciente');
+    }
   };
 
   const handleCerrarModal = () => {
@@ -85,7 +106,6 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
     setContactoEmergencia('');
     setTelefonoEmergencia('');
     setMotivoConsulta('');
-    setAntecedentes('');
     // Navegar a buscar paciente
     onNavigate('buscar-paciente');
   };
@@ -246,7 +266,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
         <Card>
           <CardHeader>
             <CardTitle>Información Clínica</CardTitle>
-            <CardDescription>Motivo de consulta y antecedentes</CardDescription>
+            <CardDescription>Motivo de consulta</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -257,17 +277,6 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                 onChange={(e) => setMotivoConsulta(e.target.value)}
                 placeholder="Describe el motivo principal de la consulta..."
                 rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="antecedentes">Antecedentes Médicos/Psicológicos</Label>
-              <Textarea
-                id="antecedentes"
-                value={antecedentes}
-                onChange={(e) => setAntecedentes(e.target.value)}
-                placeholder="Historial médico, tratamientos previos, medicación actual..."
-                rows={4}
               />
             </div>
           </CardContent>

@@ -29,7 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Cita, ESTADO_CITA, MODALIDAD_CITA } from '../utils/types';
-import { API_ENDPOINTS } from '../utils/api';
+import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
 interface MisCitasProps {
   userType: 'psicologo' | 'paciente';
@@ -45,42 +45,35 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchCitas = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No autenticado. Por favor inicia sesión nuevamente.');
-        }
+  const fetchCitas = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const response = await fetch(API_ENDPOINTS.CITAS, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+      const response = await apiFetch(API_ENDPOINTS.CITAS);
 
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
-        }
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al obtener las citas.');
-        }
-
-        const data = await response.json();
-        setCitas(data);
-      } catch (err: any) {
-        setError(err.message);
-        toast.error(err.message);
-      } finally {
-        setLoading(false);
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
       }
-    };
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al obtener las citas.');
+      }
+
+      const data = await response.json();
+      setCitas(data);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCitas();
   }, []);
 
@@ -94,14 +87,51 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
   const listaPacientesUnicos = Array.from(new Set(citas.map(c => `${c.paciente_nombre} ${c.paciente_apellido}`)));
 
+  const esEstado = (estado: string, objetivo: string) => estado?.toLowerCase() === objetivo.toLowerCase();
+  const esModalidadEnLinea = (modalidad: string) => modalidad?.toLowerCase() === MODALIDAD_CITA.EN_LINEA.toLowerCase() || modalidad?.toLowerCase() === 'virtual';
+  const obtenerUbicacion = (cita: Cita & { ubicacion?: string }) => {
+    if (cita.ubicacion) {
+      return cita.ubicacion;
+    }
 
-  const handleCancelarCita = () => {
+    return esModalidadEnLinea(cita.modalidad) ? 'Sesion en linea' : 'Consultorio por confirmar';
+  };
+  const formatearFechaInput = (fechaHora: string) => {
+    const date = new Date(fechaHora);
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const formatearHoraInput = (fechaHora: string) => {
+    const date = new Date(fechaHora);
+    return `${`${date.getHours()}`.padStart(2, '0')}:${`${date.getMinutes()}`.padStart(2, '0')}`;
+  };
+  const actualizarFechaHoraCita = (cita: Cita, fecha: string, hora: string) => {
+    const nuevaFechaHora = new Date(`${fecha}T${hora}:00`);
+    return { ...cita, fechahora: nuevaFechaHora.toISOString() };
+  };
+
+
+  const handleCancelarCita = async () => {
     if (citaACancelar) {
-      // Aquí iría la lógica para llamar a la API y cancelar la cita
-      setCitas(citas.filter(c => c.citaid !== citaACancelar));
-      toast.success('Cita cancelada exitosamente', {
-        description: `Se ha notificado al ${userType === 'psicologo' ? 'paciente' : 'profesional'}`
-      });
+      try {
+        const response = await apiFetch(`${API_ENDPOINTS.CITAS}/${citaACancelar}/cancel`, {
+          method: 'PUT',
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'No fue posible cancelar la cita.');
+        }
+
+        setCitas((prev) => prev.map((cita) => (cita.citaid === citaACancelar ? { ...cita, ...data } : cita)));
+        toast.success('Cita cancelada exitosamente', {
+          description: `Se ha notificado al ${userType === 'psicologo' ? 'paciente' : 'profesional'}`,
+        });
+      } catch (error: any) {
+        toast.error(error.message || 'Error al cancelar la cita.');
+      }
     }
     setCitaACancelar(null);
   };
@@ -122,26 +152,55 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     setCitaAEditar(cita);
   };
 
-  const handleGuardarEdicionCita = (e: React.FormEvent) => {
+  const handleGuardarEdicionCita = async (e: React.FormEvent) => {
     e.preventDefault();
     if (citaAEditar) {
-      // Aquí iría la lógica para llamar a la API y guardar los cambios
-      setCitas(citas.map(c => c.citaid === citaAEditar.citaid ? citaAEditar : c));
-      toast.success('Cita modificada exitosamente', {
-        description: 'Los cambios han sido guardados'
-      });
-      setCitaAEditar(null);
+      try {
+        const response = await apiFetch(`${API_ENDPOINTS.CITAS}/${citaAEditar.citaid}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            fecha: formatearFechaInput(citaAEditar.fechahora),
+            hora: formatearHoraInput(citaAEditar.fechahora),
+            modalidad: citaAEditar.modalidad,
+            estado: citaAEditar.estado,
+            notas: citaAEditar.notas || '',
+          }),
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'No fue posible actualizar la cita.');
+        }
+
+        setCitas((prev) => prev.map((cita) => (cita.citaid === citaAEditar.citaid ? { ...cita, ...data, paciente_nombre: cita.paciente_nombre, paciente_apellido: cita.paciente_apellido, ubicacion: cita.ubicacion } : cita)));
+        toast.success('Cita modificada exitosamente', {
+          description: 'Los cambios han sido guardados.',
+        });
+        setCitaAEditar(null);
+      } catch (error: any) {
+        toast.error(error.message || 'Error al guardar la cita.');
+      }
     }
   };
 
-  const handleConfirmarCita = (citaId: number) => {
-    // Aquí iría la lógica para llamar a la API y confirmar la cita
-    setCitas(citas.map(c => 
-      c.citaid === citaId ? { ...c, estado: 'confirmada' } : c
-    ));
-    toast.success('Cita confirmada exitosamente', {
-      description: 'Recibirás un recordatorio 24 horas antes'
-    });
+  const handleConfirmarCita = async (citaId: number) => {
+    try {
+      const response = await apiFetch(`${API_ENDPOINTS.CITAS}/${citaId}/confirm`, {
+        method: 'PUT',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'No fue posible confirmar la cita.');
+      }
+
+      setCitas((prev) => prev.map((cita) => (cita.citaid === citaId ? { ...cita, ...data } : cita)));
+      toast.success('Cita confirmada exitosamente', {
+        description: 'El estado ya se actualizó en la base de datos.',
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'Error al confirmar la cita.');
+    }
   };
 
   const handleUnirseVideollamada = () => {
@@ -155,19 +214,34 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     setCitaNotasVisibles(citaId);
   };
   
-  const handleGuardarReagendamiento = (e: React.FormEvent) => {
+  const handleGuardarReagendamiento = async (e: React.FormEvent) => {
     e.preventDefault();
     if (citaAReagendar) {
-      // Aquí iría la lógica para llamar a la API y reagendar la cita
-      setCitas(citas.map(c => 
-        c.citaid === citaAReagendar.citaid 
-          ? { ...citaAReagendar, estado: 'pendiente' } 
-          : c
-      ));
-      toast.success('Solicitud de reagendamiento enviada', {
-        description: 'El profesional revisará tu solicitud y te contactará pronto'
-      });
-      setCitaAReagendar(null);
+      try {
+        const response = await apiFetch(`${API_ENDPOINTS.CITAS}/${citaAReagendar.citaid}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            fecha: formatearFechaInput(citaAReagendar.fechahora),
+            hora: formatearHoraInput(citaAReagendar.fechahora),
+            modalidad: citaAReagendar.modalidad,
+            estado: ESTADO_CITA.PENDIENTE,
+            notas: citaAReagendar.notas || '',
+          }),
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'No fue posible reagendar la cita.');
+        }
+
+        setCitas((prev) => prev.map((cita) => (cita.citaid === citaAReagendar.citaid ? { ...cita, ...data, psicologa_nombre: cita.psicologa_nombre, psicologa_apellido: cita.psicologa_apellido, ubicacion: cita.ubicacion } : cita)));
+        toast.success('Reagendamiento guardado', {
+          description: 'La cita fue actualizada y notificada.',
+        });
+        setCitaAReagendar(null);
+      } catch (error: any) {
+        toast.error(error.message || 'Error al reagendar la cita.');
+      }
     }
   };
 
@@ -183,6 +257,19 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const citasProximas = citas.filter(c => new Date(c.fechahora) >= ahora);
   const citasPasadas = citas.filter(c => new Date(c.fechahora) < ahora);
   const citaConNotas = citasPasadas.find(c => c.citaid === citaNotasVisibles);
+  const esMismoMes = (fecha: Date, referencia: Date) => fecha.getMonth() === referencia.getMonth() && fecha.getFullYear() === referencia.getFullYear();
+  const esMismoDia = (fecha: Date, referencia: Date) => fecha.toDateString() === referencia.toDateString();
+  const inicioSemana = new Date(ahora);
+  inicioSemana.setDate(ahora.getDate() - ahora.getDay());
+  inicioSemana.setHours(0, 0, 0, 0);
+  const finSemana = new Date(inicioSemana);
+  finSemana.setDate(inicioSemana.getDate() + 7);
+  const citasMesActual = citas.filter((cita) => esMismoMes(new Date(cita.fechahora), mesActual));
+  const citasHoy = citas.filter((cita) => esMismoDia(new Date(cita.fechahora), ahora));
+  const citasSemana = citas.filter((cita) => {
+    const fecha = new Date(cita.fechahora);
+    return fecha >= inicioSemana && fecha < finSemana;
+  });
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -211,7 +298,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4 flex-1">
                     <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                      {cita.modalidad === 'virtual' ? (
+                      {esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-white stroke-2" />
                       ) : (
                         <Calendar className="w-8 h-8 text-white stroke-2" />
@@ -221,10 +308,10 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                       <div className="flex items-center gap-2 mb-2">
                         
                         <Badge
-                          variant={cita.estado === 'confirmada' ? 'default' : 'secondary'}
-                          className={cita.estado === 'confirmada' ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}
+                          variant={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'default' : 'secondary'}
+                          className={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}
                         >
-                          {cita.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                          {esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
                         </Badge>
                       </div>
                       <div className="space-y-1 text-slate-300">
@@ -242,16 +329,16 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
-                          <span>{cita.ubicacion}</span>
+                          <span>{obtenerUbicacion(cita as Cita & { ubicacion?: string })}</span>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {cita.modalidad === 'virtual' && (
+                    {esModalidadEnLinea(cita.modalidad) && (
                       <Button size="sm" onClick={handleUnirseVideollamada} className="bg-teal-600 hover:bg-teal-700">Unirse a Videollamada</Button>
                     )}
-                    {cita.estado === 'pendiente' && userType === 'paciente' && (
+                    {esEstado(cita.estado, ESTADO_CITA.PENDIENTE) && userType === 'paciente' && (
                       <Button size="sm" variant="outline" onClick={() => handleConfirmarCita(cita.citaid)} className="border-green-600 text-green-400 hover:bg-green-600/20">
                         Confirmar Cita
                       </Button>
@@ -295,7 +382,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4 flex-1">
                     <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                      {cita.modalidad === 'virtual' ? (
+                      {esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-slate-400" />
                       ) : (
                         <Calendar className="w-8 h-8 text-slate-400" />
@@ -347,7 +434,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-400 mb-1">Citas Hoy</p>
-                      <p className="text-slate-100">2 citas</p>
+                      <p className="text-slate-100">{citasHoy.length} citas</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
                       <CalendarDays className="w-6 h-6 text-white stroke-2" />
@@ -361,7 +448,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-400 mb-1">Esta Semana</p>
-                      <p className="text-slate-100">8 citas</p>
+                      <p className="text-slate-100">{citasSemana.length} citas</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg">
                       <Calendar className="w-6 h-6 text-white stroke-2" />
@@ -375,7 +462,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-400 mb-1">Este Mes</p>
-                      <p className="text-slate-100">{citas.length} citas</p>
+                      <p className="text-slate-100">{citasMesActual.length} citas</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
                       <CalendarDays className="w-6 h-6 text-white stroke-2" />
@@ -434,8 +521,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
                         <SelectItem value="todos">Todos los estados</SelectItem>
-                        <SelectItem value="confirmada">Confirmadas</SelectItem>
-                        <SelectItem value="pendiente">Pendientes</SelectItem>
+                        <SelectItem value={ESTADO_CITA.CONFIRMADA}>Confirmadas</SelectItem>
+                        <SelectItem value={ESTADO_CITA.PENDIENTE}>Pendientes</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -500,7 +587,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-violet-500 rounded-full"></div>
-                    <span className="text-slate-300">Virtual</span>
+                    <span className="text-slate-300">En linea</span>
                   </div>
                 </div>
               </CardContent>
@@ -510,9 +597,10 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-slate-100">
-                  Citas del Mes ({citas.filter(c => {
-                    const cumpleBusqueda = busquedaAgenda === '' || c.paciente.toLowerCase().includes(busquedaAgenda.toLowerCase());
-                    const cumplePaciente = filtroPaciente === 'todos' || c.paciente === filtroPaciente;
+                  Citas del Mes ({citasMesActual.filter(c => {
+                    const nombrePaciente = `${c.paciente_nombre} ${c.paciente_apellido}`.trim();
+                    const cumpleBusqueda = busquedaAgenda === '' || nombrePaciente.toLowerCase().includes(busquedaAgenda.toLowerCase());
+                    const cumplePaciente = filtroPaciente === 'todos' || nombrePaciente === filtroPaciente;
                     const cumpleEstado = filtroEstado === 'todos' || c.estado === filtroEstado;
                     return cumpleBusqueda && cumplePaciente && cumpleEstado;
                   }).length})
@@ -533,7 +621,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 </Button>
               </div>
               
-              {citas
+              {citasMesActual
                 .filter(c => {
                   const cumpleBusqueda = busquedaAgenda === '' || `${c.paciente_nombre} ${c.paciente_apellido}`.toLowerCase().includes(busquedaAgenda.toLowerCase());
                   const cumplePaciente = filtroPaciente === 'todos' || `${c.paciente_nombre} ${c.paciente_apellido}` === filtroPaciente;
@@ -564,19 +652,19 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                             <div className="flex flex-col gap-2">
                               <div 
                                 className={`w-16 h-16 ${
-                                  cita.modalidad === 'virtual' 
+                                  esModalidadEnLinea(cita.modalidad) 
                                     ? 'bg-gradient-to-br from-violet-500 to-violet-600' 
                                     : 'bg-gradient-to-br from-teal-500 to-teal-600'
                                 } rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}
                               >
-                                {cita.modalidad === 'virtual' ? (
+                                {esModalidadEnLinea(cita.modalidad) ? (
                                   <Video className="w-8 h-8 text-white stroke-2" />
                                 ) : (
                                   <MapPin className="w-8 h-8 text-white stroke-2" />
                                 )}
                               </div>
                               <div className={`w-16 h-1 rounded-full ${
-                                cita.estado === 'confirmada' ? 'bg-green-500' : 'bg-amber-500'
+                                esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-500' : 'bg-amber-500'
                               }`}></div>
                             </div>
                             
@@ -585,15 +673,15 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 
                                 <Badge
-                                  className={cita.estado === 'confirmada' ? 'bg-green-600' : 'bg-amber-600'}
+                                  className={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600' : 'bg-amber-600'}
                                 >
-                                  {cita.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                                  {esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
                                 </Badge>
                                 <Badge
                                   variant="outline"
-                                  className={cita.modalidad === 'virtual' ? 'border-violet-500 text-violet-400' : 'border-teal-500 text-teal-400'}
+                                  className={esModalidadEnLinea(cita.modalidad) ? 'border-violet-500 text-violet-400' : 'border-teal-500 text-teal-400'}
                                 >
-                                  {cita.modalidad === 'virtual' ? 'Virtual' : 'Presencial'}
+                                  {esModalidadEnLinea(cita.modalidad) ? 'En linea' : 'Presencial'}
                                 </Badge>
                               </div>
                               <div className="space-y-1 text-slate-300">
@@ -611,7 +699,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <MapPin className="w-4 h-4" />
-                                  <span>{cita.ubicacion}</span>
+                                  <span>{obtenerUbicacion(cita as Cita & { ubicacion?: string })}</span>
                                 </div>
                               </div>
                             </div>
@@ -619,7 +707,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                           
                           {/* Acciones rápidas */}
                           <div className="flex flex-col gap-2">
-                            {cita.modalidad === 'virtual' && (
+                            {esModalidadEnLinea(cita.modalidad) && (
                               <Button size="sm" onClick={(e) => { e.stopPropagation(); handleUnirseVideollamada(); }} className="bg-teal-600 hover:bg-teal-700">
                                 <Video className="w-4 h-4 mr-2" />
                                 Unirse
@@ -641,7 +729,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   </motion.div>
                 ))}
               
-              {citas.filter(c => {
+              {citasMesActual.filter(c => {
                 const cumpleBusqueda = busquedaAgenda === '' || `${c.paciente_nombre} ${c.paciente_apellido}`.toLowerCase().includes(busquedaAgenda.toLowerCase());
                 const cumplePaciente = filtroPaciente === 'todos' || `${c.paciente_nombre} ${c.paciente_apellido}` === filtroPaciente;
                 const cumpleEstado = filtroEstado === 'todos' || c.estado === filtroEstado;
@@ -684,7 +772,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-400 mb-1">Confirmadas</p>
-                      <p className="text-slate-100">{citasProximas.filter(c => c.estado === 'confirmada').length} citas</p>
+                      <p className="text-slate-100">{citasProximas.filter(c => esEstado(c.estado, ESTADO_CITA.CONFIRMADA)).length} citas</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg">
                       <CheckCircle2 className="w-6 h-6 text-white stroke-2" />
@@ -765,7 +853,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-violet-500 rounded-full"></div>
-                    <span className="text-slate-300">Virtual</span>
+                    <span className="text-slate-300">En linea</span>
                   </div>
                 </div>
               </CardContent>
@@ -782,8 +870,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               {citas
                 .sort((a, b) => {
                   // Ordenar por fecha y hora
-                  const fechaA = new Date(a.fecha);
-                  const fechaB = new Date(b.fecha);
+                  const fechaA = new Date(a.fechahora);
+                  const fechaB = new Date(b.fechahora);
                   return fechaA.getTime() - fechaB.getTime();
                 })
                 .map((cita) => (
@@ -803,19 +891,19 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                             <div className="flex flex-col gap-2">
                               <div 
                                 className={`w-16 h-16 ${
-                                  cita.modalidad === 'virtual' 
+                                  esModalidadEnLinea(cita.modalidad) 
                                     ? 'bg-gradient-to-br from-violet-500 to-violet-600' 
                                     : 'bg-gradient-to-br from-teal-500 to-teal-600'
                                 } rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}
                               >
-                                {cita.modalidad === 'virtual' ? (
+                                {esModalidadEnLinea(cita.modalidad) ? (
                                   <Video className="w-8 h-8 text-white stroke-2" />
                                 ) : (
                                   <MapPin className="w-8 h-8 text-white stroke-2" />
                                 )}
                               </div>
                               <div className={`w-16 h-1 rounded-full ${
-                                cita.estado === 'confirmada' ? 'bg-green-500' : 'bg-amber-500'
+                                esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-500' : 'bg-amber-500'
                               }`}></div>
                             </div>
                             
@@ -824,15 +912,15 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 
                                 <Badge
-                                  className={cita.estado === 'confirmada' ? 'bg-green-600' : 'bg-amber-600'}
+                                  className={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600' : 'bg-amber-600'}
                                 >
-                                  {cita.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                                  {esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
                                 </Badge>
                                 <Badge
                                   variant="outline"
-                                  className={cita.modalidad === 'virtual' ? 'border-violet-500 text-violet-400' : 'border-teal-500 text-teal-400'}
+                                  className={esModalidadEnLinea(cita.modalidad) ? 'border-violet-500 text-violet-400' : 'border-teal-500 text-teal-400'}
                                 >
-                                  {cita.modalidad === 'virtual' ? 'Virtual' : 'Presencial'}
+                                  {esModalidadEnLinea(cita.modalidad) ? 'En linea' : 'Presencial'}
                                 </Badge>
                               </div>
                               <div className="space-y-1 text-slate-300">
@@ -850,7 +938,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <MapPin className="w-4 h-4" />
-                                  <span>{cita.ubicacion}</span>
+                                  <span>{obtenerUbicacion(cita as Cita & { ubicacion?: string })}</span>
                                 </div>
                               </div>
                             </div>
@@ -858,13 +946,13 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                           
                           {/* Acciones rápidas */}
                           <div className="flex flex-col gap-2">
-                            {cita.modalidad === 'virtual' && (
+                            {esModalidadEnLinea(cita.modalidad) && (
                               <Button size="sm" onClick={() => handleUnirseVideollamada()} className="bg-teal-600 hover:bg-teal-700">
                                 <Video className="w-4 h-4 mr-2" />
                                 Unirse
                               </Button>
                             )}
-                            {cita.estado === 'pendiente' && (
+                            {esEstado(cita.estado, ESTADO_CITA.PENDIENTE) && (
                               <Button 
                                 size="sm" 
                                 variant="outline" 
@@ -964,7 +1052,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   
                   <Badge className="bg-slate-700 text-slate-300 border-slate-600 text-xs">
-                    {citaConNotas.modalidad === 'presencial' ? 'Presencial' : 'Virtual'}
+                    {esModalidadEnLinea(citaConNotas.modalidad) ? 'En linea' : 'Presencial'}
                   </Badge>
                 </div>
               </div>
@@ -1022,15 +1110,19 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               <div className="bg-gradient-to-br from-violet-900/20 to-teal-900/20 border border-violet-700/30 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-slate-300 mb-2">
                   <User className="w-5 h-5 text-violet-400 stroke-2" />
-                  <span className="font-semibold text-slate-100">{`${citaAReagendar.paciente_nombre} ${citaAReagendar.paciente_apellido}`}</span>
+                  <span className="font-semibold text-slate-100">
+                    {userType === 'paciente'
+                      ? `${citaAReagendar.psicologa_nombre} ${citaAReagendar.psicologa_apellido}`
+                      : `${citaAReagendar.paciente_nombre} ${citaAReagendar.paciente_apellido}`}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   
                   <Badge className="bg-slate-700 text-slate-300 border-slate-600">
-                    {citaAReagendar.modalidad === 'presencial' ? 'Presencial' : 'Virtual'}
+                    {esModalidadEnLinea(citaAReagendar.modalidad) ? 'En linea' : 'Presencial'}
                   </Badge>
-                  <Badge className={citaAReagendar.estado === 'confirmada' ? 'bg-green-600/20 text-green-300 border-green-600/50' : 'bg-amber-600/20 text-amber-300 border-amber-600/50'}>
-                    {citaAReagendar.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                  <Badge className={esEstado(citaAReagendar.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600/20 text-green-300 border-green-600/50' : 'bg-amber-600/20 text-amber-300 border-amber-600/50'}>
+                    {esEstado(citaAReagendar.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
                   </Badge>
                 </div>
               </div>
@@ -1044,8 +1136,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   </Label>
                   <Input
                     type="date"
-                    value={new Date(citaAReagendar.fechahora).toISOString().split('T')[0]}
-                    onChange={(e) => setCitaAReagendar({ ...citaAReagendar, fechahora: new Date(e.target.value).toISOString() })}
+                    value={formatearFechaInput(citaAReagendar.fechahora)}
+                    onChange={(e) => setCitaAReagendar(actualizarFechaHoraCita(citaAReagendar, e.target.value, formatearHoraInput(citaAReagendar.fechahora)))}
                     className="bg-slate-700 border-slate-600 text-slate-100"
                     required
                   />
@@ -1058,48 +1150,12 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   </Label>
                   <Input
                     type="time"
-                    value={new Date(citaAReagendar.fechahora).toTimeString().slice(0,5)}
-                    onChange={(e) => {
-                      const newDate = new Date(citaAReagendar.fechahora);
-                      const [hours, minutes] = e.target.value.split(':');
-                      newDate.setHours(parseInt(hours, 10));
-                      newDate.setMinutes(parseInt(minutes, 10));
-                      setCitaAReagendar({ ...citaAReagendar, fechahora: newDate.toISOString() });
-                    }}
+                    value={formatearHoraInput(citaAReagendar.fechahora)}
+                    onChange={(e) => setCitaAReagendar(actualizarFechaHoraCita(citaAReagendar, formatearFechaInput(citaAReagendar.fechahora), e.target.value))}
                     className="bg-slate-700 border-slate-600 text-slate-100"
                     required
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-slate-200 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-teal-400 stroke-2" />
-                  Ubicación
-                </Label>
-                <Input
-                  value={citaAReagendar.ubicacion}
-                  onChange={(e) => setCitaAReagendar({ ...citaAReagendar, ubicacion: e.target.value })}
-                  className="bg-slate-700 border-slate-600 text-slate-100"
-                  placeholder="Consultorio o link de videollamada"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400 stroke-2" />
-                  Estado de la Cita
-                </Label>
-                <Select value={citaAReagendar.estado} onValueChange={(value) => setCitaAReagendar({ ...citaAReagendar, estado: value })}>
-                  <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="confirmada">✅ Confirmada</SelectItem>
-                    <SelectItem value="pendiente">⏳ Pendiente</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">
@@ -1163,10 +1219,10 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   
                   <Badge className="bg-slate-700 text-slate-300 border-slate-600">
-                    {citaAEditar.modalidad === 'presencial' ? 'Presencial' : 'Virtual'}
+                    {esModalidadEnLinea(citaAEditar.modalidad) ? 'En linea' : 'Presencial'}
                   </Badge>
-                  <Badge className={citaAEditar.estado === 'confirmada' ? 'bg-green-600/20 text-green-300 border-green-600/50' : 'bg-amber-600/20 text-amber-300 border-amber-600/50'}>
-                    {citaAEditar.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                  <Badge className={esEstado(citaAEditar.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600/20 text-green-300 border-green-600/50' : 'bg-amber-600/20 text-amber-300 border-amber-600/50'}>
+                    {esEstado(citaAEditar.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
                   </Badge>
                 </div>
               </div>
@@ -1180,8 +1236,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   </Label>
                   <Input
                     type="date"
-                    value={new Date(citaAEditar.fechahora).toISOString().split('T')[0]}
-                    onChange={(e) => setCitaAEditar({ ...citaAEditar, fechahora: new Date(e.target.value).toISOString() })}
+                    value={formatearFechaInput(citaAEditar.fechahora)}
+                    onChange={(e) => setCitaAEditar(actualizarFechaHoraCita(citaAEditar, e.target.value, formatearHoraInput(citaAEditar.fechahora)))}
                     className="bg-slate-700 border-slate-600 text-slate-100"
                     required
                   />
@@ -1194,32 +1250,12 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   </Label>
                   <Input
                     type="time"
-                    value={new Date(citaAEditar.fechahora).toTimeString().slice(0,5)}
-                    onChange={(e) => {
-                      const newDate = new Date(citaAEditar.fechahora);
-                      const [hours, minutes] = e.target.value.split(':');
-                      newDate.setHours(parseInt(hours, 10));
-                      newDate.setMinutes(parseInt(minutes, 10));
-                      setCitaAEditar({ ...citaAEditar, fechahora: newDate.toISOString() });
-                    }}
+                    value={formatearHoraInput(citaAEditar.fechahora)}
+                    onChange={(e) => setCitaAEditar(actualizarFechaHoraCita(citaAEditar, formatearFechaInput(citaAEditar.fechahora), e.target.value))}
                     className="bg-slate-700 border-slate-600 text-slate-100"
                     required
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-slate-200 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-teal-400 stroke-2" />
-                  Ubicación
-                </Label>
-                <Input
-                  value={citaAEditar.ubicacion}
-                  onChange={(e) => setCitaAEditar({ ...citaAEditar, ubicacion: e.target.value })}
-                  className="bg-slate-700 border-slate-600 text-slate-100"
-                  placeholder="Consultorio o link de videollamada"
-                  required
-                />
               </div>
               
               <div className="space-y-2">
@@ -1232,8 +1268,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="confirmada">✅ Confirmada</SelectItem>
-                    <SelectItem value="pendiente">⏳ Pendiente</SelectItem>
+                    <SelectItem value={ESTADO_CITA.CONFIRMADA}>✅ Confirmada</SelectItem>
+                    <SelectItem value={ESTADO_CITA.PENDIENTE}>⏳ Pendiente</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

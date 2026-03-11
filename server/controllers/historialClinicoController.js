@@ -76,11 +76,22 @@ const getHistorial = async (req, res) => {
 };
 
 const crearEntradaHistorial = async (req, res) => {
-  const { pacienteId, diagnostico, tratamiento, observaciones } = req.body;
-  const psicologaResult = await db.query('SELECT psicologaid FROM psicologas WHERE usuarioid = $1', [req.user.id]);
-  const psicologaId = psicologaResult.rows[0].psicologaid;
-
   try {
+    const { pacienteId, diagnostico, tratamiento, observaciones } = req.body;
+
+    if (!pacienteId || !observaciones) {
+      return res.status(400).json({ message: 'pacienteId y observaciones son requeridos.' });
+    }
+
+    const psicologaResult = await db.query(
+      'SELECT psicologaid FROM psicologas WHERE usuarioid = $1',
+      [req.user.id]
+    );
+    if (psicologaResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Perfil de psicóloga no encontrado.' });
+    }
+    const psicologaId = psicologaResult.rows[0].psicologaid;
+
     const query = `
       INSERT INTO historialclinico (pacienteid, psicologaid, diagnostico, tratamiento, observaciones)
       VALUES ($1, $2, $3, $4, $5)
@@ -99,13 +110,27 @@ const actualizarEntradaHistorial = async (req, res) => {
   const { diagnostico, tratamiento, observaciones } = req.body;
 
   try {
+    const psicologaResult = await db.query(
+      'SELECT psicologaid FROM psicologas WHERE usuarioid = $1',
+      [req.user.id]
+    );
+    if (psicologaResult.rows.length === 0) {
+      return res.status(403).json({ message: 'No tienes permiso para editar este registro.' });
+    }
+    const psicologaId = psicologaResult.rows[0].psicologaid;
+
     const query = `
       UPDATE historialclinico
       SET diagnostico = $1, tratamiento = $2, observaciones = $3
-      WHERE historialid = $4
+      WHERE historialid = $4 AND psicologaid = $5
       RETURNING *
     `;
-    const result = await db.query(query, [diagnostico, tratamiento, observaciones, id]);
+    const result = await db.query(query, [diagnostico, tratamiento, observaciones, id, psicologaId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Entrada no encontrada o no tienes permiso para editarla.' });
+    }
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Error al actualizar la entrada del historial:", error);

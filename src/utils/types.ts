@@ -63,8 +63,10 @@ export interface Paciente {
   apellidopaterno?: string;
   apellidomaterno?: string;
   correo?: string;
+  email?: string;
   telefono?: string;
   edad?: number;
+  sesionesTotales?: number;
 }
 
 // ============================================
@@ -88,6 +90,60 @@ export interface Cita {
   paciente_apellido?: string;
   psicologa_nombre?: string;
   psicologa_apellido?: string;
+  notas?: string;
+  notasresumen?: string;
+  ubicacion?: string;
+}
+
+export interface ReporteCitasResumen {
+  total_citas: number;
+  citas_completadas: number;
+  citas_canceladas: number;
+  citas_pendientes: number;
+  citas_reagendadas: number;
+  pacientes_activos: number;
+  horas_terapia: number;
+}
+
+export interface ReporteCitasModalidad {
+  modalidad: string;
+  cantidad: number;
+  porcentaje: number;
+}
+
+export interface ReporteCitasPaciente {
+  pacienteid: number;
+  paciente: string;
+  sesiones: number;
+  ultima_cita: string;
+}
+
+export interface ReporteCitasTimeline {
+  fecha: string;
+  completadas: number;
+  canceladas: number;
+  pendientes: number;
+  reagendadas: number;
+}
+
+export interface ReporteCitasDetalle {
+  citaid: number;
+  fecha: string;
+  hora: string;
+  paciente: string;
+  modalidad: string;
+  estado: string;
+  duracionmin: number;
+  notas?: string;
+  consultorio?: string;
+}
+
+export interface ReporteCitasResponse {
+  resumen: ReporteCitasResumen;
+  modalidades: ReporteCitasModalidad[];
+  pacientes: ReporteCitasPaciente[];
+  timeline: ReporteCitasTimeline[];
+  citas: ReporteCitasDetalle[];
 }
 
 // ============================================
