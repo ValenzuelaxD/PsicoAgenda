@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { toast } from 'sonner';
+import { API_ENDPOINTS } from '../utils/api';
 
 interface PerfilProps {
   userName: string;
@@ -23,10 +24,14 @@ interface PerfilProps {
 }
 
 export function Perfil({ userName, userType }: PerfilProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [nombre, setNombre] = useState(userName);
-  const [email, setEmail] = useState('usuario@email.com');
-  const [telefono, setTelefono] = useState('+52 555 123 4567');
-  const [fechaNacimiento, setFechaNacimiento] = useState('1990-05-15');
+  const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [fotoPerfil, setFotoPerfil] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [direccion, setDireccion] = useState('');
   const [genero, setGenero] = useState('');
   const [contactoEmergencia, setContactoEmergencia] = useState('');
@@ -36,7 +41,8 @@ export function Perfil({ userName, userType }: PerfilProps) {
   // Campos específicos para psicólogo
   const [cedula, setCedula] = useState('');
   const [especialidad, setEspecialidad] = useState('');
-  const [experiencia, setExperiencia] = useState('');
+  const [descripcionProfesional, setDescripcionProfesional] = useState('');
+  const [consultorio, setConsultorio] = useState('');
 
   const [notificacionesEmail, setNotificacionesEmail] = useState(true);
   const [notificacionesWhatsApp, setNotificacionesWhatsApp] = useState(false);
@@ -52,11 +58,12 @@ export function Perfil({ userName, userType }: PerfilProps) {
   const [passwordConfirmar, setPasswordConfirmar] = useState('');
 
   // Estado para valores originales (para cancelar)
-  const [valoresOriginales] = useState({
+  const [valoresOriginales, setValoresOriginales] = useState({
     nombre: userName,
-    email: 'usuario@email.com',
-    telefono: '+52 555 123 4567',
-    fechaNacimiento: '1990-05-15',
+    email: '',
+    telefono: '',
+    fotoPerfil: '',
+    fechaNacimiento: '',
     direccion: '',
     genero: '',
     contactoEmergencia: '',
@@ -64,15 +71,162 @@ export function Perfil({ userName, userType }: PerfilProps) {
     notasPersonales: '',
     cedula: '',
     especialidad: '',
-    experiencia: '',
+    descripcionProfesional: '',
+    consultorio: '',
     notificacionesEmail: true,
     notificacionesWhatsApp: false,
     recordatorios: true,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const cargarPerfil = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          toast.error('No hay sesión activa');
+          return;
+        }
+
+        const response = await fetch(API_ENDPOINTS.PERFIL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
+        }
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || 'No se pudo cargar el perfil');
+        }
+
+        const data = await response.json();
+        const profile = data.profile || {};
+
+        const siguientesValores = {
+          nombre: profile.nombreCompleto || userName || '',
+          email: profile.email || '',
+          telefono: profile.telefono || '',
+          fotoPerfil: profile.fotoPerfil || '',
+          fechaNacimiento: profile.fechaNacimiento ? String(profile.fechaNacimiento).slice(0, 10) : '',
+          direccion: profile.direccion || '',
+          genero: profile.genero || '',
+          contactoEmergencia: profile.contactoEmergencia || '',
+          telefonoEmergencia: profile.telefonoEmergencia || '',
+          notasPersonales: profile.notasPersonales || '',
+          cedula: profile.cedula || '',
+          especialidad: profile.especialidad || '',
+          descripcionProfesional: profile.descripcionProfesional || '',
+          consultorio: profile.consultorio || '',
+          notificacionesEmail,
+          notificacionesWhatsApp,
+          recordatorios,
+        };
+
+        setNombre(siguientesValores.nombre);
+        setEmail(siguientesValores.email);
+        setTelefono(siguientesValores.telefono);
+        setFotoPerfil(siguientesValores.fotoPerfil);
+        setFechaNacimiento(siguientesValores.fechaNacimiento);
+        setDireccion(siguientesValores.direccion);
+        setGenero(siguientesValores.genero);
+        setContactoEmergencia(siguientesValores.contactoEmergencia);
+        setTelefonoEmergencia(siguientesValores.telefonoEmergencia);
+        setNotasPersonales(siguientesValores.notasPersonales);
+        setCedula(siguientesValores.cedula);
+        setEspecialidad(siguientesValores.especialidad);
+        setDescripcionProfesional(siguientesValores.descripcionProfesional);
+        setConsultorio(siguientesValores.consultorio);
+        setValoresOriginales(siguientesValores);
+      } catch (error: any) {
+        toast.error('No se pudo cargar tu perfil', {
+          description: error.message,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    cargarPerfil();
+  }, [userName]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMostrarExitoGuardado(true);
+
+    try {
+      setIsSaving(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(API_ENDPOINTS.PERFIL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nombreCompleto: nombre,
+          email,
+          telefono,
+          fotoPerfil,
+          fechaNacimiento: fechaNacimiento || null,
+          genero: genero || null,
+          direccion,
+          contactoEmergencia,
+          telefonoEmergencia,
+          notasPersonales,
+          cedula,
+          especialidad,
+          descripcionProfesional,
+          consultorio,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || 'No se pudo guardar el perfil');
+      }
+
+      setValoresOriginales({
+        nombre,
+        email,
+        telefono,
+        fotoPerfil,
+        fechaNacimiento,
+        direccion,
+        genero,
+        contactoEmergencia,
+        telefonoEmergencia,
+        notasPersonales,
+        cedula,
+        especialidad,
+        descripcionProfesional,
+        consultorio,
+        notificacionesEmail,
+        notificacionesWhatsApp,
+        recordatorios,
+      });
+
+      const userRaw = localStorage.getItem('user');
+      if (userRaw) {
+        const userData = JSON.parse(userRaw);
+        const primerNombre = nombre.trim().split(' ')[0] || userData.nombre;
+        localStorage.setItem('user', JSON.stringify({ ...userData, nombre: primerNombre, correo: email }));
+      }
+
+      setMostrarExitoGuardado(true);
+    } catch (error: any) {
+      toast.error('Error al guardar cambios', { description: error.message });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancelar = () => {
@@ -80,6 +234,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
     setNombre(valoresOriginales.nombre);
     setEmail(valoresOriginales.email);
     setTelefono(valoresOriginales.telefono);
+    setFotoPerfil(valoresOriginales.fotoPerfil);
     setFechaNacimiento(valoresOriginales.fechaNacimiento);
     setDireccion(valoresOriginales.direccion);
     setGenero(valoresOriginales.genero);
@@ -88,7 +243,8 @@ export function Perfil({ userName, userType }: PerfilProps) {
     setNotasPersonales(valoresOriginales.notasPersonales);
     setCedula(valoresOriginales.cedula);
     setEspecialidad(valoresOriginales.especialidad);
-    setExperiencia(valoresOriginales.experiencia);
+    setDescripcionProfesional(valoresOriginales.descripcionProfesional);
+    setConsultorio(valoresOriginales.consultorio);
     setNotificacionesEmail(valoresOriginales.notificacionesEmail);
     setNotificacionesWhatsApp(valoresOriginales.notificacionesWhatsApp);
     setRecordatorios(valoresOriginales.recordatorios);
@@ -97,7 +253,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
     });
   };
 
-  const handleCambiarPassword = () => {
+  const handleCambiarPassword = async () => {
     if (!passwordActual || !passwordNueva || !passwordConfirmar) {
       toast.error('Por favor completa todos los campos');
       return;
@@ -110,14 +266,44 @@ export function Perfil({ userName, userType }: PerfilProps) {
       toast.error('La contraseña debe tener al menos 8 caracteres');
       return;
     }
-    toast.success('Contraseña actualizada exitosamente', {
-      description: 'Tu contraseña ha sido cambiada correctamente'
-    });
-    setMostrarCambiarPassword(false);
-    setPasswordActual('');
-    setPasswordNueva('');
-    setPasswordConfirmar('');
-    setMostrarExitoPassword(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(API_ENDPOINTS.PERFIL_PASSWORD, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          passwordActual,
+          passwordNueva,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || 'No se pudo cambiar la contraseña');
+      }
+
+      toast.success('Contraseña actualizada exitosamente', {
+        description: 'Tu contraseña ha sido cambiada correctamente'
+      });
+      setMostrarCambiarPassword(false);
+      setPasswordActual('');
+      setPasswordNueva('');
+      setPasswordConfirmar('');
+      setMostrarExitoPassword(true);
+    } catch (error: any) {
+      toast.error('No se pudo cambiar la contraseña', {
+        description: error.message,
+      });
+    }
   };
 
   const handleHabilitar2FA = () => {
@@ -126,6 +312,18 @@ export function Perfil({ userName, userType }: PerfilProps) {
     });
     setMostrar2FA(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+          <CardContent className="py-10 text-center text-slate-300">
+            Cargando perfil desde la base de datos...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
@@ -188,6 +386,18 @@ export function Perfil({ userName, userType }: PerfilProps) {
                 </div>
               </div>
 
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="foto-perfil" className="text-slate-200">Foto de Perfil (URL)</Label>
+                <Input
+                  id="foto-perfil"
+                  type="url"
+                  value={fotoPerfil}
+                  onChange={(e) => setFotoPerfil(e.target.value)}
+                  className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                  placeholder="https://.../mi-foto.jpg"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="fecha-nacimiento" className="text-slate-200">Fecha de Nacimiento</Label>
                 <div className="relative">
@@ -209,10 +419,10 @@ export function Perfil({ userName, userType }: PerfilProps) {
                     <SelectValue placeholder="Selecciona una opción" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="masculino">Masculino</SelectItem>
-                    <SelectItem value="femenino">Femenino</SelectItem>
-                    <SelectItem value="otro">Otro</SelectItem>
-                    <SelectItem value="no-especificar">Prefiero no especificar</SelectItem>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Femenino">Femenino</SelectItem>
+                    <SelectItem value="Otro">Otro</SelectItem>
+                    <SelectItem value="Prefiero no decir">Prefiero no decir</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -268,13 +478,24 @@ export function Perfil({ userName, userType }: PerfilProps) {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="experiencia" className="text-slate-200">Años de Experiencia</Label>
+                  <Label htmlFor="descripcion" className="text-slate-200">Descripción Profesional</Label>
+                  <Textarea
+                    id="descripcion"
+                    value={descripcionProfesional}
+                    onChange={(e) => setDescripcionProfesional(e.target.value)}
+                    placeholder="Describe tu experiencia y enfoque terapéutico"
+                    className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="consultorio" className="text-slate-200">Consultorio</Label>
                   <Input
-                    id="experiencia"
-                    type="number"
-                    value={experiencia}
-                    onChange={(e) => setExperiencia(e.target.value)}
-                    placeholder="Años de práctica profesional"
+                    id="consultorio"
+                    value={consultorio}
+                    onChange={(e) => setConsultorio(e.target.value)}
+                    placeholder="Ej: Consultorio 201 o enlace de atención"
                     className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
                   />
                 </div>
@@ -430,8 +651,8 @@ export function Perfil({ userName, userType }: PerfilProps) {
         </Card>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700">
-            Guardar Cambios
+          <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700" disabled={isSaving}>
+            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
           </Button>
           <Button type="button" variant="outline" className="sm:w-auto border-slate-600 text-slate-200 hover:bg-slate-700" onClick={handleCancelar}>
             Cancelar

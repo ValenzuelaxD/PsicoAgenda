@@ -10,6 +10,7 @@ const { getPacienteDashboard, getPsicologoDashboard } = require('../controllers/
 const { getPsicologas, getDisponibilidad } = require('../controllers/psicologasController');
 const { getPacientes } = require('../controllers/pacientesController');
 const { getMiHistorial, getHistorial, crearEntradaHistorial, actualizarEntradaHistorial } = require('../controllers/historialClinicoController');
+const { getMiPerfil, actualizarMiPerfil, cambiarMiPassword } = require('../controllers/perfilController');
 const { protegerRuta } = require('../middleware/authMiddleware');
 
 // --- Rutas Públicas ---
@@ -49,6 +50,9 @@ router.get('/historialclinico', protegerRuta, getMiHistorial);
 router.get('/historialclinico/:pacienteId', protegerRuta, getHistorial);
 router.post('/historialclinico', protegerRuta, crearEntradaHistorial);
 router.put('/historialclinico/:id', protegerRuta, actualizarEntradaHistorial);
+router.get('/perfil', protegerRuta, getMiPerfil);
+router.put('/perfil', protegerRuta, actualizarMiPerfil);
+router.put('/perfil/password', protegerRuta, cambiarMiPassword);
 // ... aquí irían el resto de tus rutas protegidas
 
 module.exports = router;

@@ -69,6 +69,16 @@ const login = async (req, res) => {
 
   } catch (error) {
     console.error("Error en el login:", error);
+
+    // Errores típicos cuando Cloud SQL Proxy no puede alcanzar la instancia.
+    if (["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT"].includes(error.code)) {
+      return res.status(503).json({
+        success: false,
+        message: "Base de datos no disponible temporalmente. Verifica Cloud SQL Proxy o conectividad de red.",
+        error: error.code
+      });
+    }
+
     return res.status(500).json({ 
       success: false,
       message: "Error interno del servidor.",

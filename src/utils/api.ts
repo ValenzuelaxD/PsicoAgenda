@@ -30,6 +30,10 @@ export const API_ENDPOINTS = {
   
   // Psicologas
   PSICOLOGAS: `${API_BASE_URL}/api/psicologas`,
+
+  // Perfil
+  PERFIL: `${API_BASE_URL}/api/perfil`,
+  PERFIL_PASSWORD: `${API_BASE_URL}/api/perfil/password`,
   
   // Historial Clínico
   HISTORIAL_CLINICO: `${API_BASE_URL}/api/historialclinico`,
