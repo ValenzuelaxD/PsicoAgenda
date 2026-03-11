@@ -357,18 +357,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
                 </div>
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="foto-perfil" className="text-slate-200">Foto de Perfil (URL)</Label>
-                <Input
-                  id="foto-perfil"
-                  type="url"
-                  value={fotoPerfil}
-                  onChange={(e) => setFotoPerfil(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
-                  placeholder="https://.../mi-foto.jpg"
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="fecha-nacimiento" className="text-slate-200">Fecha de Nacimiento</Label>
                 <div className="relative">

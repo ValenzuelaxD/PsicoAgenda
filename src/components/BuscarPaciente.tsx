@@ -33,6 +33,14 @@ interface HistorialPaciente {
   estadisticas: any;
 }
 
+const obtenerNombreCompletoPaciente = (paciente: Partial<Paciente> | null | undefined) => {
+  if (!paciente) return '';
+  return [paciente.nombre, paciente.apellidopaterno, paciente.apellidomaterno]
+    .filter((valor) => Boolean(valor && String(valor).trim()))
+    .join(' ')
+    .trim();
+};
+
 export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
   const [busqueda, setBusqueda] = useState('');
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
@@ -52,6 +60,14 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
     fechaNacimiento: '',
     motivoConsulta: '',
   });
+
+  const dividirNombreCompleto = (nombreCompleto: string) => {
+    const partes = nombreCompleto.trim().split(/\s+/).filter(Boolean);
+    const nombre = partes.shift() || '';
+    const apellidoPaterno = partes.shift() || '';
+    const apellidoMaterno = partes.length > 0 ? partes.join(' ') : null;
+    return { nombre, apellidoPaterno, apellidoMaterno };
+  };
 
   useEffect(() => {
     const fetchPacientes = async () => {
@@ -150,18 +166,18 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
   }, [pacienteSeleccionado]);
 
   const pacientesFiltrados = pacientes.filter((p) =>
-    `${p.nombre} ${p.apellidopaterno}`.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.email.toLowerCase().includes(busqueda.toLowerCase())
+    obtenerNombreCompletoPaciente(p).toLowerCase().includes(busqueda.toLowerCase()) ||
+    (p.email ?? '').toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const handleAbrirModalActualizar = () => {
     if (pacienteSeleccionado) {
       setFormActualizar({
-        nombre: `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}`,
-        email: pacienteSeleccionado.email,
-        telefono: pacienteSeleccionado.telefono,
-        fechaNacimiento: pacienteSeleccionado.fechanacimiento,
-        motivoConsulta: pacienteSeleccionado.motivoconsulta,
+        nombre: obtenerNombreCompletoPaciente(pacienteSeleccionado),
+        email: pacienteSeleccionado.email ?? '',
+        telefono: pacienteSeleccionado.telefono ?? '',
+        fechaNacimiento: pacienteSeleccionado.fechanacimiento ?? '',
+        motivoConsulta: pacienteSeleccionado.motivoconsulta ?? '',
       });
       setMostrarModalActualizar(true);
     }
@@ -169,6 +185,12 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
 
   const handleActualizarPaciente = async () => {
     if (!pacienteSeleccionado) return;
+    const nombreDividido = dividirNombreCompleto(formActualizar.nombre);
+    if (!nombreDividido.nombre || !nombreDividido.apellidoPaterno) {
+      toast.error('Debes capturar nombre y al menos un apellido.');
+      return;
+    }
+
     try {
       const response = await fetch(`${API_ENDPOINTS.PACIENTES}/${pacienteSeleccionado.pacienteid}`, {
         method: 'PUT',
@@ -177,8 +199,9 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          nombre: formActualizar.nombre.split(' ')[0],
-          apellidoPaterno: formActualizar.nombre.split(' ')[1] || '',
+          nombre: nombreDividido.nombre,
+          apellidoPaterno: nombreDividido.apellidoPaterno,
+          apellidoMaterno: nombreDividido.apellidoMaterno,
           telefono: formActualizar.telefono,
           motivoConsulta: formActualizar.motivoConsulta,
         })
@@ -265,7 +288,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                                 <User className="w-5 h-5 text-white stroke-2" />
                               </div>
                               <div>
-                                <p className="text-white font-medium">{`${paciente.nombre} ${paciente.apellidopaterno}`}</p>
+                                <p className="text-white font-medium">{obtenerNombreCompletoPaciente(paciente)}</p>
                                 <p className="text-slate-400">{paciente.edad} años</p>
                               </div>
                             </div>
@@ -303,7 +326,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <p className="text-slate-400 mb-1">Nombre Completo</p>
-                              <p className="text-teal-300 font-medium">{`${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno} ${pacienteSeleccionado.apellidomaterno}`}</p>
+                              <p className="text-teal-300 font-medium">{obtenerNombreCompletoPaciente(pacienteSeleccionado)}</p>
                             </div>
                             <div>
                               <p className="text-slate-400 mb-1">Fecha de Nacimiento</p>
@@ -386,7 +409,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                   <Dialog open={mostrarHistorial} onOpenChange={setMostrarHistorial}>
                     <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-slate-800 border-slate-700 p-0">
                       <DialogTitle className="sr-only">
-                        Historial Clínico Completo - {pacienteSeleccionado.nombre}
+                        Historial Clínico Completo - {obtenerNombreCompletoPaciente(pacienteSeleccionado)}
                       </DialogTitle>
                       <DialogDescription className="sr-only">
                         Visualización completa del historial clínico y sesiones del paciente seleccionado
@@ -402,7 +425,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                           <div className="flex items-center justify-between">
                             <div>
                               <h2 className="text-white text-xl font-semibold">Historial Clínico Completo</h2>
-                              <p className="text-teal-400 mt-1">{pacienteSeleccionado.nombre}</p>
+                              <p className="text-teal-400 mt-1">{obtenerNombreCompletoPaciente(pacienteSeleccionado)}</p>
                             </div>
                             <Button
                               variant="ghost"
@@ -534,7 +557,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                   <Dialog open={mostrarModalActualizar} onOpenChange={setMostrarModalActualizar}>
                     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-800 border-slate-700 p-0">
                       <DialogTitle className="sr-only">
-                        Actualizar Información del Paciente - {pacienteSeleccionado.nombre}
+                        Actualizar Información del Paciente - {obtenerNombreCompletoPaciente(pacienteSeleccionado)}
                       </DialogTitle>
                       <DialogDescription className="sr-only">
                         Formulario para actualizar la información del paciente seleccionado
@@ -550,7 +573,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                           <div className="flex items-center justify-between">
                             <div>
                               <h2 className="text-white text-xl font-semibold">Actualizar Información del Paciente</h2>
-                              <p className="text-teal-400 mt-1">{pacienteSeleccionado.nombre}</p>
+                              <p className="text-teal-400 mt-1">{obtenerNombreCompletoPaciente(pacienteSeleccionado)}</p>
                             </div>
                             <Button
                               variant="ghost"
@@ -639,7 +662,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-white">Eliminar Paciente</AlertDialogTitle>
                         <AlertDialogDescription className="text-slate-300">
-                          ¿Estás seguro de que deseas eliminar a {pacienteSeleccionado.nombre} del sistema? Esta acción no se puede deshacer.
+                          ¿Estás seguro de que deseas eliminar a {obtenerNombreCompletoPaciente(pacienteSeleccionado)} del sistema? Esta acción no se puede deshacer.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

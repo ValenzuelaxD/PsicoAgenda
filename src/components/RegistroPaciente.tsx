@@ -5,10 +5,17 @@ import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { User, Mail, Phone, Calendar, MapPin, Check } from 'lucide-react';
+import { User, Mail, Phone, Calendar, MapPin, Check, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
-import { validarNombre, validarEmail, validarTelefono, validarFecha } from '../utils/validators';
+import {
+  validarNombre,
+  validarEmail,
+  validarTelefono,
+  validarFecha,
+  validarContrasena,
+  validarConfirmacionContrasena,
+} from '../utils/validators';
 import { motion, AnimatePresence } from 'motion/react';
 import { API_ENDPOINTS, apiFetch } from '../utils/api';
 
@@ -20,6 +27,8 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [telefono, setTelefono] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [genero, setGenero] = useState('');
@@ -28,31 +37,42 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
   const [telefonoEmergencia, setTelefonoEmergencia] = useState('');
   const [motivoConsulta, setMotivoConsulta] = useState('');
   const [mostrarExito, setMostrarExito] = useState(false);
+  const [credencialesRegistradas, setCredencialesRegistradas] = useState(null as { correo: string; password: string } | null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
 
     // Validar campos obligatorios
-    if (!nombre.trim()) {
-      toast.error('Campo requerido', { description: 'Por favor ingresa el nombre del paciente' });
+    const validacionNombre = validarNombre(nombre);
+    if (!validacionNombre.valido) {
+      toast.error('Error de validación', { description: validacionNombre.error });
       return;
     }
-    if (!apellidos.trim()) {
-      toast.error('Campo requerido', { description: 'Por favor ingresa los apellidos del paciente' });
+
+    const validacionApellidos = validarNombre(apellidos);
+    if (!validacionApellidos.valido) {
+      toast.error('Error de validación', { description: validacionApellidos.error });
       return;
     }
-    if (!email.trim()) {
-      toast.error('Campo requerido', { description: 'Por favor ingresa el correo electrónico' });
+
+    const validacionEmail = validarEmail(email);
+    if (!validacionEmail.valido) {
+      toast.error('Error de validación', { description: validacionEmail.error });
       return;
     }
-    if (!telefono.trim()) {
-      toast.error('Campo requerido', { description: 'Por favor ingresa el teléfono' });
+
+    const validacionTelefono = validarTelefono(telefono);
+    if (!validacionTelefono.valido) {
+      toast.error('Error de validación', { description: validacionTelefono.error });
       return;
     }
-    if (!fechaNacimiento) {
-      toast.error('Campo requerido', { description: 'Por favor selecciona la fecha de nacimiento' });
+
+    const validacionFechaNacimiento = validarFecha(fechaNacimiento);
+    if (!validacionFechaNacimiento.valido) {
+      toast.error('Error de validación', { description: validacionFechaNacimiento.error });
       return;
     }
+
     if (!genero) {
       toast.error('Campo requerido', { description: 'Por favor selecciona el género' });
       return;
@@ -60,6 +80,26 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
     if (!motivoConsulta.trim()) {
       toast.error('Campo requerido', { description: 'Por favor ingresa el motivo de consulta' });
       return;
+    }
+
+    const validacionPassword = validarContrasena(password);
+    if (!validacionPassword.valido) {
+      toast.error('Error de validación', { description: validacionPassword.error });
+      return;
+    }
+
+    const validacionConfirmacion = validarConfirmacionContrasena(password, confirmPassword);
+    if (!validacionConfirmacion.valido) {
+      toast.error('Error de validación', { description: validacionConfirmacion.error });
+      return;
+    }
+
+    if (telefonoEmergencia.trim()) {
+      const validacionTelefonoEmergencia = validarTelefono(telefonoEmergencia);
+      if (!validacionTelefonoEmergencia.valido) {
+        toast.error('Error de validación', { description: `Teléfono de emergencia: ${validacionTelefonoEmergencia.error}` });
+        return;
+      }
     }
 
     try {
@@ -77,7 +117,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
           motivoConsulta,
           contactoEmergencia,
           telefonoEmergencia,
-          password: email.split('@')[0] + Math.random().toString(36).slice(-6), // Password temporal
+          password,
         }),
       });
 
@@ -87,6 +127,10 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
       }
 
       toast.success('Paciente registrado exitosamente');
+      setCredencialesRegistradas({
+        correo: email.toLowerCase(),
+        password,
+      });
       setMostrarExito(true);
     } catch (err: any) {
       toast.error(err.message || 'Error al registrar el paciente');
@@ -99,6 +143,8 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
     setNombre('');
     setApellidos('');
     setEmail('');
+    setPassword('');
+    setConfirmPassword('');
     setTelefono('');
     setFechaNacimiento('');
     setGenero('');
@@ -106,6 +152,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
     setContactoEmergencia('');
     setTelefonoEmergencia('');
     setMotivoConsulta('');
+    setCredencialesRegistradas(null);
     // Navegar a buscar paciente
     onNavigate('buscar-paciente');
   };
@@ -177,6 +224,36 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                     onChange={(e) => setTelefono(e.target.value)}
                     className="pl-10"
                     placeholder="+52 555 123 4567"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña de Inicio de Sesión *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="Mínimo 8 caracteres, mayúscula y número"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmar Contraseña *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="Repite la contraseña"
                   />
                 </div>
               </div>
@@ -333,6 +410,21 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                   <p className="text-slate-300">
                     El paciente <span className="text-teal-400">{nombre} {apellidos}</span> ha sido agregado al sistema correctamente.
                   </p>
+
+                  {credencialesRegistradas && (
+                    <div className="bg-slate-900 border border-slate-600 rounded-lg p-4 text-left space-y-2">
+                      <p className="text-slate-200 text-sm font-medium">Credenciales de inicio de sesión</p>
+                      <p className="text-slate-300 text-sm">
+                        Correo: <span className="text-teal-400">{credencialesRegistradas.correo}</span>
+                      </p>
+                      <p className="text-slate-300 text-sm">
+                        Contraseña: <span className="text-teal-400">{credencialesRegistradas.password}</span>
+                      </p>
+                      <p className="text-amber-300 text-xs">
+                        Comparte estas credenciales con el paciente para que pueda iniciar sesión.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Botón */}
                   <Button

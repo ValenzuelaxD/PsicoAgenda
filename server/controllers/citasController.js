@@ -211,7 +211,13 @@ const getMisCitas = async (req, res) => {
     }
 
     const result = await db.query(query, params);
-    res.json(result.rows.map((row) => ({ ...row, notas: row.notasresumen || row.notas || '' })));
+    res.json(
+      result.rows.map((row) => ({
+        ...row,
+        notas: rol === 'psicologa' ? (row.notaspsicologa || '') : (row.notaspaciente || ''),
+        notasresumen: row.notasresumen || row.notaspsicologa || row.notaspaciente || '',
+      }))
+    );
   } catch (error) {
     console.error('Error al obtener citas:', error);
     res.status(500).json({ message: 'Error interno del servidor.' });
@@ -311,7 +317,7 @@ const crearCita = async (req, res) => {
 
 const actualizarCita = async (req, res) => {
   const { id } = req.params;
-  const { fecha, hora, modalidad, duracionMin, estado, notas } = req.body;
+  const { fecha, hora, modalidad, duracionMin, estado, notas, notasPaciente, notasPsicologa } = req.body;
 
   try {
     const validacion = await validarAccesoCita(req, id);
@@ -339,8 +345,12 @@ const actualizarCita = async (req, res) => {
       return res.status(409).json({ message: disponibilidad.message });
     }
 
-    const notaspaciente = req.user.rol === 'paciente' ? (notas ?? contexto.notaspaciente) : contexto.notaspaciente;
-    const notaspsicologa = req.user.rol === 'psicologa' ? (notas ?? contexto.notaspsicologa) : contexto.notaspsicologa;
+    const notaspaciente = req.user.rol === 'paciente'
+      ? (notasPaciente ?? notas ?? contexto.notaspaciente)
+      : contexto.notaspaciente;
+    const notaspsicologa = req.user.rol === 'psicologa'
+      ? (notasPsicologa ?? notas ?? contexto.notaspsicologa)
+      : contexto.notaspsicologa;
 
     const result = await db.query(
       `
@@ -373,7 +383,13 @@ const actualizarCita = async (req, res) => {
       });
     }
 
-    res.json(result.rows[0]);
+    res.json({
+      ...result.rows[0],
+      notas: req.user.rol === 'psicologa' ? (notaspsicologa || '') : (notaspaciente || ''),
+      notasresumen: contextoActualizado
+        ? (contextoActualizado.notaspsicologa || contextoActualizado.notaspaciente || '')
+        : '',
+    });
   } catch (error) {
     console.error('Error al actualizar la cita:', error);
     res.status(500).json({ message: 'Error interno del servidor.' });

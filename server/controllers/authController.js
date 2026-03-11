@@ -2,6 +2,19 @@ const db = require('../db'); // Tu archivo de conexión
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+function dividirNombreCompleto(nombreCompleto = '') {
+  const partes = String(nombreCompleto).trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) {
+    return { nombre: '', apellidoPaterno: '', apellidoMaterno: null };
+  }
+
+  const nombre = partes.shift();
+  const apellidoPaterno = partes.shift() || '';
+  const apellidoMaterno = partes.length > 0 ? partes.join(' ') : null;
+
+  return { nombre, apellidoPaterno, apellidoMaterno };
+}
+
 /**
  * Maneja el inicio de sesión de un usuario.
  */
@@ -92,36 +105,43 @@ const login = async (req, res) => {
  * Crea la entrada en Usuarios y también en Pacientes o Psicologas según corresponda.
  */
 const register = async (req, res) => {
-  const { nombre, apellidoPaterno, correo, password, rol, cedulaProfesional } = req.body;
+  let { nombre, apellidoPaterno, apellidoMaterno, correo, password, cedulaProfesional } = req.body;
+
+  if (nombre && (!apellidoPaterno || !String(apellidoPaterno).trim())) {
+    const nombreDividido = dividirNombreCompleto(nombre);
+    nombre = nombreDividido.nombre;
+    apellidoPaterno = nombreDividido.apellidoPaterno;
+    apellidoMaterno = nombreDividido.apellidoMaterno;
+  }
 
   // Validar campos requeridos
-  if (!nombre || !apellidoPaterno || !correo || !password || !rol) {
+  if (!nombre || !apellidoPaterno || !correo || !password) {
     return res.status(400).json({ 
       success: false,
       message: "Todos los campos son requeridos." 
     });
   }
 
-  // Validar que rol sea válido
-  if (!['paciente', 'psicologa', 'admin'].includes(rol)) {
-    return res.status(400).json({ 
-      success: false,
-      message: "Rol inválido." 
-    });
-  }
+  // Registro público restringido: solo se permite registro de psicólogas.
+  const rol = 'psicologa';
 
-  // Si es psicólogo, validar que tenga cédula
-  if (rol === 'psicologa' && !cedulaProfesional) {
+  // Validar que tenga cédula profesional.
+  if (!cedulaProfesional) {
     return res.status(400).json({ 
       success: false,
       message: "Los psicólogos deben proporcionar una cédula profesional." 
     });
   }
 
+  let client;
   try {
+    client = await db.getClient();
+    await client.query('BEGIN');
+
     // Verificar si el usuario ya existe
-    const existingUser = await db.query('SELECT * FROM usuarios WHERE correo = $1', [correo.toLowerCase()]);
+    const existingUser = await client.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correo.toLowerCase()]);
     if (existingUser.rows.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(409).json({ 
         success: false,
         message: "El correo ya está registrado." 
@@ -133,32 +153,22 @@ const register = async (req, res) => {
     const contrasenaHash = await bcrypt.hash(password, salt);
 
     // Guarda el nuevo usuario en la base de datos con la contraseña hasheada
-    const newUser = await db.query(
-      'INSERT INTO usuarios (nombre, apellidopaterno, correo, contrasenahash, rol, activo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING usuarioid, nombre, apellidopaterno, correo, rol',
-      [nombre, apellidoPaterno, correo.toLowerCase(), contrasenaHash, rol, true]
+    const newUser = await client.query(
+      'INSERT INTO usuarios (nombre, apellidopaterno, apellidomaterno, correo, contrasenahash, rol, activo) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING usuarioid, nombre, apellidopaterno, apellidomaterno, correo, rol',
+      [nombre, apellidoPaterno, apellidoMaterno || null, correo.toLowerCase(), contrasenaHash, rol, true]
     );
     
     const usuarioId = newUser.rows[0].usuarioid;
 
     console.log(`Registrando usuario ${rol}: ${usuarioId}`);
 
-    // Si es paciente, crear entrada en tabla Pacientes
-    if (rol === 'paciente') {
-      await db.query(
-        'INSERT INTO pacientes (usuarioid, fechaalta) VALUES ($1, CURRENT_DATE)',
-        [usuarioId]
-      );
-      console.log(`Paciente creado: ${usuarioId}`);
-    }
+    await client.query(
+      'INSERT INTO psicologas (usuarioid, cedulaprofesional, especialidad) VALUES ($1, $2, $3)',
+      [usuarioId, cedulaProfesional, 'Psicología General']
+    );
+    console.log(`Psicólogo creado: ${usuarioId}`);
 
-    // Si es psicólogo, crear entrada en tabla Psicologas
-    if (rol === 'psicologa') {
-      await db.query(
-        'INSERT INTO psicologas (usuarioid, cedulaprofesional, especialidad) VALUES ($1, $2, $3)',
-        [usuarioId, cedulaProfesional, 'Psicología General']
-      );
-      console.log(`Psicólogo creado: ${usuarioId}`);
-    }
+    await client.query('COMMIT');
     
     return res.status(201).json({ 
       success: true,
@@ -167,18 +177,52 @@ const register = async (req, res) => {
         id: usuarioId,
         nombre: newUser.rows[0].nombre,
         apellidoPaterno: newUser.rows[0].apellidopaterno,
+        apellidoMaterno: newUser.rows[0].apellidomaterno,
         correo: newUser.rows[0].correo,
         rol: newUser.rows[0].rol
       } 
     });
 
   } catch (error) {
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error al hacer rollback en registro:', rollbackError);
+      }
+    }
+
+    if (error.code === '23505') {
+      if (String(error.constraint || '').includes('cedulaprofesional')) {
+        return res.status(409).json({
+          success: false,
+          message: 'La cédula profesional ya está registrada.'
+        });
+      }
+
+      if (String(error.constraint || '').includes('correo')) {
+        return res.status(409).json({
+          success: false,
+          message: 'El correo ya está registrado.'
+        });
+      }
+
+      return res.status(409).json({
+        success: false,
+        message: 'Registro duplicado detectado.'
+      });
+    }
+
     console.error("Error en el registro:", error);
     return res.status(500).json({ 
       success: false,
       message: "Error al registrar el usuario.",
       error: error.message 
     });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 };
 

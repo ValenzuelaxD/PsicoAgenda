@@ -46,7 +46,7 @@ export interface Psicologa {
 // ============================================
 // PACIENTES
 // ============================================
-
+ 
 export interface Paciente {
   pacienteid: number;
   usuarioid: number;
@@ -82,7 +82,7 @@ export interface Cita {
   estado: 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada' | 'Reagendada';
   modalidad: 'Presencial' | 'En linea';
   notaspaciente?: string;
-  notaspsicologal?: string;
+  notaspsicologa?: string;
   fechacreacion?: string;
   fechamodificacion?: string;
   // Campos derivados

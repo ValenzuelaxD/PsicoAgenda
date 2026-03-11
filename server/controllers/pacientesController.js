@@ -1,6 +1,19 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
 
+function dividirNombreCompleto(nombreCompleto = '') {
+  const partes = String(nombreCompleto).trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) {
+    return { nombre: '', apellidoPaterno: '', apellidoMaterno: null };
+  }
+
+  const nombre = partes.shift();
+  const apellidoPaterno = partes.shift() || '';
+  const apellidoMaterno = partes.length > 0 ? partes.join(' ') : null;
+
+  return { nombre, apellidoPaterno, apellidoMaterno };
+}
+
 const getPacientes = async (req, res) => {
   try {
     const result = await db.query(`
@@ -44,13 +57,31 @@ const getPacientes = async (req, res) => {
 };
 
 const crearPaciente = async (req, res) => {
-  const { nombre, apellidoPaterno, apellidoMaterno, correo, telefono, fechaNacimiento, genero, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia, password } = req.body;
+  let { nombre, apellidoPaterno, apellidoMaterno, correo, telefono, fechaNacimiento, genero, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia, password } = req.body;
+
+  if (nombre && (!apellidoPaterno || !String(apellidoPaterno).trim())) {
+    const nombreDividido = dividirNombreCompleto(nombre);
+    nombre = nombreDividido.nombre;
+    apellidoPaterno = nombreDividido.apellidoPaterno;
+    apellidoMaterno = nombreDividido.apellidoMaterno;
+  }
+
+  if (!req.user || !['psicologa', 'admin'].includes(req.user.rol)) {
+    return res.status(403).json({ message: 'Solo psicólogas o administradores pueden registrar pacientes.' });
+  }
 
   if (!nombre || !apellidoPaterno || !correo || !password) {
     return res.status(400).json({ message: 'Campos requeridos: nombre, apellidoPaterno, correo, password.' });
   }
 
   try {
+    if (req.user.rol === 'psicologa') {
+      const psicologa = await db.query('SELECT psicologaid FROM psicologas WHERE usuarioid = $1', [req.user.id]);
+      if (psicologa.rows.length === 0) {
+        return res.status(404).json({ message: 'Perfil de psicóloga no encontrado.' });
+      }
+    }
+
     // Verificar si el correo ya existe
     const existing = await db.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correo.toLowerCase()]);
     if (existing.rows.length > 0) {
@@ -90,7 +121,14 @@ const crearPaciente = async (req, res) => {
 
 const actualizarPaciente = async (req, res) => {
   const { pacienteId } = req.params;
-  const { nombre, apellidoPaterno, apellidoMaterno, telefono, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia } = req.body;
+  let { nombre, apellidoPaterno, apellidoMaterno, telefono, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia } = req.body;
+
+  if (nombre && (!apellidoPaterno || !String(apellidoPaterno).trim())) {
+    const nombreDividido = dividirNombreCompleto(nombre);
+    nombre = nombreDividido.nombre;
+    apellidoPaterno = nombreDividido.apellidoPaterno;
+    apellidoMaterno = nombreDividido.apellidoMaterno;
+  }
 
   try {
     // Obtener usuarioId del paciente

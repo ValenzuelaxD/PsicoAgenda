@@ -24,7 +24,6 @@ export function Autenticar({ onLogin }: AutenticarProps) {
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
-  const [registerUserType, setRegisterUserType] = useState<'psicologo' | 'paciente'>('paciente');
   const [cedulaProfesional, setCedulaProfesional] = useState('');
 
   // Estado para splash de login
@@ -32,6 +31,14 @@ export function Autenticar({ onLogin }: AutenticarProps) {
 
   // Estado para controlar el tab activo
   const [tabActivo, setTabActivo] = useState('login');
+
+  const dividirNombreCompleto = (nombreCompleto: string) => {
+    const partes = nombreCompleto.trim().split(/\s+/).filter(Boolean);
+    const nombre = partes.shift() || '';
+    const apellidoPaterno = partes.shift() || '';
+    const apellidoMaterno = partes.length > 0 ? partes.join(' ') : null;
+    return { nombre, apellidoPaterno, apellidoMaterno };
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,24 +101,30 @@ export function Autenticar({ onLogin }: AutenticarProps) {
       return;
     }
     
-    // Validar que si es psicólogo, tenga cédula
-    if (registerUserType === 'psicologo' && !cedulaProfesional) {
+    // Registro público solo para psicólogos
+    if (!cedulaProfesional) {
       toast.error('Los psicólogos deben proporcionar su cédula profesional');
       return;
     }
     
     // RF_US_016: Validar formato de cédula profesional
-    if (registerUserType === 'psicologo') {
-      const validacionCedula = validarCedulaProfesional(cedulaProfesional);
-      if (!validacionCedula.valido) {
-        toast.error('Error de validación', { description: validacionCedula.error });
-        return;
-      }
+    const validacionCedula = validarCedulaProfesional(cedulaProfesional);
+    if (!validacionCedula.valido) {
+      toast.error('Error de validación', { description: validacionCedula.error });
+      return;
     }
     
     // Validar que todos los campos requeridos estén completos
     if (!registerName || !registerEmail || !registerPassword) {
       toast.error('Error de validación', { description: 'Por favor completa todos los campos' });
+      return;
+    }
+
+    const nombreDividido = dividirNombreCompleto(registerName);
+    if (!nombreDividido.nombre || !nombreDividido.apellidoPaterno) {
+      toast.error('Error de validación', {
+        description: 'Ingresa nombre y al menos un apellido.'
+      });
       return;
     }
 
@@ -122,13 +135,13 @@ export function Autenticar({ onLogin }: AutenticarProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          nombre: registerName,
-          apellidoPaterno: registerName.split(' ')[1] || registerName, 
+          nombre: nombreDividido.nombre,
+          apellidoPaterno: nombreDividido.apellidoPaterno,
+          apellidoMaterno: nombreDividido.apellidoMaterno,
           correo: registerEmail,
           password: registerPassword,
-          rol: registerUserType === 'psicologo' ? 'psicologa' : 'paciente',
-          // Si es psicólogo, envía la cédula
-          ...(registerUserType === 'psicologo' && { cedulaProfesional }),
+          rol: 'psicologa',
+          cedulaProfesional,
         }),
       });
 
@@ -158,9 +171,8 @@ export function Autenticar({ onLogin }: AutenticarProps) {
         throw new Error(data.message || 'Error al registrar el usuario');
       }
 
-      const tipoUsuario = registerUserType === 'psicologo' ? 'psicólogo' : 'paciente';
       toast.success('¡Registro exitoso!', { 
-        description: `Tu cuenta de ${tipoUsuario} ha sido creada. Ahora puedes iniciar sesión.` 
+        description: 'Tu cuenta de psicólogo ha sido creada. Ahora puedes iniciar sesión.' 
       });
       
       // Resetear el formulario de registro
@@ -168,7 +180,6 @@ export function Autenticar({ onLogin }: AutenticarProps) {
       setRegisterEmail('');
       setRegisterPassword('');
       setCedulaProfesional('');
-      setRegisterUserType('paciente');
       
       // Auto-llenar el email en el formulario de login
       setLoginEmail(registerEmail);
@@ -287,71 +298,48 @@ export function Autenticar({ onLogin }: AutenticarProps) {
                 <TabsContent value="register">
                   <form onSubmit={handleRegisterSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="register-user-type" className="text-slate-200">Tipo de Usuario</Label>
-                      <Select
-                        value={registerUserType}
-                        onValueChange={(value: 'psicologo' | 'paciente') => {
-                          setRegisterUserType(value);
-                          if (value === 'paciente') {
-                            setCedulaProfesional('');
-                          }
-                        }}
-                      >
-                        <SelectTrigger id="register-user-type" className="border-slate-600 bg-slate-700 text-slate-100">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          <SelectItem value="paciente">
-                            <div className="flex items-center gap-2">
-                              <UserCircle className="w-4 h-4 stroke-2" />
-                              <span>Paciente</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="psicologo">
-                            <div className="flex items-center gap-2">
-                              <FileCheck className="w-4 h-4 stroke-2" />
-                              <span>Psicólogo</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-slate-200">Tipo de Usuario</Label>
+                      <div className="border border-slate-600 bg-slate-700 rounded-md px-3 py-2 text-slate-100">
+                        Psicólogo
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="register-name" className="text-slate-200">Nombre Completo</Label>
+                      <Label htmlFor="register-name" className="text-slate-200">Nombre completo (nombre y apellidos)</Label>
                       <Input
                         id="register-name"
                         type="text"
-                        placeholder="Juan Pérez"
+                        placeholder="Ej. Laura Martínez López"
                         value={registerName}
                         onChange={(e) => setRegisterName(e.target.value)}
                         className="border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500"
                         required
                       />
+                      <p className="text-xs text-slate-400">
+                        Captura al menos un nombre y un apellido.
+                      </p>
                     </div>
 
-                    {registerUserType === 'psicologo' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="cedula-profesional" className="text-slate-200">
-                          Cédula Profesional *
-                        </Label>
-                        <div className="relative">
-                          <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-400 stroke-2" />
-                          <Input
-                            id="cedula-profesional"
-                            type="text"
-                            placeholder="Número de cédula profesional"
-                            value={cedulaProfesional}
-                            onChange={(e) => setCedulaProfesional(e.target.value)}
-                            className="pl-10 border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500"
-                            required
-                          />
-                        </div>
-                        <p className="text-xs text-slate-400">
-                          Tu cédula profesional será verificada antes de aprobar tu cuenta
-                        </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="cedula-profesional" className="text-slate-200">
+                        Cédula Profesional *
+                      </Label>
+                      <div className="relative">
+                        <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-400 stroke-2" />
+                        <Input
+                          id="cedula-profesional"
+                          type="text"
+                          placeholder="Número de cédula profesional"
+                          value={cedulaProfesional}
+                          onChange={(e) => setCedulaProfesional(e.target.value)}
+                          className="pl-10 border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500"
+                          required
+                        />
                       </div>
-                    )}
+                      <p className="text-xs text-slate-400">
+                        Tu cédula profesional será verificada antes de aprobar tu cuenta
+                      </p>
+                    </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="register-email" className="text-slate-200">Correo Electrónico</Label>
@@ -387,9 +375,7 @@ export function Autenticar({ onLogin }: AutenticarProps) {
 
                     <div className="bg-gradient-to-r from-teal-900/50 to-violet-900/50 border border-teal-700/50 rounded-lg p-3">
                       <p className="text-slate-300">
-                        {registerUserType === 'psicologo'
-                          ? '🩺 Los psicólogos podrán gestionar citas, pacientes y expedientes.'
-                          : '👤 Los pacientes podrán agendar citas y ver su historial.'}
+                        🩺 Los psicólogos podrán gestionar citas, pacientes y expedientes.
                       </p>
                     </div>
 

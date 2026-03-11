@@ -88,6 +88,41 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const listaPacientesUnicos = Array.from(new Set(citas.map(c => `${c.paciente_nombre} ${c.paciente_apellido}`)));
 
   const esEstado = (estado: string, objetivo: string) => estado?.toLowerCase() === objetivo.toLowerCase();
+  const obtenerEstiloEstado = (estado: string) => {
+    if (esEstado(estado, ESTADO_CITA.CONFIRMADA)) {
+      return {
+        label: 'Confirmada',
+        badgeClass: 'bg-green-600 text-white',
+        softBadgeClass: 'bg-green-600/20 text-green-300 border-green-600/50',
+        indicatorClass: 'bg-green-500',
+      };
+    }
+
+    if (esEstado(estado, ESTADO_CITA.CANCELADA)) {
+      return {
+        label: 'Cancelada',
+        badgeClass: 'bg-red-600 text-white',
+        softBadgeClass: 'bg-red-600/20 text-red-300 border-red-600/50',
+        indicatorClass: 'bg-red-500',
+      };
+    }
+
+    if (esEstado(estado, ESTADO_CITA.COMPLETADA)) {
+      return {
+        label: 'Completada',
+        badgeClass: 'bg-slate-600 text-white',
+        softBadgeClass: 'bg-slate-600/20 text-slate-300 border-slate-600/50',
+        indicatorClass: 'bg-slate-500',
+      };
+    }
+
+    return {
+      label: 'Pendiente',
+      badgeClass: 'bg-amber-600 text-white',
+      softBadgeClass: 'bg-amber-600/20 text-amber-300 border-amber-600/50',
+      indicatorClass: 'bg-amber-500',
+    };
+  };
   const esModalidadEnLinea = (modalidad: string) => modalidad?.toLowerCase() === MODALIDAD_CITA.EN_LINEA.toLowerCase() || modalidad?.toLowerCase() === 'virtual';
   const obtenerUbicacion = (cita: Cita & { ubicacion?: string }) => {
     if (cita.ubicacion) {
@@ -163,7 +198,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
             hora: formatearHoraInput(citaAEditar.fechahora),
             modalidad: citaAEditar.modalidad,
             estado: citaAEditar.estado,
-            notas: citaAEditar.notas || '',
+            notasPsicologa: citaAEditar.notaspsicologa || '',
           }),
         });
         const data = await response.json();
@@ -225,7 +260,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
             hora: formatearHoraInput(citaAReagendar.fechahora),
             modalidad: citaAReagendar.modalidad,
             estado: ESTADO_CITA.PENDIENTE,
-            notas: citaAReagendar.notas || '',
+            notasPaciente: citaAReagendar.notaspaciente || citaAReagendar.notas || '',
           }),
         });
         const data = await response.json();
@@ -295,6 +330,9 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           {citasProximas.map((cita) => (
             <Card key={cita.citaid} className="hover:shadow-lg transition-shadow bg-slate-800/50 backdrop-blur-sm border-slate-700">
               <CardContent className="pt-6">
+                {(() => {
+                  const estadoVisual = obtenerEstiloEstado(cita.estado);
+                  return (
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4 flex-1">
                     <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
@@ -308,10 +346,10 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                       <div className="flex items-center gap-2 mb-2">
                         
                         <Badge
-                          variant={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'default' : 'secondary'}
-                          className={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}
+                          variant="secondary"
+                          className={estadoVisual.badgeClass}
                         >
-                          {esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
+                          {estadoVisual.label}
                         </Badge>
                       </div>
                       <div className="space-y-1 text-slate-300">
@@ -370,6 +408,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     </Button>
                   </div>
                 </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           ))}
@@ -663,19 +703,15 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                                   <MapPin className="w-8 h-8 text-white stroke-2" />
                                 )}
                               </div>
-                              <div className={`w-16 h-1 rounded-full ${
-                                esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-500' : 'bg-amber-500'
-                              }`}></div>
+                              <div className={`w-16 h-1 rounded-full ${obtenerEstiloEstado(cita.estado).indicatorClass}`}></div>
                             </div>
                             
                             {/* Información de la cita */}
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 
-                                <Badge
-                                  className={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600' : 'bg-amber-600'}
-                                >
-                                  {esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
+                                <Badge className={obtenerEstiloEstado(cita.estado).badgeClass}>
+                                  {obtenerEstiloEstado(cita.estado).label}
                                 </Badge>
                                 <Badge
                                   variant="outline"
@@ -911,10 +947,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 
-                                <Badge
-                                  className={esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600' : 'bg-amber-600'}
-                                >
-                                  {esEstado(cita.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
+                                <Badge className={obtenerEstiloEstado(cita.estado).badgeClass}>
+                                  {obtenerEstiloEstado(cita.estado).label}
                                 </Badge>
                                 <Badge
                                   variant="outline"
@@ -1065,7 +1099,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 </h4>
                 <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700 max-h-[40vh] overflow-y-auto">
                   <p className="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">
-                    {citaConNotas.notas}
+                    {citaConNotas.notasresumen || citaConNotas.notas || 'Sin notas disponibles.'}
                   </p>
                 </div>
               </div>
@@ -1121,8 +1155,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <Badge className="bg-slate-700 text-slate-300 border-slate-600">
                     {esModalidadEnLinea(citaAReagendar.modalidad) ? 'En linea' : 'Presencial'}
                   </Badge>
-                  <Badge className={esEstado(citaAReagendar.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600/20 text-green-300 border-green-600/50' : 'bg-amber-600/20 text-amber-300 border-amber-600/50'}>
-                    {esEstado(citaAReagendar.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
+                  <Badge className={obtenerEstiloEstado(citaAReagendar.estado).softBadgeClass}>
+                    {obtenerEstiloEstado(citaAReagendar.estado).label}
                   </Badge>
                 </div>
               </div>
@@ -1221,8 +1255,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <Badge className="bg-slate-700 text-slate-300 border-slate-600">
                     {esModalidadEnLinea(citaAEditar.modalidad) ? 'En linea' : 'Presencial'}
                   </Badge>
-                  <Badge className={esEstado(citaAEditar.estado, ESTADO_CITA.CONFIRMADA) ? 'bg-green-600/20 text-green-300 border-green-600/50' : 'bg-amber-600/20 text-amber-300 border-amber-600/50'}>
-                    {esEstado(citaAEditar.estado, ESTADO_CITA.CONFIRMADA) ? 'Confirmada' : 'Pendiente'}
+                  <Badge className={obtenerEstiloEstado(citaAEditar.estado).softBadgeClass}>
+                    {obtenerEstiloEstado(citaAEditar.estado).label}
                   </Badge>
                 </div>
               </div>
@@ -1277,13 +1311,25 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               <div className="space-y-2">
                 <Label className="text-slate-200 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-teal-400 stroke-2" />
-                  Notas Adicionales (Opcional)
+                  Notas del Paciente
                 </Label>
                 <Textarea
-                  value={citaAEditar.notas || ''}
-                  onChange={(e) => setCitaAEditar({ ...citaAEditar, notas: e.target.value })}
+                  value={citaAEditar.notaspaciente || 'Sin notas del paciente'}
+                  className="bg-slate-900 border-slate-700 text-slate-400 min-h-[80px]"
+                  readOnly
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-200 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-violet-400 stroke-2" />
+                  Notas de la Psicóloga (Opcional)
+                </Label>
+                <Textarea
+                  value={citaAEditar.notaspsicologa || ''}
+                  onChange={(e) => setCitaAEditar({ ...citaAEditar, notaspsicologa: e.target.value })}
                   className="bg-slate-700 border-slate-600 text-slate-100 min-h-[80px]"
-                  placeholder="Agrega notas o información adicional sobre esta cita..."
+                  placeholder="Agrega notas clínicas o administrativas de uso interno para esta cita..."
                 />
               </div>
 
