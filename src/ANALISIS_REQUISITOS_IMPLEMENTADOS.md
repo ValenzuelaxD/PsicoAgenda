@@ -512,3 +512,4 @@
 **Última actualización:** 27 de Noviembre, 2025  
 **Sistema:** PsicoAgenda - Agenda Psicológica Digital  
 **Estado:** PRODUCCIÓN READY (con migración a BD real pendiente)
+TEST_CI_FRONT_2026_03_14
