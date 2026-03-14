@@ -7,15 +7,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "src/**"
-      - "public/**"
-      - "index.html"
-      - "package.json"
-      - "package-lock.json"
-      - "vite.config.ts"
-      - "firebase.json"
-      - ".github/workflows/deploy-frontend-firebase.yml"
   workflow_dispatch:
 
 permissions:
