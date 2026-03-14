@@ -4,6 +4,7 @@
 
 # Build artifacts
 /dist
+/build
 
 # Environment variables
 .env
@@ -12,6 +13,8 @@
 server/.env
 server/*.env
 server/.env.*
+!.env.example
+!server/.env.example
 
 # Logs
 npm-debug.log*
