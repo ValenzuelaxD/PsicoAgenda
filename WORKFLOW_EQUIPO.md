@@ -28,3 +28,33 @@ git commit -m "nombreDeSuUsuario: descripcion corta"
 git push origin main
 ```
 Comentario: sube tus cambios a main y dispara deploy automatico.
+
+## 3) Verificar despliegue
+
+1. Ir a GitHub Actions.
+2. Confirmar en verde:
+- build-and-deploy
+- deploy-backend
+
+Comentario: si ambos estan en verde, el cambio ya se publico.
+
+## 4) Si el push falla (rejected/fetch first)
+
+```bash
+git pull --rebase origin main
+git push origin main
+```
+Comentario: integra cambios remotos y reintenta push.
+
+## 5) URLs de verificacion
+
+- Frontend: https://psicoagenda-489800.web.app
+- Backend (salud): https://psicoagenda-api-315439788368.us-central1.run.app/test-db
+
+Comentario: backend debe responder success=true.
+
+## 6) Regla simple de equipo
+
+- Siempre hacer pull antes de empezar.
+- Hacer commits pequenos y claros.
+- Esperar Actions en verde antes del siguiente cambio grande.
