@@ -307,7 +307,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-8">
       <div>
         <h1 className="text-slate-100 mb-2">
           {userType === 'psicologo' ? 'Gestionar Citas' : 'Mis Citas'}

@@ -163,7 +163,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-0 space-y-8">
       <div>
         <h1 className="text-white mb-2">Agendar Nueva Cita</h1>
         <p className="text-slate-300">

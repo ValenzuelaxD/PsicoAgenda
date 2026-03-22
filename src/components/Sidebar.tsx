@@ -20,10 +20,16 @@ interface SidebarProps {
   userType: 'psicologo' | 'paciente';
   onNavigate: (view: ViewType) => void;
   onLogout: () => void;
+  isMobile?: boolean;
 }
 
-export function Sidebar({ currentView, userType, onNavigate, onLogout }: SidebarProps) {
+export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile = false }: SidebarProps) {
   const [mostrarConfirmacionLogout, setMostrarConfirmacionLogout] = useState(false);
+
+  // Desktop: fixed sidebar visible on sm+; Mobile: render full-width content suitable for Drawer
+  const containerClass = isMobile
+    ? 'w-full bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col z-50'
+    : 'hidden sm:flex fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-50';
 
   // RF_US_003, RF_US_010-014, RF_US_023, RF_US_002/007
   const pacienteMenuItems = [
@@ -56,7 +62,7 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout }: Sidebar
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-50">
+    <aside className={containerClass}>
       {/* Logo */}
       <div className="p-6 border-b border-slate-700">
         <motion.div

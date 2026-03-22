@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sidebar } from './Sidebar';
+import { Drawer, DrawerContent, DrawerClose } from './ui/drawer';
+import { Menu, X } from 'lucide-react';
 import { Inicio } from './Inicio';
 import { AgendarCita } from './AgendarCita';
 import { MisCitas } from './MisCitas';
@@ -25,6 +27,7 @@ export type ViewType = 'inicio' | 'agendar' | 'citas' | 'historial' | 'perfil' |
 
 export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
   const [currentView, setCurrentView] = useState<ViewType>('inicio');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<number | undefined>(undefined);
   const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -110,14 +113,42 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
         onLogout={onLogout}
       />
 
+      {/* Mobile Drawer */}
+      <Drawer direction="left" open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent>
+          <div className="h-full">
+            <div className="flex items-center justify-between p-4 border-b border-slate-700">
+              <h3 className="text-slate-100">Menu</h3>
+              <DrawerClose>
+                <button className="text-slate-100">
+                  <X className="w-5 h-5" />
+                </button>
+              </DrawerClose>
+            </div>
+            <div className="p-2">
+              <Sidebar currentView={currentView} userType={userType} onNavigate={(v)=>{handleNavigate(v); setDrawerOpen(false);}} onLogout={onLogout} isMobile />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       {/* Main Content */}
-      <main className="flex-1 ml-64 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <main className="flex-1 ml-0 sm:ml-64 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         {/* Top Bar con Notificaciones */}
-        <div className="sticky top-0 z-30 bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-8 py-4">
+        <div className="sticky top-0 z-30 bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-slate-100 text-lg">PsicoAgenda</h2>
-              <p className="text-slate-400 text-sm">Sistema de gestión psicológica profesional</p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="sm:hidden p-2 rounded-md bg-slate-700/30 text-slate-100"
+                aria-label="Abrir menú"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="text-slate-100 text-lg">PsicoAgenda</h2>
+                <p className="text-slate-400 text-sm">Sistema de gestión psicológica profesional</p>
+              </div>
             </div>
             <NotificationCenter userType={userType} />
           </div>
