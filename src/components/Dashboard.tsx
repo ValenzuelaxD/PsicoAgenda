@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sidebar } from './Sidebar';
 import { Drawer, DrawerContent, DrawerClose } from './ui/drawer';
 import { Menu, X } from 'lucide-react';
+import useIsMobile from '../hooks/useIsMobile';
 import { Inicio } from './Inicio';
 import { AgendarCita } from './AgendarCita';
 import { MisCitas } from './MisCitas';
@@ -31,6 +32,7 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
   const [selectedPacienteId, setSelectedPacienteId] = useState<number | undefined>(undefined);
   const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchUnreadNotifications = async () => {
@@ -105,35 +107,39 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
 
   return (
     <div className="flex min-h-screen bg-slate-900">
-      {/* Sidebar */}
-      <Sidebar
-        currentView={currentView}
-        userType={userType}
-        onNavigate={handleNavigate}
-        onLogout={onLogout}
-      />
+      {/* Sidebar (desktop only) */}
+      {!isMobile && (
+        <Sidebar
+          currentView={currentView}
+          userType={userType}
+          onNavigate={handleNavigate}
+          onLogout={onLogout}
+        />
+      )}
 
-      {/* Mobile Drawer */}
-      <Drawer direction="left" open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
-          <div className="h-full">
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-slate-100">Menu</h3>
-              <DrawerClose>
-                <button className="text-slate-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </DrawerClose>
+      {/* Mobile Drawer (mobile only) */}
+      {isMobile && (
+        <Drawer direction="left" open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerContent>
+            <div className="h-full">
+              <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                <h3 className="text-slate-100">Menu</h3>
+                <DrawerClose>
+                  <button className="text-slate-100">
+                    <X className="w-5 h-5" />
+                  </button>
+                </DrawerClose>
+              </div>
+              <div className="p-2">
+                <Sidebar currentView={currentView} userType={userType} onNavigate={(v)=>{handleNavigate(v); setDrawerOpen(false);}} onLogout={onLogout} isMobile />
+              </div>
             </div>
-            <div className="p-2">
-              <Sidebar currentView={currentView} userType={userType} onNavigate={(v)=>{handleNavigate(v); setDrawerOpen(false);}} onLogout={onLogout} isMobile />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+          </DrawerContent>
+        </Drawer>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 ml-0 sm:ml-64 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <main className={`flex-1 ${isMobile ? 'ml-0' : 'ml-64'} bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900`}>
         {/* Top Bar con Notificaciones */}
         <div className="sticky top-0 z-30 bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-4 py-4">
           <div className="flex items-center justify-between">
