@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sidebar } from './Sidebar';
-import { Drawer, DrawerContent, DrawerClose } from './ui/drawer';
 import { Menu, X } from 'lucide-react';
 import useIsMobile from '../hooks/useIsMobile';
 import { Inicio } from './Inicio';
@@ -117,25 +116,26 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
         />
       )}
 
-      {/* Mobile Drawer (mobile only) */}
-      {isMobile && (
-        <Drawer direction="left" open={drawerOpen} onOpenChange={setDrawerOpen}>
-          <DrawerContent>
-            <div className="h-full">
-              <div className="flex items-center justify-between p-4 border-b border-slate-700">
-                <h3 className="text-slate-100">Menu</h3>
-                <DrawerClose>
-                  <button className="text-slate-100">
-                    <X className="w-5 h-5" />
-                  </button>
-                </DrawerClose>
-              </div>
-              <div className="p-2">
-                <Sidebar currentView={currentView} userType={userType} onNavigate={(v)=>{handleNavigate(v); setDrawerOpen(false);}} onLogout={onLogout} isMobile />
-              </div>
+      {/* Mobile panel (overlay + aside) */}
+      {isMobile && drawerOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50"
+            onClick={() => setDrawerOpen(false)}
+            aria-hidden
+          />
+          <aside className="fixed left-0 top-0 z-50 h-full w-64 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-slate-700">
+              <h3 className="text-slate-100">Menu</h3>
+              <button onClick={() => setDrawerOpen(false)} className="text-slate-100">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          </DrawerContent>
-        </Drawer>
+            <div className="p-2">
+              <Sidebar currentView={currentView} userType={userType} onNavigate={(v)=>{handleNavigate(v); setDrawerOpen(false);}} onLogout={onLogout} isMobile />
+            </div>
+          </aside>
+        </>
       )}
 
       {/* Main Content */}
