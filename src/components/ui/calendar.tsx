@@ -6,6 +6,7 @@ import { DayPicker } from "react-day-picker@8.10.1";
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
+import useIsMobile from '../../hooks/useIsMobile';
 
 function Calendar({
   className,
@@ -13,12 +14,15 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
+  const isMobile = useIsMobile();
+
   return (
     <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      showOutsideDays={isMobile ? false : showOutsideDays}
+      numberOfMonths={isMobile ? 1 : undefined}
+      className={cn(isMobile ? 'p-2' : 'p-3', className)}
       classNames={{
-        months: "flex flex-col sm:flex-row gap-2",
+        months: isMobile ? "flex flex-col gap-2" : "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
         caption: "flex justify-center pt-1 relative items-center w-full",
         caption_label: "text-sm font-medium",
