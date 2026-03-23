@@ -527,14 +527,11 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                     </div>
 
                                     {/* Botones de Acción */}
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          iniciarEdicion(agenda);
-                                        }} 
+                                        onClick={() => iniciarEdicion(agenda)}
                                         className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700"
                                       >
                                         <Pencil className="w-4 h-4 mr-2 stroke-2" />
@@ -543,10 +540,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          toggleDisponibilidad(agenda);
-                                        }} 
+                                        onClick={() => toggleDisponibilidad(agenda)}
                                         className={agenda.disponible 
                                           ? "flex-1 border-amber-500/40 text-amber-300 hover:bg-amber-500/10" 
                                           : "flex-1 border-green-500/40 text-green-300 hover:bg-green-500/10"}
@@ -556,10 +550,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          eliminarBloque(agenda);
-                                        }} 
+                                        onClick={() => eliminarBloque(agenda)}
                                         className="flex-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
                                       >
                                         <Trash2 className="w-4 h-4 stroke-2" />

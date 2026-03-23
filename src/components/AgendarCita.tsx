@@ -281,21 +281,19 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                   
                             {/* Columna Derecha */}
                             <div className="space-y-6 w-full lg:w-fit">
-                              <div className="rounded-xl border border-slate-700 bg-slate-800/50 backdrop-blur-sm overflow-hidden">
+                              <div className="rounded-xl border border-slate-700 bg-slate-800/50 backdrop-blur-sm">
                                 <div className="px-6 pt-6 pb-0">
                                   <h3 className="text-slate-100 font-semibold">Seleccionar Fecha</h3>
                                   <p className="text-slate-400 text-sm">Elige el día para tu sesión</p>
                                 </div>
                                 <div className="flex justify-center p-6 bg-slate-900/30">
-                                  <div className="scale-90 lg:scale-100 origin-top">
-                                    <Calendar
-                                      mode="single"
-                                      selected={date}
-                                      onSelect={setDate}
-                                      className="bg-transparent"
-                                      disabled={(date) => date < hoy}
-                                    />
-                                  </div>
+                                  <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={setDate}
+                                    className="bg-transparent"
+                                    disabled={(date) => date < hoy}
+                                  />
                                 </div>
                               </div>
                   
