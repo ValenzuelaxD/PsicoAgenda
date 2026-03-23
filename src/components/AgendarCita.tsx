@@ -281,24 +281,24 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                   
                             {/* Columna Derecha */}
                             <div className="space-y-6">
-                              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 min-h-fit">
+                              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                                 <CardHeader>
                                   <CardTitle className="text-slate-100">Seleccionar Fecha</CardTitle>
                                   <CardDescription className="text-slate-400">
                                     Elige el día para tu sesión
                                   </CardDescription>
                                 </CardHeader>
-                                <CardContent className="overflow-visible">
-                                  <div className="w-full flex justify-center">
+                                <div className="px-6 pb-6 flex flex-col items-center w-full overflow-visible">
+                                  <div className="w-full max-w-sm bg-slate-900/30 rounded-lg border border-slate-600 p-4">
                                     <Calendar
                                       mode="single"
                                       selected={date}
                                       onSelect={setDate}
-                                      className="rounded-md border border-slate-600 bg-slate-900/50"
+                                      className="w-full"
                                       disabled={(date) => date < hoy}
                                     />
                                   </div>
-                                </CardContent>
+                                </div>
                               </Card>
                   
                               {date && psicologo && hora && tipo && (
