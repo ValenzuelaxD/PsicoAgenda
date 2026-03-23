@@ -280,26 +280,24 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                             </div>
                   
                             {/* Columna Derecha */}
-                            <div className="space-y-6">
-                              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
-                                <CardHeader>
-                                  <CardTitle className="text-slate-100">Seleccionar Fecha</CardTitle>
-                                  <CardDescription className="text-slate-400">
-                                    Elige el día para tu sesión
-                                  </CardDescription>
-                                </CardHeader>
-                                <div className="px-6 pb-6 flex flex-col items-center w-full overflow-visible">
-                                  <div className="w-full max-w-sm bg-slate-900/30 rounded-lg border border-slate-600 p-4">
+                            <div className="space-y-6 w-full lg:w-fit">
+                              <div className="rounded-xl border border-slate-700 bg-slate-800/50 backdrop-blur-sm overflow-hidden">
+                                <div className="px-6 pt-6 pb-0">
+                                  <h3 className="text-slate-100 font-semibold">Seleccionar Fecha</h3>
+                                  <p className="text-slate-400 text-sm">Elige el día para tu sesión</p>
+                                </div>
+                                <div className="flex justify-center p-6 bg-slate-900/30">
+                                  <div className="scale-90 lg:scale-100 origin-top">
                                     <Calendar
                                       mode="single"
                                       selected={date}
                                       onSelect={setDate}
-                                      className="w-full"
+                                      className="bg-transparent"
                                       disabled={(date) => date < hoy}
                                     />
                                   </div>
                                 </div>
-                              </Card>
+                              </div>
                   
                               {date && psicologo && hora && tipo && (
                                 <motion.div

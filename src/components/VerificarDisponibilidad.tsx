@@ -531,7 +531,10 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
-                                        onClick={() => iniciarEdicion(agenda)} 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          iniciarEdicion(agenda);
+                                        }} 
                                         className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700"
                                       >
                                         <Pencil className="w-4 h-4 mr-2 stroke-2" />
@@ -540,7 +543,10 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
-                                        onClick={() => toggleDisponibilidad(agenda)} 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleDisponibilidad(agenda);
+                                        }} 
                                         className={agenda.disponible 
                                           ? "flex-1 border-amber-500/40 text-amber-300 hover:bg-amber-500/10" 
                                           : "flex-1 border-green-500/40 text-green-300 hover:bg-green-500/10"}
@@ -550,7 +556,10 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
-                                        onClick={() => eliminarBloque(agenda)} 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          eliminarBloque(agenda);
+                                        }} 
                                         className="flex-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
                                       >
                                         <Trash2 className="w-4 h-4 stroke-2" />
