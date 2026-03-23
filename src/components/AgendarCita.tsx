@@ -74,7 +74,22 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
           const response = await apiFetch(`${API_ENDPOINTS.PSICOLOGAS}/${psicologo}/disponibilidad?fecha=${fechaSeleccionada}`);
           if (response.ok) {
             const data = await response.json();
-            setHorarios(data);
+            
+            // Filtrar horarios que ya han pasado si es hoy
+            let horariosValidos = data;
+            const esHoy = formatearFechaLocal(new Date()) === fechaSeleccionada;
+            
+            if (esHoy && Array.isArray(data)) {
+              const ahora = new Date();
+              const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+              horariosValidos = data.filter((horario: string) => horario > horaActual);
+              
+              if (horariosValidos.length === 0) {
+                toast.error('No hay horarios disponibles para hoy. Selecciona otra fecha.');
+              }
+            }
+            
+            setHorarios(horariosValidos);
           } else {
             const errorData = await response.json().catch(() => null);
             if (errorData?.message) {
@@ -98,6 +113,19 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validación: No permitir citas en el pasado
+    if (date) {
+      const esHoy = formatearFechaLocal(new Date()) === formatearFechaLocal(date);
+      if (esHoy) {
+        const ahora = new Date();
+        const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+        if (hora <= horaActual) {
+          toast.error('No puedes agendar una cita en una hora que ya pasó. Selecciona una hora posterior.');
+          return;
+        }
+      }
+    }
 
     try {
       const response = await apiFetch(API_ENDPOINTS.CITAS, {
@@ -222,9 +250,9 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                         <SelectValue placeholder={loadingHorarios ? 'Cargando horarios...' : 'Selecciona la hora'} />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {horarios.length === 0 && (
+                                        {horarios.length === 0 && !loadingHorarios && (
                                           <SelectItem value="__sin_horarios__" disabled>
-                                            No hay horarios disponibles
+                                            {psicologo && date ? 'No hay horarios disponibles' : 'Selecciona psicólogo y fecha'}
                                           </SelectItem>
                                         )}
                                         {horarios.map((h) => (
