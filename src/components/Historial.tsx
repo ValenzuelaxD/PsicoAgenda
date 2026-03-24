@@ -66,7 +66,7 @@ export function Historial() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
         <div className="text-center py-12">
           <p className="text-slate-400">Cargando historial clínico...</p>
         </div>
@@ -76,7 +76,7 @@ export function Historial() {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
         <div className="text-center py-12">
           <p className="text-red-400">{error}</p>
         </div>
@@ -85,16 +85,16 @@ export function Historial() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-white mb-2">Historial Clínico</h1>
-        <p className="text-slate-300">
+        <h1 className="text-white mb-2 text-xl sm:text-2xl">Historial Clínico</h1>
+        <p className="text-slate-300 text-sm sm:text-base">
           Revisa tus sesiones pasadas y tu progreso terapéutico
         </p>
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -130,7 +130,7 @@ export function Historial() {
 
       {/* Historial de Sesiones */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h2 className="text-white">Sesiones Anteriores ({historial.length})</h2>
         </div>
 
@@ -148,12 +148,12 @@ export function Historial() {
           historial.map((entrada, index) => (
             <Card key={entrada.historialid} className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                     <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
                       <FileText className="w-6 h-6 text-white stroke-2" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <CardTitle className="text-slate-100">
                         Sesión #{historial.length - index} - {entrada.modalidad || 'Presencial'}
                       </CardTitle>
@@ -185,7 +185,7 @@ export function Historial() {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge className="bg-teal-600">Completada</Badge>
+                  <Badge className="bg-teal-600 w-fit">Completada</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

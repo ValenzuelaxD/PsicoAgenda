@@ -203,14 +203,14 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
       {/* Encabezado */}
       <div>
-        <h1 className="text-white mb-2 flex items-center gap-3">
+        <h1 className="text-white mb-2 text-xl sm:text-2xl flex items-center gap-2 sm:gap-3">
           <CalendarDays className="w-8 h-8 text-teal-400" />
           Horario de Atención
         </h1>
-        <p className="text-slate-300">
+        <p className="text-slate-300 text-sm sm:text-base">
           Define cuándo estás disponible para atender pacientes. Los patientes verán estos horarios al solicitar citas.
         </p>
       </div>
@@ -317,7 +317,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
         </Card>
       </Collapsible>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[420px_minmax(0,1fr)] gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[420px_minmax(0,1fr)] gap-4 sm:gap-6">
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 h-fit">
           <CardHeader>
             <CardTitle className="text-slate-100 flex items-center gap-2">
@@ -349,7 +349,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="horainicio" className="text-slate-200">Hora inicio</Label>
                   <Input
@@ -391,13 +391,13 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                 <p className="text-xs text-teal-200">Cada espacio dura 60 minutos para que el paciente pueda agendar</p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700" disabled={guardando}>
                   {agendaEnEdicion ? <Save className="w-4 h-4 mr-2 stroke-2" /> : <Plus className="w-4 h-4 mr-2 stroke-2" />}
                   {guardando ? 'Guardando...' : agendaEnEdicion ? 'Guardar Cambios' : 'Agregar Horario'}
                 </Button>
                 {agendaEnEdicion && (
-                  <Button type="button" variant="outline" onClick={resetFormulario} className="border-slate-600 text-slate-200 hover:bg-slate-700">
+                  <Button type="button" variant="outline" onClick={resetFormulario} className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto">
                     Cancelar
                   </Button>
                 )}
@@ -415,11 +415,11 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                   Aquí aparecen todos tus horarios de atención. Los pacientes verán estos espacios cuando soliciten una cita.
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <Button 
                   variant="outline" 
                   onClick={() => setMostraPreview(!mostraPreview)} 
-                  className="border-slate-600 text-slate-200 hover:bg-slate-700 whitespace-nowrap"
+                  className="border-slate-600 text-slate-200 hover:bg-slate-700 whitespace-nowrap w-full sm:w-auto"
                 >
                   <Eye className="w-4 h-4 mr-2" />
                   Vista del Paciente
@@ -479,8 +479,8 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                     >
                       <div className="rounded-lg border border-slate-700 bg-slate-900/30 overflow-hidden">
                         <CollapsibleTrigger asChild>
-                          <button className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
-                            <div className="flex items-center gap-3">
+                                  <button className="w-full px-4 py-3 flex items-center justify-between gap-3 hover:bg-slate-800/50 transition-colors">
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-wrap">
                               <span className="font-medium text-slate-100">{dia}</span>
                               <Badge className="bg-slate-700 text-slate-200 text-xs">
                                 {horariosDelDia.length} horario{horariosDelDia.length !== 1 ? 's' : ''}
@@ -527,12 +527,12 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                     </div>
 
                                     {/* Botones de Acción */}
-                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex flex-col sm:flex-row gap-2" onClick={(e) => e.stopPropagation()}>
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
                                         onClick={() => iniciarEdicion(agenda)}
-                                        className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700"
+                                        className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700 w-full"
                                       >
                                         <Pencil className="w-4 h-4 mr-2 stroke-2" />
                                         Editar
@@ -542,8 +542,8 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                         variant="outline" 
                                         onClick={() => toggleDisponibilidad(agenda)}
                                         className={agenda.disponible 
-                                          ? "flex-1 border-amber-500/40 text-amber-300 hover:bg-amber-500/10" 
-                                          : "flex-1 border-green-500/40 text-green-300 hover:bg-green-500/10"}
+                                          ? "flex-1 border-amber-500/40 text-amber-300 hover:bg-amber-500/10 w-full" 
+                                          : "flex-1 border-green-500/40 text-green-300 hover:bg-green-500/10 w-full"}
                                       >
                                         {agenda.disponible ? 'Pausar' : 'Reactivar'}
                                       </Button>
@@ -551,7 +551,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                                         size="sm" 
                                         variant="outline" 
                                         onClick={() => eliminarBloque(agenda)}
-                                        className="flex-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
+                                        className="flex-1 border-red-500/40 text-red-300 hover:bg-red-500/10 w-full"
                                       >
                                         <Trash2 className="w-4 h-4 stroke-2" />
                                       </Button>

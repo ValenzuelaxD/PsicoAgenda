@@ -236,10 +236,10 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
 
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-white mb-2">Buscar Paciente</h1>
-        <p className="text-slate-300">
+        <h1 className="text-white mb-2 text-xl sm:text-2xl">Buscar Paciente</h1>
+        <p className="text-slate-300 text-sm sm:text-base">
           Encuentra y consulta la información de tus pacientes
         </p>
       </div>
@@ -247,17 +247,17 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
       {/* Barra de Búsqueda */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <Input
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por nombre o correo electrónico..."
-                className="pl-10"
+                className="pl-10 w-full"
               />
             </div>
-            <Button onClick={() => onNavigate('registro-paciente')} className="bg-teal-600 hover:bg-teal-700">
+            <Button onClick={() => onNavigate('registro-paciente')} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
               Nuevo Paciente
             </Button>
           </div>
@@ -287,7 +287,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                               <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
                                 <User className="w-5 h-5 text-white stroke-2" />
                               </div>
-                              <div>
+                              <div className="min-w-0">
                                 <p className="text-white font-medium">{obtenerNombreCompletoPaciente(paciente)}</p>
                                 <p className="text-slate-400">{paciente.edad} años</p>
                               </div>
@@ -308,14 +308,14 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                     <div className="space-y-6">
                       <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                         <CardHeader>
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <CardTitle className="text-slate-100">Información del Paciente</CardTitle>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline" className="border-slate-600 text-slate-200 hover:bg-slate-700" onClick={handleAbrirModalActualizar}>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                              <Button size="sm" variant="outline" className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto" onClick={handleAbrirModalActualizar}>
                                 <Edit2 className="w-4 h-4 mr-2 stroke-2" />
                                 Actualizar
                               </Button>
-                              <Button size="sm" variant="outline" className="border-red-600 text-red-400 hover:bg-red-900/20" onClick={() => setMostrarConfirmacionEliminar(true)}>
+                              <Button size="sm" variant="outline" className="border-red-600 text-red-400 hover:bg-red-900/20 w-full sm:w-auto" onClick={() => setMostrarConfirmacionEliminar(true)}>
                                 <Trash2 className="w-4 h-4 mr-2 stroke-2" />
                                 Eliminar
                               </Button>
@@ -336,14 +336,14 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                               <p className="text-slate-400 mb-1">Correo Electrónico</p>
                               <div className="flex items-center gap-2">
                                 <Mail className="w-4 h-4 text-teal-400" />
-                                <p className="text-slate-200">{pacienteSeleccionado.email}</p>
+                                <p className="text-slate-200 break-all">{pacienteSeleccionado.email}</p>
                               </div>
                             </div>
                             <div>
                               <p className="text-slate-400 mb-1">Teléfono</p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
                                 <Phone className="w-4 h-4 text-violet-400" />
-                                <p className="text-slate-200">{pacienteSeleccionado.telefono}</p>
+                                <p className="text-slate-200 break-words">{pacienteSeleccionado.telefono}</p>
                               </div>
                             </div>
                           </div>
@@ -359,7 +359,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                             <p className="text-slate-400 mb-1">Motivo de Consulta</p>
                             <p className="text-slate-200">{pacienteSeleccionado.motivoconsulta}</p>
                           </div>
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                               <p className="text-slate-400 mb-1">Sesiones Totales</p>
                               <p className="text-teal-400 text-2xl font-semibold">{pacienteSeleccionado.sesionesTotales}</p>
@@ -407,7 +407,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
               <AnimatePresence>
                 {mostrarHistorial && pacienteSeleccionado && historialActual && (
                   <Dialog open={mostrarHistorial} onOpenChange={setMostrarHistorial}>
-                    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-slate-800 border-slate-700 p-0">
+                    <DialogContent className="w-[calc(100%-1rem)] max-w-5xl max-h-[90dvh] overflow-y-auto bg-slate-800 border-slate-700 p-0">
                       <DialogTitle className="sr-only">
                         Historial Clínico Completo - {obtenerNombreCompletoPaciente(pacienteSeleccionado)}
                       </DialogTitle>
@@ -555,7 +555,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
               <AnimatePresence>
                 {mostrarModalActualizar && pacienteSeleccionado && (
                   <Dialog open={mostrarModalActualizar} onOpenChange={setMostrarModalActualizar}>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-800 border-slate-700 p-0">
+                    <DialogContent className="w-[calc(100%-1rem)] max-w-2xl max-h-[90dvh] overflow-y-auto bg-slate-800 border-slate-700 p-0">
                       <DialogTitle className="sr-only">
                         Actualizar Información del Paciente - {obtenerNombreCompletoPaciente(pacienteSeleccionado)}
                       </DialogTitle>

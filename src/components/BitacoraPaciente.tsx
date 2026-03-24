@@ -176,19 +176,19 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-950 px-8 py-6">
+    <div className="flex flex-col min-h-[100dvh] overflow-hidden bg-slate-950 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
       {/* Cabecera */}
-      <div className="flex items-center justify-between mb-8 flex-shrink-0">
-        <div>
-          <h1 className="text-white mb-1 text-2xl font-bold">Bitácora de Paciente</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-8 flex-shrink-0">
+        <div className="min-w-0">
+          <h1 className="text-white mb-1 text-xl sm:text-2xl font-bold">Bitacora de Paciente</h1>
           <p className="text-slate-300 text-sm">
-            Consulta y registra el historial clínico de tus pacientes
+            Consulta y registra el historial clinico de tus pacientes
           </p>
         </div>
         {pacienteSeleccionado && (
           <Button
             onClick={() => setEditando(!editando)}
-            className="bg-teal-600 hover:bg-teal-700 flex-shrink-0"
+            className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto flex-shrink-0"
           >
             <Plus className="w-4 h-4 mr-2 stroke-2" />
             Nueva Entrada
@@ -197,9 +197,9 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       </div>
 
       {/* Layout de dos columnas con scroll independiente */}
-      <div className="flex gap-6 flex-1 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-4 sm:gap-6 flex-1 overflow-hidden min-h-0">
         {/* Panel izquierdo: lista de pacientes */}
-        <div className="w-72 flex-shrink-0 flex flex-col gap-3 overflow-y-auto pr-1">
+        <div className="min-w-0 flex flex-col gap-3 overflow-y-auto lg:pr-1 max-h-[36dvh] lg:max-h-none">
           {/* Buscador fijo al tope del panel */}
           <div className="relative sticky top-0 z-10 bg-slate-900 pb-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -207,7 +207,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar paciente..."
-              className="pl-9 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500"
+              className="pl-9 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 w-full"
             />
           </div>
 
@@ -250,17 +250,17 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         </div>
 
         {/* Panel derecho: información y bitácora */}
-        <div className="flex-1 overflow-y-auto space-y-6 pr-1">
+        <div className="min-w-0 flex-1 overflow-y-auto space-y-6 lg:pr-1">
           {pacienteSeleccionado ? (
             <>
               {/* Resumen del paciente */}
               <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                 <CardContent className="pt-4 pb-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                     <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0">
                       <User className="w-6 h-6 text-white stroke-2" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <h2 className="text-white font-semibold">
                         {`${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}`}
                       </h2>
@@ -318,15 +318,15 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
                       />
                     </div>
-                    <div className="flex gap-4">
-                      <Button onClick={handleGuardarNota} className="bg-teal-600 hover:bg-teal-700">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                      <Button onClick={handleGuardarNota} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
                         <Save className="w-4 h-4 mr-2 stroke-2" />
                         Guardar Entrada
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() => setEditando(false)}
-                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                        className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
                       >
                         Cancelar
                       </Button>
@@ -375,7 +375,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleAbrirEditar(entrada)}
-                            className="text-slate-300 hover:bg-slate-700"
+                            className="text-slate-300 hover:bg-slate-700 shrink-0"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -406,7 +406,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       {/* Diálogo de edición */}
       {editarEntrada !== null && (
         <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
-          <DialogContent className="sm:max-w-[600px] bg-slate-800 border-slate-700">
+          <DialogContent className="w-[calc(100%-1rem)] max-w-[600px] bg-slate-800 border-slate-700">
             <DialogHeader>
               <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
               <DialogDescription className="text-slate-400">
@@ -450,15 +450,15 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 onClick={() => setEditarEntrada(null)}
-                className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
               >
                 Cancelar
               </Button>
-              <Button onClick={handleGuardarEdicion} className="bg-teal-600 hover:bg-teal-700">
+              <Button onClick={handleGuardarEdicion} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
                 <Save className="w-4 h-4 mr-2 stroke-2" />
                 Guardar Cambios
               </Button>
@@ -483,7 +483,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-8"
+              className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-8"
             >
               <motion.div
                 initial={{ scale: 0 }}
@@ -494,7 +494,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 <Check className="w-10 h-10 stroke-2 text-white" />
               </motion.div>
               <div className="text-center space-y-4">
-                <h2 className="text-white text-2xl">¡Cambios Guardados!</h2>
+                <h2 className="text-white text-xl sm:text-2xl">¡Cambios Guardados!</h2>
                 <p className="text-slate-300">
                   La entrada de bitácora ha sido actualizada correctamente.
                 </p>

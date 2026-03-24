@@ -158,10 +158,10 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-white mb-2">Registro de Paciente</h1>
-        <p className="text-slate-300">
+        <h1 className="text-white mb-2 text-xl sm:text-2xl">Registro de Paciente</h1>
+        <p className="text-slate-300 text-sm sm:text-base">
           Ingresa la información del nuevo paciente en el sistema
         </p>
       </div>
@@ -359,13 +359,14 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700">
             Registrar Paciente
           </Button>
           <Button
             type="button"
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={() => onNavigate('inicio')}
           >
             Cancelar
@@ -392,7 +393,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                 exit={{ scale: 0.9, opacity: 0 }}
                 transition={{ type: 'spring', damping: 20 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-8"
+                className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-8"
               >
                 {/* Icono de éxito */}
                 <motion.div
@@ -406,7 +407,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
 
                 {/* Contenido */}
                 <div className="text-center space-y-4">
-                  <h2 className="text-white text-2xl">¡Paciente Registrado Exitosamente!</h2>
+                  <h2 className="text-white text-xl sm:text-2xl">¡Paciente Registrado Exitosamente!</h2>
                   <p className="text-slate-300">
                     El paciente <span className="text-teal-400">{nombre} {apellidos}</span> ha sido agregado al sistema correctamente.
                   </p>

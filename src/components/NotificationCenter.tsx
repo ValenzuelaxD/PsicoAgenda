@@ -4,7 +4,6 @@ import { Bell, X, Check, Calendar, Clock, AlertCircle, Info } from 'lucide-react
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { ScrollArea } from './ui/scroll-area';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../utils/api';
 
@@ -162,7 +161,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
               animate={{ x: 0 }}
               exit={{ x: 400 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="fixed right-0 top-0 h-screen w-[360px] bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col"
+              className="fixed right-0 top-0 h-[100dvh] w-[min(100vw,360px)] bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col"
             >
               {/* Header */}
               <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30 flex-shrink-0">

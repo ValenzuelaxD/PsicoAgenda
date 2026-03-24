@@ -75,7 +75,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
   // Contenido para Paciente
   if (userType === 'paciente' && pacienteData) {
     return (
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-slate-100 mb-2">Bienvenido/a, {userName}</h1>
@@ -145,16 +145,16 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                 pacienteData.proximasCitas.map((cita) => (
                   <Card key={cita.citaid} className="bg-slate-700/30 border-slate-600">
                     <CardContent className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
                             <Calendar className="w-5 h-5 text-white" />
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-slate-100 font-medium">
                               {cita.nombre} {cita.apellidopaterno}
                             </p>
-                            <div className="flex items-center gap-2 text-sm text-slate-400">
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
                               <Clock className="w-3 h-3" />
                               <span>{new Date(cita.fechahora).toLocaleString('es-ES', {
                                 weekday: 'short',
@@ -172,7 +172,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                           size="sm" 
                           variant="outline" 
                           onClick={() => onNavigate('citas')}
-                          className="border-teal-500/30 text-teal-400 hover:bg-teal-500/10"
+                          className="border-teal-500/30 text-teal-400 hover:bg-teal-500/10 w-full sm:w-auto"
                         >
                           Ver Detalles
                         </Button>
@@ -238,7 +238,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
   // Contenido para Psicólogo
   if (userType === 'psicologo' && psicologoData) {
     return (
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-slate-100 mb-2">Bienvenido/a, Dr. {userName}</h1>

@@ -105,10 +105,10 @@ export function ReportesCitas() {
   const resumen = data?.resumen;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-white mb-2">Reportes de Citas</h1>
-        <p className="text-slate-300">Indicadores y listados obtenidos directamente desde la base de datos.</p>
+        <h1 className="text-white mb-2 text-xl sm:text-2xl">Reportes de Citas</h1>
+        <p className="text-slate-300 text-sm sm:text-base">Indicadores y listados obtenidos directamente desde la base de datos.</p>
       </div>
 
       <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
@@ -156,7 +156,7 @@ export function ReportesCitas() {
               <Filter className="w-4 h-4" />
               Estados
             </Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {ESTADOS_DISPONIBLES.map((estado) => (
                 <div key={estado} className="flex items-center space-x-2 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
                   <Checkbox id={estado} checked={estadosSeleccionados[estado]} onCheckedChange={() => toggleEstado(estado)} />
@@ -167,14 +167,14 @@ export function ReportesCitas() {
           </div>
 
           <div className="flex justify-end">
-            <Button variant="outline" onClick={limpiarFiltros} className="border-slate-600 text-slate-200 hover:bg-slate-700">
+            <Button variant="outline" onClick={limpiarFiltros} className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto">
               Limpiar Filtros
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -233,7 +233,7 @@ export function ReportesCitas() {
           <CardDescription className="text-slate-400">Distribución del período seleccionado</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="text-center p-4 bg-teal-900/20 border border-teal-500/30 rounded-lg">
               <p className="text-teal-100">{loading ? '...' : resumen?.citas_completadas ?? 0}</p>
               <p className="text-teal-300">Completadas</p>
@@ -291,7 +291,7 @@ export function ReportesCitas() {
           </CardHeader>
           <CardContent className="space-y-4">
             {(data?.modalidades || []).map((item) => (
-              <div key={item.modalidad} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg border border-slate-600">
+              <div key={item.modalidad} className="flex items-start sm:items-center justify-between gap-3 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
                 <div>
                   <p className="text-slate-100">{item.modalidad}</p>
                   <p className="text-slate-400">{item.cantidad} citas</p>
@@ -313,9 +313,9 @@ export function ReportesCitas() {
           <CardContent>
             <div className="space-y-3">
               {(data?.pacientes || []).map((item) => (
-                <div key={item.pacienteid} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg border border-slate-600">
-                  <div>
-                    <p className="text-slate-100">{item.paciente}</p>
+                <div key={item.pacienteid} className="flex items-start sm:items-center justify-between gap-3 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
+                  <div className="min-w-0">
+                    <p className="text-slate-100 break-words">{item.paciente}</p>
                     <p className="text-slate-400">Última cita: {new Date(item.ultima_cita).toLocaleDateString('es-ES')}</p>
                   </div>
                   <Badge className="bg-violet-600">{item.sesiones} sesiones</Badge>

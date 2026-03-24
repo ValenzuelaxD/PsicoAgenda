@@ -320,10 +320,10 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
       </div>
 
       <Tabs defaultValue="proximas" className="w-full">
-        <TabsList className="bg-slate-800 border-slate-700">
-          <TabsTrigger value="proximas" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white">Próximas Citas</TabsTrigger>
-          <TabsTrigger value="pasadas" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white">Historial</TabsTrigger>
-          <TabsTrigger value="agenda" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white">Consultar Agenda</TabsTrigger>
+        <TabsList className="bg-slate-800 border-slate-700 w-full justify-start overflow-x-auto gap-1">
+          <TabsTrigger value="proximas" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white whitespace-nowrap">Próximas Citas</TabsTrigger>
+          <TabsTrigger value="pasadas" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white whitespace-nowrap">Historial</TabsTrigger>
+          <TabsTrigger value="agenda" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white whitespace-nowrap">Consultar Agenda</TabsTrigger>
         </TabsList>
 
         <TabsContent value="proximas" className="space-y-4 mt-6">
@@ -333,8 +333,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 {(() => {
                   const estadoVisual = obtenerEstiloEstado(cita.estado);
                   return (
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-4 flex-1">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
                     <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
                       {esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-white stroke-2" />
@@ -342,7 +342,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         <Calendar className="w-8 h-8 text-white stroke-2" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         
                         <Badge
@@ -355,7 +355,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                       <div className="space-y-1 text-slate-300">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4" />
-                          <span>{userType === 'psicologo' ? `${cita.paciente_nombre} ${cita.paciente_apellido}` : `${cita.psicologa_nombre} ${cita.psicologa_apellido}`}</span>
+                          <span className="break-words">{userType === 'psicologo' ? `${cita.paciente_nombre} ${cita.paciente_apellido}` : `${cita.psicologa_nombre} ${cita.psicologa_apellido}`}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
@@ -367,22 +367,22 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
-                          <span>{obtenerUbicacion(cita as Cita & { ubicacion?: string })}</span>
+                          <span className="break-words">{obtenerUbicacion(cita as Cita & { ubicacion?: string })}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 w-full lg:w-auto">
                     {esModalidadEnLinea(cita.modalidad) && (
-                      <Button size="sm" onClick={handleUnirseVideollamada} className="bg-teal-600 hover:bg-teal-700">Unirse a Videollamada</Button>
+                      <Button size="sm" onClick={handleUnirseVideollamada} className="bg-teal-600 hover:bg-teal-700 w-full lg:w-auto">Unirse a Videollamada</Button>
                     )}
                     {esEstado(cita.estado, ESTADO_CITA.PENDIENTE) && userType === 'paciente' && (
-                      <Button size="sm" variant="outline" onClick={() => handleConfirmarCita(cita.citaid)} className="border-green-600 text-green-400 hover:bg-green-600/20">
+                      <Button size="sm" variant="outline" onClick={() => handleConfirmarCita(cita.citaid)} className="border-green-600 text-green-400 hover:bg-green-600/20 w-full lg:w-auto">
                         Confirmar Cita
                       </Button>
                     )}
                     {userType === 'psicologo' && (
-                      <Button size="sm" variant="outline" onClick={() => handleModificarCita(cita.citaid)} className="border-violet-600 text-violet-400 hover:bg-violet-600/20">
+                      <Button size="sm" variant="outline" onClick={() => handleModificarCita(cita.citaid)} className="border-violet-600 text-violet-400 hover:bg-violet-600/20 w-full lg:w-auto">
                         <Edit className="w-4 h-4 mr-2" />
                         Modificar
                       </Button>
@@ -392,7 +392,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleModificarCita(cita.citaid)}
-                        className="border-violet-600 text-violet-400 hover:bg-violet-600/20"
+                        className="border-violet-600 text-violet-400 hover:bg-violet-600/20 w-full lg:w-auto"
                       >
                         Reagendar
                       </Button>
@@ -401,7 +401,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => setCitaACancelar(cita.citaid)}
-                      className="border-red-600 text-red-400 hover:bg-red-600/20"
+                      className="border-red-600 text-red-400 hover:bg-red-600/20 w-full lg:w-auto"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Cancelar
@@ -419,8 +419,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           {citasPasadas.map((cita) => (
             <Card key={cita.citaid} className="bg-slate-800/30 backdrop-blur-sm border-slate-700">
               <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-4 flex-1">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
                     <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
                       {esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-slate-400" />
@@ -428,7 +428,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         <Calendar className="w-8 h-8 text-slate-400" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         
                         <Badge variant="outline" className="border-slate-600 text-slate-400">Completada</Badge>
@@ -436,7 +436,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                       <div className="space-y-1 text-slate-400">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4" />
-                          <span>{userType === 'psicologo' ? `${cita.paciente_nombre} ${cita.paciente_apellido}` : `${cita.psicologa_nombre} ${cita.psicologa_apellido}`}</span>
+                          <span className="break-words">{userType === 'psicologo' ? `${cita.paciente_nombre} ${cita.paciente_apellido}` : `${cita.psicologa_nombre} ${cita.psicologa_apellido}`}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
@@ -453,7 +453,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     variant="outline" 
                     size="sm" 
                     onClick={() => userType === 'psicologo' ? onNavigate('bitacora') : handleVerNotas(cita.citaid)} 
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700 w-full lg:w-auto"
                   >
                     <FileText className="w-4 h-4 mr-2 stroke-2" />
                     {userType === 'psicologo' ? 'Ver Bitácora' : 'Ver Notas'}

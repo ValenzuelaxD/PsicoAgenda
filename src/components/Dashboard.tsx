@@ -34,6 +34,12 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    if (!isMobile) {
+      setDrawerOpen(false);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
     const fetchUnreadNotifications = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -124,7 +130,7 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
             onClick={() => setDrawerOpen(false)}
             aria-hidden
           />
-          <aside className="fixed left-0 top-0 z-50 h-full w-64 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 shadow-2xl">
+          <aside className="fixed left-0 top-0 z-50 h-[100dvh] w-[85vw] max-w-72 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-slate-700">
               <h3 className="text-slate-100">Menu</h3>
               <button onClick={() => setDrawerOpen(false)} className="text-slate-100">
@@ -132,18 +138,27 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
               </button>
             </div>
             <div className="p-2">
-              <Sidebar currentView={currentView} userType={userType} onNavigate={(v)=>{handleNavigate(v); setDrawerOpen(false);}} onLogout={onLogout} isMobile />
+              <Sidebar
+                currentView={currentView}
+                userType={userType}
+                onNavigate={(v) => {
+                  handleNavigate(v);
+                  setDrawerOpen(false);
+                }}
+                onLogout={onLogout}
+                isMobile
+              />
             </div>
           </aside>
         </>
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 ${isMobile ? 'ml-0' : 'ml-64'} bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900`}>
+      <main className={`flex-1 min-w-0 ${isMobile ? 'ml-0' : 'ml-64'} bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900`}>
         {/* Top Bar con Notificaciones */}
-        <div className="sticky top-0 z-30 bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="sticky top-0 z-30 bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-4 py-3 sm:py-4">
+          <div className="flex items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3 min-w-0">
               <button
                 onClick={() => setDrawerOpen(true)}
                 className="sm:hidden p-2 rounded-md bg-slate-700/30 text-slate-100"
@@ -151,16 +166,16 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div>
-                <h2 className="text-slate-100 text-lg">PsicoAgenda</h2>
-                <p className="text-slate-400 text-sm">Sistema de gestión psicológica profesional</p>
+              <div className="min-w-0">
+                <h2 className="text-slate-100 text-base sm:text-lg">PsicoAgenda</h2>
+                <p className="text-slate-400 text-xs sm:text-sm truncate">Sistema de gestion psicologica profesional</p>
               </div>
             </div>
             <NotificationCenter userType={userType} />
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           <AnimatePresence>
             <motion.div 
               key={currentView}

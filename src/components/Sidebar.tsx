@@ -28,8 +28,8 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
 
   // Desktop: fixed sidebar visible on sm+; Mobile: render full-width content suitable for Drawer
   const containerClass = isMobile
-    ? 'w-full bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col z-50'
-    : 'hidden sm:flex fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-50';
+    ? 'w-full h-full bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col z-50'
+    : 'hidden sm:flex fixed left-0 top-0 h-[100dvh] w-64 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-50';
 
   // RF_US_003, RF_US_010-014, RF_US_023, RF_US_002/007
   const pacienteMenuItems = [
@@ -64,20 +64,20 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
   return (
     <aside className={containerClass}>
       {/* Logo */}
-      <div className="p-6 border-b border-slate-700">
+      <div className={`${isMobile ? 'p-4' : 'p-6'} border-b border-slate-700`}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="flex flex-col items-center gap-2"
         >
-          <img src={logo} alt="PsicoAgenda" className="h-20 w-auto" />
-          <p className="text-teal-400 text-center text-sm">{userType === 'psicologo' ? 'Panel Psicólogo' : 'Panel Paciente'}</p>
+          <img src={logo} alt="PsicoAgenda" className={`${isMobile ? 'h-16' : 'h-20'} w-auto`} />
+          <p className="text-teal-400 text-center text-sm">{userType === 'psicologo' ? 'Panel Psicologo' : 'Panel Paciente'}</p>
         </motion.div>
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className={`${isMobile ? 'p-3' : 'p-4'} flex-1 space-y-2 overflow-y-auto`}>
         {menuItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -95,14 +95,14 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
               }`}
             >
               <Icon className="w-5 h-5 stroke-2" />
-              <span className={isActive ? 'text-white' : 'text-slate-100'}>{item.label}</span>
+              <span className={`${isActive ? 'text-white' : 'text-slate-100'} min-w-0 truncate text-left`}>{item.label}</span>
             </motion.button>
           );
         })}
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-slate-700">
+      <div className="p-4 border-t border-slate-700 mt-auto">
         <motion.button
           onClick={() => setMostrarConfirmacionLogout(true)}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/20 transition-all"

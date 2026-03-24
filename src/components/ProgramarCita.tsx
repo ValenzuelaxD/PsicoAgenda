@@ -132,10 +132,10 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-white mb-2">Programar Cita</h1>
-        <p className="text-slate-300">Agenda una sesión real usando pacientes y horarios obtenidos desde la base de datos.</p>
+        <h1 className="text-white mb-2 text-xl sm:text-2xl">Programar Cita</h1>
+        <p className="text-slate-300 text-sm sm:text-base">Agenda una sesion real usando pacientes y horarios obtenidos desde la base de datos.</p>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -232,12 +232,12 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                 <CardTitle>Seleccionar Fecha</CardTitle>
                 <CardDescription>La disponibilidad se calcula con tu agenda registrada.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="overflow-x-auto">
                 <Calendar
                   mode="single"
                   selected={date}
                   onSelect={(nextDate: Date | undefined) => nextDate && setDate(nextDate)}
-                  className="rounded-md border"
+                  className="rounded-md border w-full max-w-full"
                   disabled={(candidateDate: Date) => candidateDate < new Date(new Date().setHours(0, 0, 0, 0))}
                 />
               </CardContent>
@@ -262,11 +262,11 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
           </div>
         </div>
 
-        <div className="flex gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
           <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700" disabled={guardando || !pacienteId || !hora}>
             {guardando ? 'Guardando...' : 'Programar Cita'}
           </Button>
-          <Button type="button" variant="outline" onClick={() => onNavigate('citas')}>
+          <Button type="button" variant="outline" onClick={() => onNavigate('citas')} className="w-full sm:w-auto">
             Cancelar
           </Button>
         </div>
