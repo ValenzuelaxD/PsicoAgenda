@@ -193,8 +193,8 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-0 space-y-8">
       <div>
-        <h1 className="text-white mb-2">Agendar Nueva Cita</h1>
-        <p className="text-slate-300">
+        <h1 className="text-white mb-2 text-xl sm:text-2xl">Solicitar Cita</h1>
+        <p className="text-slate-300 text-sm sm:text-base">
           Selecciona el profesional, fecha y hora para tu próxima sesión
         </p>
       </div>
@@ -280,18 +280,18 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                             </div>
                   
                             {/* Columna Derecha */}
-                            <div className="space-y-6 w-full lg:w-fit">
+                            <div className="space-y-6 w-full">
                               <div className="rounded-xl border border-slate-700 bg-slate-800/50 backdrop-blur-sm">
                                 <div className="px-6 pt-6 pb-0">
-                                  <h3 className="text-slate-100 font-semibold">Seleccionar Fecha</h3>
-                                  <p className="text-slate-400 text-sm">Elige el día para tu sesión</p>
+                                  <h3 className="text-slate-100 font-semibold">Solicitar Fecha</h3>
+                                  <p className="text-slate-400 text-sm">Elige el dia para tu sesion</p>
                                 </div>
-                                <div className="flex justify-center p-6 bg-slate-900/30">
+                                <div className="p-4 sm:p-6 bg-slate-900/30 overflow-x-auto">
                                   <Calendar
                                     mode="single"
                                     selected={date}
                                     onSelect={setDate}
-                                    className="bg-transparent"
+                                    className="bg-transparent mx-auto min-w-[280px]"
                                     disabled={(date) => date < hoy}
                                   />
                                 </div>
@@ -336,7 +336,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                             </div>
                           </div>
                   
-                          <div className="flex gap-4 mt-6">
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
                             <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700" disabled={!date || !psicologo || !hora || !tipo}>
                               Confirmar Cita
                             </Button>
@@ -344,7 +344,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                               type="button"
                               variant="outline"
                               onClick={() => onNavigate('inicio')}
-                              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                              className="border-slate-600 text-slate-300 hover:bg-slate-700 w-full sm:w-auto"
                             >
                               Cancelar
                             </Button>

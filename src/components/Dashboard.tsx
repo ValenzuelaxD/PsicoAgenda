@@ -130,14 +130,14 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
             onClick={() => setDrawerOpen(false)}
             aria-hidden
           />
-          <aside className="fixed left-0 top-0 z-50 h-[100dvh] w-[85vw] max-w-72 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 shadow-2xl">
+          <aside className="fixed left-0 top-0 z-50 h-[100dvh] w-[85vw] max-w-72 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 shadow-2xl flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-slate-700">
               <h3 className="text-slate-100">Menu</h3>
               <button onClick={() => setDrawerOpen(false)} className="text-slate-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-2">
+            <div className="p-2 flex-1 min-h-0 overflow-hidden">
               <Sidebar
                 currentView={currentView}
                 userType={userType}

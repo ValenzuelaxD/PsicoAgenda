@@ -28,7 +28,7 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
 
   // Desktop: fixed sidebar visible on sm+; Mobile: render full-width content suitable for Drawer
   const containerClass = isMobile
-    ? 'w-full h-full bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col z-50'
+    ? 'w-full h-full min-h-0 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col z-50'
     : 'hidden sm:flex fixed left-0 top-0 h-[100dvh] w-64 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-50';
 
   // RF_US_003, RF_US_010-014, RF_US_023, RF_US_002/007
@@ -77,7 +77,7 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
       </div>
 
       {/* Menu Items */}
-      <nav className={`${isMobile ? 'p-3' : 'p-4'} flex-1 space-y-2 overflow-y-auto`}>
+      <nav className={`${isMobile ? 'p-3' : 'p-4'} flex-1 min-h-0 space-y-2 overflow-y-auto`}>
         {menuItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -102,7 +102,7 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-slate-700 mt-auto">
+      <div className="p-4 border-t border-slate-700 mt-auto pb-[max(env(safe-area-inset-bottom),1rem)]">
         <motion.button
           onClick={() => setMostrarConfirmacionLogout(true)}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/20 transition-all"
