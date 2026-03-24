@@ -286,12 +286,12 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                   <h3 className="text-slate-100 font-semibold">Solicitar Fecha</h3>
                                   <p className="text-slate-400 text-sm">Elige el dia para tu sesion</p>
                                 </div>
-                                <div className="p-4 sm:p-6 bg-slate-900/30 overflow-x-auto">
+                                <div className="p-4 sm:p-6 bg-slate-900/30">
                                   <Calendar
                                     mode="single"
                                     selected={date}
                                     onSelect={setDate}
-                                    className="bg-transparent mx-auto min-w-[280px]"
+                                    className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
                                     disabled={(date) => date < hoy}
                                   />
                                 </div>
