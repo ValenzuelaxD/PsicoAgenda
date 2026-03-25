@@ -131,20 +131,34 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
     return esModalidadEnLinea(cita.modalidad) ? 'Sesion en linea' : 'Consultorio por confirmar';
   };
-  const formatearFechaInput = (fechaHora: string) => {
-    const date = new Date(fechaHora);
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, '0');
-    const day = `${date.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const extraerFechaHoraLocal = (fechaHora: string) => {
+    const valor = String(fechaHora || '').trim();
+    const matchLocal = valor.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
+
+    if (matchLocal) {
+      return { fecha: matchLocal[1], hora: matchLocal[2] };
+    }
+
+    const date = new Date(valor);
+    if (!Number.isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = `${date.getMonth() + 1}`.padStart(2, '0');
+      const day = `${date.getDate()}`.padStart(2, '0');
+      const hour = `${date.getHours()}`.padStart(2, '0');
+      const minute = `${date.getMinutes()}`.padStart(2, '0');
+      return { fecha: `${year}-${month}-${day}`, hora: `${hour}:${minute}` };
+    }
+
+    return { fecha: '', hora: '' };
   };
-  const formatearHoraInput = (fechaHora: string) => {
-    const date = new Date(fechaHora);
-    return `${`${date.getHours()}`.padStart(2, '0')}:${`${date.getMinutes()}`.padStart(2, '0')}`;
-  };
+
+  const formatearFechaInput = (fechaHora: string) => extraerFechaHoraLocal(fechaHora).fecha;
+
+  const formatearHoraInput = (fechaHora: string) => extraerFechaHoraLocal(fechaHora).hora;
+
   const actualizarFechaHoraCita = (cita: Cita, fecha: string, hora: string) => {
-    const nuevaFechaHora = new Date(`${fecha}T${hora}:00`);
-    return { ...cita, fechahora: nuevaFechaHora.toISOString() };
+    // Mantener formato local y evitar conversiones a UTC mientras el usuario edita.
+    return { ...cita, fechahora: `${fecha}T${hora}:00` };
   };
 
 
