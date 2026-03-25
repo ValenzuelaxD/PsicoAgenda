@@ -207,7 +207,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar paciente..."
-              className="pl-9 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 w-full"
+              className="h-11 pl-9 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
             />
           </div>
 
@@ -291,7 +291,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         id="diagnostico"
                         value={diagnostico}
                         onChange={(e) => setDiagnostico(e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-slate-100"
+                        className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
                       />
                     </div>
                     <div className="space-y-2">
@@ -302,7 +302,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         id="tratamiento"
                         value={tratamiento}
                         onChange={(e) => setTratamiento(e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-slate-100"
+                        className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
                       />
                     </div>
                     <div className="space-y-2">
@@ -422,7 +422,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   id="diagnostico-editar"
                   value={diagnosticoEditar}
                   onChange={(e) => setDiagnosticoEditar(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-slate-100"
+                  className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
                 />
               </div>
               <div className="space-y-2">
@@ -433,7 +433,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   id="tratamiento-editar"
                   value={tratamientoEditar}
                   onChange={(e) => setTratamientoEditar(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-slate-100"
+                  className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
                 />
               </div>
               <div className="space-y-2">
