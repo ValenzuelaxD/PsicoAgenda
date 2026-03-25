@@ -85,6 +85,14 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
     return `${encabezado}, ${hora}`;
   };
 
+  const obtenerFechaLocalISO = () => {
+    const ahora = new Date();
+    const yyyy = ahora.getFullYear();
+    const mm = `${ahora.getMonth() + 1}`.padStart(2, '0');
+    const dd = `${ahora.getDate()}`.padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   useEffect(() => {
     if (userType === 'admin') {
       setLoading(false);
@@ -99,7 +107,9 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
           throw new Error("No autenticado. Por favor inicia sesión.");
         }
 
-  const endpoint = userType === 'paciente' ? API_ENDPOINTS.DASHBOARD_PACIENTE : API_ENDPOINTS.DASHBOARD_PSICOLOGO;
+    const endpoint = userType === 'paciente'
+      ? API_ENDPOINTS.DASHBOARD_PACIENTE
+      : `${API_ENDPOINTS.DASHBOARD_PSICOLOGO}?fecha=${obtenerFechaLocalISO()}`;
         const response = await fetch(endpoint, {
           headers: {
             'Authorization': `Bearer ${token}`,

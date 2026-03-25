@@ -54,6 +54,11 @@ const getPacienteDashboard = async (req, res) => {
 
 const getPsicologoDashboard = async (req, res) => {
   const usuarioId = req.user.id;
+  const fechaParam = String(req.query?.fecha || '').trim();
+
+  const hoyLocal = new Date();
+  const fechaHoy = `${hoyLocal.getFullYear()}-${String(hoyLocal.getMonth() + 1).padStart(2, '0')}-${String(hoyLocal.getDate()).padStart(2, '0')}`;
+  const fechaObjetivo = /^\d{4}-\d{2}-\d{2}$/.test(fechaParam) ? fechaParam : fechaHoy;
 
   try {
     const psicologaResult = await db.query('SELECT psicologaid FROM psicologas WHERE usuarioid = $1', [usuarioId]);
@@ -67,14 +72,14 @@ const getPsicologoDashboard = async (req, res) => {
       FROM citas c
       JOIN pacientes p ON c.pacienteid = p.pacienteid
       JOIN usuarios u ON p.usuarioid = u.usuarioid
-      WHERE c.psicologaid = $1 AND DATE(c.fechahora) = CURRENT_DATE
+      WHERE c.psicologaid = $1 AND DATE(c.fechahora) = $2
       ORDER BY c.fechahora ASC
     `;
     const pacientesActivosQuery = `SELECT COUNT(DISTINCT pacienteid) FROM citas WHERE psicologaid = $1`;
     const citasSemanaQuery = `SELECT COUNT(*) FROM citas WHERE psicologaid = $1 AND fechahora >= date_trunc('week', CURRENT_DATE) AND fechahora < date_trunc('week', CURRENT_DATE) + interval '1 week'`;
     const citasPendientesQuery = `SELECT COUNT(*) FROM citas WHERE psicologaid = $1 AND estado = 'Pendiente'`;
 
-    const citasHoyResult = await db.query(citasHoyQuery, [psicologaId]);
+    const citasHoyResult = await db.query(citasHoyQuery, [psicologaId, fechaObjetivo]);
     const pacientesActivosResult = await db.query(pacientesActivosQuery, [psicologaId]);
     const citasSemanaResult = await db.query(citasSemanaQuery, [psicologaId]);
     const citasPendientesResult = await db.query(citasPendientesQuery, [psicologaId]);
