@@ -44,6 +44,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const [loadingProximos, setLoadingProximos] = useState(false);
   const [loadingCalendario, setLoadingCalendario] = useState(false);
   const [mesCalendario, setMesCalendario] = useState<Date>(new Date());
+  const [mostrarCalendarioInformativo, setMostrarCalendarioInformativo] = useState(false);
   const [proximosHorarios, setProximosHorarios] = useState<Array<{ fecha: string; etiqueta: string; horarios: string[] }>>([]);
   const [fechasConDisponibilidad, setFechasConDisponibilidad] = useState<string[]>([]);
 
@@ -94,6 +95,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const seleccionarProximoHorario = (fecha: string, horario: string) => {
     const siguienteFecha = new Date(`${fecha}T00:00:00`);
     setDate(siguienteFecha);
+    setMesCalendario(new Date(siguienteFecha.getFullYear(), siguienteFecha.getMonth(), 1));
     setHora(horario);
   };
 
@@ -371,7 +373,12 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="psicologo" className="text-slate-200">Seleccionar Psicólogo</Label>
-                  <Select value={psicologo} onValueChange={setPsicologo} required>
+                  <Select value={psicologo} onValueChange={(value) => {
+                    setPsicologo(value);
+                    setDate(undefined);
+                    setHora('');
+                    setMesCalendario(new Date());
+                  }} required>
                                       <SelectTrigger id="psicologo" className="bg-slate-700/50 border-slate-600 text-slate-200">
                                         <SelectValue placeholder={loadingInicial ? 'Cargando profesionales...' : 'Elige un profesional'} />
                                       </SelectTrigger>
@@ -426,13 +433,13 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     <div className="flex items-center justify-between">
                                       <Label className="text-slate-200 flex items-center gap-2">
                                         <CalendarDays className="w-4 h-4" />
-                                        Próximos horarios disponibles
+                                        Próximos horarios disponibles (reserva rápida)
                                       </Label>
                                       {loadingProximos && <span className="text-xs text-slate-400">Buscando...</span>}
                                     </div>
                                     <div className="rounded-lg border border-slate-600 bg-slate-700/30 p-3 space-y-3">
                                       {!psicologo ? (
-                                        <p className="text-sm text-slate-400">Selecciona un psicólogo para ver sugerencias rápidas.</p>
+                                        <p className="text-sm text-slate-400">Selecciona un psicólogo para ver horarios sugeridos.</p>
                                       ) : loadingProximos ? (
                                         <p className="text-sm text-slate-400">Consultando próximos espacios...</p>
                                       ) : proximosHorarios.length === 0 ? (
@@ -448,18 +455,33 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                             Usar primer horario disponible
                                           </Button>
                                           <div className="flex flex-wrap gap-2">
-                                            {proximosHorarios.slice(0, 6).map((item) => (
-                                              <Button
-                                                key={`${item.fecha}-${item.horarios[0]}`}
-                                                type="button"
-                                                variant="outline"
-                                                className="border-slate-500 text-slate-200 hover:bg-slate-600/50"
-                                                onClick={() => seleccionarProximoHorario(item.fecha, item.horarios[0])}
-                                              >
-                                                {item.etiqueta} · {item.horarios[0]}
-                                              </Button>
-                                            ))}
+                                            {proximosHorarios.slice(0, 6).flatMap((item) =>
+                                              item.horarios.slice(0, 2).map((horarioItem) => {
+                                                const activo =
+                                                  date &&
+                                                  formatearFechaLocal(date) === item.fecha &&
+                                                  hora === horarioItem;
+
+                                                return (
+                                                  <Button
+                                                    key={`${item.fecha}-${horarioItem}`}
+                                                    type="button"
+                                                    variant="outline"
+                                                    className={activo
+                                                      ? 'border-teal-400 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+                                                      : 'border-slate-500 text-slate-200 hover:bg-slate-600/50'
+                                                    }
+                                                    onClick={() => seleccionarProximoHorario(item.fecha, horarioItem)}
+                                                  >
+                                                    {item.etiqueta} · {horarioItem}
+                                                  </Button>
+                                                );
+                                              })
+                                            )}
                                           </div>
+                                          <p className="text-xs text-slate-400">
+                                            La selección principal se realiza aquí. El calendario queda en modo visual para referencia.
+                                          </p>
                                         </>
                                       )}
                                     </div>
@@ -483,68 +505,69 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                             {/* Columna Derecha */}
                             <div className="space-y-6 w-full">
                               <div className="rounded-xl border border-slate-700 bg-slate-800/50 backdrop-blur-sm">
-                                <div className="px-6 pt-6 pb-0">
-                                  <h3 className="text-slate-100 font-semibold">Solicitar Fecha</h3>
-                                  <p className="text-slate-400 text-sm">Elige el dia para tu sesion</p>
-                                  {psicologo && (
-                                    <p className="text-xs text-teal-300 mt-1">
-                                      {loadingCalendario ? 'Actualizando disponibilidad del calendario...' : 'Se muestran solo fechas con horarios disponibles'}
-                                    </p>
-                                  )}
+                                <div className="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
+                                  <div>
+                                    <h3 className="text-slate-100 font-semibold">Calendario de referencia</h3>
+                                    <p className="text-slate-400 text-sm">Vista informativa de disponibilidad del mes actual</p>
+                                    {psicologo && (
+                                      <p className="text-xs text-teal-300 mt-1">
+                                        {loadingCalendario ? 'Actualizando disponibilidad del calendario...' : 'La reserva se realiza desde “Próximos horarios disponibles”.'}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                                    onClick={() => setMostrarCalendarioInformativo((prev) => !prev)}
+                                  >
+                                    {mostrarCalendarioInformativo ? 'Ocultar calendario' : 'Ver calendario'}
+                                  </Button>
                                 </div>
-                                <div className="p-4 sm:p-6 bg-slate-900/30 relative">
-                                  <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={(nextDate) => {
-                                      if (!nextDate) {
-                                        setDate(undefined);
-                                        setHora('');
-                                        return;
-                                      }
 
-                                      if (!esFechaSeleccionable(nextDate)) {
-                                        return;
-                                      }
-
-                                      setDate(nextDate);
-                                      setHora('');
-                                    }}
-                                    month={mesCalendario}
-                                    onMonthChange={setMesCalendario}
-                                    fromMonth={inicioMesActual}
-                                    toMonth={inicioMesActual}
-                                    className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
-                                    modifiers={{
-                                      disponible: (candidate) => fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
-                                    }}
-                                    modifiersClassNames={{
-                                      disponible: 'ring-1 ring-teal-400/40 bg-teal-500/10 text-teal-200',
-                                    }}
-                                    disabled={(candidate) => !esFechaSeleccionable(candidate)}
-                                  />
-                                  {psicologo && loadingCalendario && (
-                                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-xl bg-slate-900/70 backdrop-blur-[1px]">
-                                      <div className="rounded-md border border-teal-500/40 bg-slate-800/90 px-4 py-2 text-sm text-teal-200">
-                                        Cargando disponibilidad...
+                                {mostrarCalendarioInformativo && (
+                                  <div className="p-4 sm:p-6 bg-slate-900/30 relative">
+                                    <div className="pointer-events-none">
+                                      <Calendar
+                                        mode="single"
+                                        selected={date}
+                                        month={mesCalendario}
+                                        onMonthChange={setMesCalendario}
+                                        fromMonth={inicioMesActual}
+                                        toMonth={inicioMesActual}
+                                        className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
+                                        modifiers={{
+                                          disponible: (candidate) => fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
+                                        }}
+                                        modifiersClassNames={{
+                                          disponible: 'ring-1 ring-teal-400/40 bg-teal-500/10 text-teal-200',
+                                        }}
+                                        disabled={() => true}
+                                      />
+                                    </div>
+                                    {psicologo && loadingCalendario && (
+                                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-xl bg-slate-900/70 backdrop-blur-[1px]">
+                                        <div className="rounded-md border border-teal-500/40 bg-slate-800/90 px-4 py-2 text-sm text-teal-200">
+                                          Cargando disponibilidad...
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                                      <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
+                                        <span className="h-2 w-2 rounded-full bg-teal-400" />
+                                        Con horarios para este psicólogo
+                                      </div>
+                                      <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
+                                        <span className="h-2 w-2 rounded-full bg-slate-500" />
+                                        Sin horarios para este psicólogo
+                                      </div>
+                                      <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
+                                        <span className="h-2 w-2 rounded-full bg-teal-600" />
+                                        Día seleccionado desde sugerencias
                                       </div>
                                     </div>
-                                  )}
-                                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                                    <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
-                                      <span className="h-2 w-2 rounded-full bg-teal-400" />
-                                      Con horarios para este psicólogo
-                                    </div>
-                                    <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
-                                      <span className="h-2 w-2 rounded-full bg-slate-500" />
-                                      Sin horarios para este psicólogo
-                                    </div>
-                                    <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
-                                      <span className="h-2 w-2 rounded-full bg-teal-600" />
-                                      Día seleccionado
-                                    </div>
                                   </div>
-                                </div>
+                                )}
                               </div>
                   
                               {date && psicologo && hora && tipo && (
