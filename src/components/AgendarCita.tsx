@@ -530,7 +530,11 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     <div className="pointer-events-none">
                                       <Calendar
                                         mode="single"
-                                        selected={date}
+                                        selected={
+                                          date && fechasConDisponibilidadSet.has(formatearFechaLocal(date))
+                                            ? date
+                                            : undefined
+                                        }
                                         month={mesCalendario}
                                         onMonthChange={setMesCalendario}
                                         fromMonth={inicioMesActual}
@@ -538,9 +542,14 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                         className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
                                         modifiers={{
                                           disponible: (candidate) => fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
+                                          sinDisponibilidad: (candidate) =>
+                                            candidate >= hoy &&
+                                            candidate <= finMesActual &&
+                                            !fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
                                         }}
                                         modifiersClassNames={{
                                           disponible: 'ring-1 ring-teal-400/40 bg-teal-500/10 text-teal-200',
+                                          sinDisponibilidad: 'text-slate-200 bg-transparent',
                                         }}
                                         disabled={() => true}
                                       />
