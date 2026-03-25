@@ -12,6 +12,7 @@ import { RegistroPaciente } from './RegistroPaciente';
 import { BuscarPaciente } from './BuscarPaciente';
 import { BitacoraPaciente } from './BitacoraPaciente';
 import { VerificarDisponibilidad } from './VerificarDisponibilidad';
+import { ProgramarCita } from './ProgramarCita';
 import { NotificationCenter } from './NotificationCenter';
 import { AdminSolicitudes } from './AdminSolicitudes';
 import { toast } from 'sonner';
@@ -24,7 +25,7 @@ interface DashboardProps {
 }
 
 export type ViewType = 'inicio' | 'agendar' | 'citas' | 'historial' | 'perfil' | 
-  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda' | 'admin-solicitudes';
+  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda' | 'programar-cita' | 'admin-solicitudes';
 
 export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
   const [currentView, setCurrentView] = useState<ViewType>(
@@ -108,6 +109,8 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
         return <BitacoraPaciente pacienteId={selectedPacienteId} />;
       case 'mi-agenda':
         return <VerificarDisponibilidad onNavigate={handleNavigate} />;
+      case 'programar-cita':
+        return <ProgramarCita onNavigate={handleNavigate} />;
       case 'admin-solicitudes':
         return <AdminSolicitudes />;
       default:

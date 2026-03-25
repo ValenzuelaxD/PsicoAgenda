@@ -44,6 +44,7 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
   const psicologoMenuItems = [
     { id: 'inicio' as ViewType, label: 'Inicio', icon: Home },
     { id: 'mi-agenda' as ViewType, label: 'Mi Agenda', icon: CalendarDays },
+    { id: 'programar-cita' as ViewType, label: 'Programar Cita', icon: Calendar },
     { id: 'registro-paciente' as ViewType, label: 'Registrar Paciente', icon: Users },
     { id: 'buscar-paciente' as ViewType, label: 'Buscar Paciente', icon: Search },
     { id: 'citas' as ViewType, label: 'Gestionar Citas', icon: CalendarCheck },
