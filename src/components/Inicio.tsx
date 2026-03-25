@@ -422,31 +422,37 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-3">
-              {psicologoData.citasHoy.map((cita: any) => (
-                <div
-                  key={cita.citaid}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gradient-to-r from-slate-700/50 to-teal-900/20 rounded-xl hover:shadow-md transition-all border border-teal-500/20"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                      <p className="text-white text-sm">{formatearHora12(extraerFechaHoraLocal(cita.fechahora).hora)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-100 text-sm sm:text-base">{`${cita.paciente_nombre} ${cita.paciente_apellido}`}</p>
-                      <p className="text-slate-300 text-sm">{cita.modalidad}</p>
-                      <p className="text-slate-400 text-sm">{cita.duracionmin} min</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <Button variant="outline" size="sm" onClick={() => onNavigate('bitacora')} className="border-violet-500/50 text-violet-300 hover:bg-violet-500/20">
-                      Ver Bitácora
-                    </Button>
-                    <Button size="sm" onClick={() => onNavigate('citas')} className="bg-teal-600 hover:bg-teal-700">
-                      Gestionar
-                    </Button>
-                  </div>
+              {psicologoData.citasHoy.length === 0 ? (
+                <div className="rounded-xl border border-slate-700 bg-slate-900/30 px-4 py-8 text-center">
+                  <p className="text-slate-300">Hoy no tienes citas agendadas</p>
                 </div>
-              ))}
+              ) : (
+                psicologoData.citasHoy.map((cita: any) => (
+                  <div
+                    key={cita.citaid}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gradient-to-r from-slate-700/50 to-teal-900/20 rounded-xl hover:shadow-md transition-all border border-teal-500/20"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                        <p className="text-white text-sm">{formatearHora12(extraerFechaHoraLocal(cita.fechahora).hora)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-100 text-sm sm:text-base">{`${cita.paciente_nombre} ${cita.paciente_apellido}`}</p>
+                        <p className="text-slate-300 text-sm">{cita.modalidad}</p>
+                        <p className="text-slate-400 text-sm">{cita.duracionmin} min</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                      <Button variant="outline" size="sm" onClick={() => onNavigate('bitacora')} className="border-violet-500/50 text-violet-300 hover:bg-violet-500/20">
+                        Ver Bitácora
+                      </Button>
+                      <Button size="sm" onClick={() => onNavigate('citas')} className="bg-teal-600 hover:bg-teal-700">
+                        Gestionar
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
