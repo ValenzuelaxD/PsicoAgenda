@@ -10,7 +10,7 @@ import { CalendarDays, Clock3, Pencil, Plus, Save, Trash2, Eye, ChevronDown, Che
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
-import { Agenda } from '../utils/types';
+import { Agenda, Cita } from '../utils/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
@@ -19,9 +19,11 @@ interface VerificarDisponibilidadProps {
 }
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'] as const;
+const DIAS_SEMANA_POR_INDICE = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'] as const;
 
 export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadProps) {
   const [agendas, setAgendas] = useState<Agenda[]>([]);
+  const [citas, setCitas] = useState<Cita[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [agendaEnEdicion, setAgendaEnEdicion] = useState<Agenda | null>(null);
@@ -43,6 +45,37 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
   });
 
   const normalizarHora = (hora: string) => String(hora || '').slice(0, 5);
+
+  const formatearFechaLocal = (fecha: Date) => {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const extraerFechaHoraLocal = (fechaHora: string) => {
+    const valor = String(fechaHora || '').trim();
+    const matchLocal = valor.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
+
+    if (matchLocal) {
+      return { fecha: matchLocal[1], hora: matchLocal[2] };
+    }
+
+    const date = new Date(valor);
+    if (!Number.isNaN(date.getTime())) {
+      return {
+        fecha: formatearFechaLocal(date),
+        hora: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+      };
+    }
+
+    return { fecha: '', hora: '' };
+  };
+
+  const esCitaBloqueante = (estado?: string) => {
+    const estadoNormalizado = String(estado || '').trim().toLowerCase();
+    return estadoNormalizado !== 'cancelada' && estadoNormalizado !== 'cancelado';
+  };
 
   const calcularDuracion = (horainicio: string, horafin: string) => {
     const [inicioHora, inicioMin] = normalizarHora(horainicio).split(':').map(Number);
@@ -82,14 +115,24 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
     setLoading(true);
 
     try {
-      const response = await apiFetch(API_ENDPOINTS.AGENDAS);
-      const data = await response.json();
+      const [responseAgenda, responseCitas] = await Promise.all([
+        apiFetch(API_ENDPOINTS.AGENDAS),
+        apiFetch(API_ENDPOINTS.CITAS),
+      ]);
+      const dataAgenda = await responseAgenda.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'No fue posible cargar tus horarios.');
+      if (!responseAgenda.ok) {
+        throw new Error(dataAgenda.message || 'No fue posible cargar tus horarios.');
       }
 
-      setAgendas(Array.isArray(data) ? data : []);
+      setAgendas(Array.isArray(dataAgenda) ? dataAgenda : []);
+
+      if (responseCitas.ok) {
+        const dataCitas = await responseCitas.json();
+        setCitas(Array.isArray(dataCitas) ? dataCitas : []);
+      } else {
+        setCitas([]);
+      }
     } catch (error: any) {
       toast.error(error.message || 'Error al cargar tu agenda.');
     } finally {
@@ -109,6 +152,52 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
       return acc;
     }, {});
   }, [agendas]);
+
+  const previewDisponibilidad = useMemo(() => {
+    const hoy = new Date();
+    const horaActual = `${String(hoy.getHours()).padStart(2, '0')}:${String(hoy.getMinutes()).padStart(2, '0')}`;
+    const fechaHoy = formatearFechaLocal(hoy);
+
+    const ocupados = new Set(
+      citas
+        .filter((cita) => esCitaBloqueante(cita.estado))
+        .map((cita) => {
+          const { fecha, hora } = extraerFechaHoraLocal(cita.fechahora);
+          return fecha && hora ? `${fecha}|${hora}` : '';
+        })
+        .filter(Boolean)
+    );
+
+    const resultados: Array<{ fecha: string; etiqueta: string; dia: string; slots: string[] }> = [];
+
+    for (let offset = 0; offset < 14; offset += 1) {
+      const fecha = new Date(hoy);
+      fecha.setDate(hoy.getDate() + offset);
+      const fechaFormato = formatearFechaLocal(fecha);
+      const diaSemana = DIAS_SEMANA_POR_INDICE[fecha.getDay()];
+
+      const slotsDia = agendas
+        .filter((agenda) => agenda.disponible && agenda.diasemana === diaSemana)
+        .flatMap((agenda) => generarSlotsDisponibles(agenda.horainicio, agenda.horafin));
+
+      const slotsDisponibles = Array.from(new Set(slotsDia))
+        .filter((slot) => !(fechaFormato === fechaHoy && slot <= horaActual))
+        .filter((slot) => !ocupados.has(`${fechaFormato}|${slot}`))
+        .sort();
+
+      if (slotsDisponibles.length > 0) {
+        const [year, month, day] = fechaFormato.split('-');
+        resultados.push({
+          fecha: fechaFormato,
+          etiqueta: `${diaSemana} ${day}/${month}/${year}`,
+          dia: diaSemana,
+          slots: slotsDisponibles,
+        });
+      }
+    }
+
+    return resultados;
+  }, [agendas, citas]);
 
   const totalBloques = agendas.length;
   const bloquesDisponibles = agendas.filter((agenda) => agenda.disponible).length;
@@ -479,23 +568,22 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                     <p className="text-slate-100 font-medium mb-3">Vista del Paciente - Próximas Citas Disponibles</p>
                     {totalBloques === 0 ? (
                       <p className="text-slate-400 text-sm">Sin horarios configurados aún</p>
+                    ) : previewDisponibilidad.length === 0 ? (
+                      <p className="text-slate-400 text-sm">No hay horarios libres en los próximos 14 días.</p>
                     ) : (
                       <div className="space-y-2">
-                        {agendas.filter(a => a.disponible).map((agenda) => {
-                          const slots = generarSlotsDisponibles(agenda.horainicio, agenda.horafin);
-                          return slots.length > 0 && (
-                            <div key={agenda.agendaid} className="bg-slate-900/50 rounded-lg p-3">
-                              <p className="text-slate-300 font-medium text-sm mb-2">{agenda.diasemana}</p>
+                        {previewDisponibilidad.map((disponibilidad) => (
+                            <div key={disponibilidad.fecha} className="bg-slate-900/50 rounded-lg p-3">
+                              <p className="text-slate-300 font-medium text-sm mb-2">{disponibilidad.etiqueta}</p>
                               <div className="flex flex-wrap gap-2">
-                                {slots.map((slot) => (
+                                {disponibilidad.slots.map((slot) => (
                                   <div key={slot} className="px-3 py-1 bg-teal-600/30 border border-teal-500/50 rounded text-teal-200 text-xs font-medium">
                                     {slot}
                                   </div>
                                 ))}
                               </div>
                             </div>
-                          );
-                        })}
+                        ))}
                       </div>
                     )}
                   </div>
