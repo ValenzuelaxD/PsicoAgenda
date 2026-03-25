@@ -28,9 +28,8 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const inicioMesSiguiente = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
-  const finMesSiguiente = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0);
-  finMesSiguiente.setHours(23, 59, 59, 999);
+  const finMesActual = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  finMesActual.setHours(23, 59, 59, 999);
 
   const [date, setDate] = useState<Date>(new Date());
   const [pacienteId, setPacienteId] = useState('');
@@ -49,9 +48,8 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
 
   const clampMonth = (monthDate: Date) => {
     const normalizado = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-    if (normalizado < inicioMesActual) return inicioMesActual;
-    if (normalizado > inicioMesSiguiente) return inicioMesSiguiente;
-    return normalizado;
+    if (normalizado.getTime() !== inicioMesActual.getTime()) return inicioMesActual;
+    return inicioMesActual;
   };
 
   const fechaSeleccionada = useMemo(() => formatDate(date), [date]);
@@ -77,7 +75,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
       return false;
     }
 
-    if (candidateDate > finMesSiguiente) {
+    if (candidateDate > finMesActual) {
       return false;
     }
 
@@ -167,8 +165,8 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
           mesCalendario.getFullYear() === inicioMesActual.getFullYear() &&
           mesCalendario.getMonth() === inicioMesActual.getMonth();
 
-        if (Object.keys(mapaDisponibilidad).length === 0 && esMesActualVisualizado) {
-          setMesCalendario(inicioMesSiguiente);
+        if (!esMesActualVisualizado) {
+          setMesCalendario(inicioMesActual);
         }
       } catch {
         setDisponibilidadPorFecha({});
@@ -193,7 +191,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
             return false;
           }
           const fechaDate = new Date(`${fecha}T00:00:00`);
-          return fechaDate <= finMesSiguiente;
+          return fechaDate <= finMesActual;
         });
 
       if (primeraFecha) {
@@ -420,7 +418,8 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                   month={mesCalendario}
                   onMonthChange={manejarCambioMes}
                   fromMonth={inicioMesActual}
-                  toMonth={inicioMesSiguiente}
+                  toMonth={inicioMesActual}
+                  disableNavigation
                   className="rounded-md border w-full max-w-full"
                   disabled={(candidateDate: Date) => !esFechaDisponible(candidateDate)}
                   modifiers={{
