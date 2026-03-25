@@ -34,6 +34,7 @@ interface HistorialPaciente {
     totalSesiones: number;
     progresoGeneral: number;
     ultimaSesion: string;
+    ultimaSesionFecha: string | null;
     tiempoEnTerapia: string;
   };
   objetivosTerapeuticos: Array<{ nombre: string; progreso: number }>;
@@ -45,6 +46,23 @@ const obtenerNombreCompletoPaciente = (paciente: Partial<Paciente> | null | unde
     .filter((valor) => Boolean(valor && String(valor).trim()))
     .join(' ')
     .trim();
+};
+
+const formatearUltimaSesionCompacta = (fechaISO: string | null | undefined) => {
+  if (!fechaISO) {
+    return { diaMes: 'N/A', anio: '' };
+  }
+
+  const fecha = new Date(fechaISO);
+  if (Number.isNaN(fecha.getTime())) {
+    return { diaMes: 'N/A', anio: '' };
+  }
+
+  const diaMes = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+  const anioActual = new Date().getFullYear();
+  const anio = fecha.getFullYear() === anioActual ? '' : String(fecha.getFullYear());
+
+  return { diaMes, anio };
 };
 
 export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
@@ -165,6 +183,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                 totalSesiones,
                 progresoGeneral,
                 ultimaSesion,
+                ultimaSesionFecha: sesiones.length > 0 ? sesiones[0].fechaentrada : null,
                 tiempoEnTerapia,
               },
               objetivosTerapeuticos: [],
@@ -258,6 +277,8 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
       : (pacienteSeleccionado?.ultimaCita
           ? new Date(pacienteSeleccionado.ultimaCita).toLocaleDateString('es-ES')
           : 'N/A');
+
+  const ultimaSesionModal = formatearUltimaSesionCompacta(historialActual?.estadisticas?.ultimaSesionFecha);
 
 
   return (
@@ -488,9 +509,14 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                               <CardContent className="pt-6">
                                 <div className="text-center">
                                   <p className="text-slate-300 mb-1">Última Sesión</p>
-                                  <p className="text-violet-400 text-base sm:text-lg font-semibold leading-snug text-center break-all max-w-full px-1">
-                                    {historialActual.estadisticas.ultimaSesion}
+                                  <p className="text-violet-400 text-lg sm:text-xl font-semibold leading-tight text-center px-1">
+                                    {ultimaSesionModal.diaMes}
                                   </p>
+                                  {ultimaSesionModal.anio && (
+                                    <p className="text-violet-300 text-sm font-medium leading-tight text-center">
+                                      {ultimaSesionModal.anio}
+                                    </p>
+                                  )}
                                 </div>
                               </CardContent>
                             </Card>
