@@ -488,7 +488,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                               <CardContent className="pt-6">
                                 <div className="text-center">
                                   <p className="text-slate-300 mb-1">Última Sesión</p>
-                                  <p className="text-violet-400 text-xl sm:text-2xl font-semibold leading-tight text-center break-words px-1">
+                                  <p className="text-violet-400 text-base sm:text-lg font-semibold leading-snug text-center break-all max-w-full px-1">
                                     {historialActual.estadisticas.ultimaSesion}
                                   </p>
                                 </div>
