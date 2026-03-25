@@ -207,7 +207,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar paciente..."
-              className="h-11 pl-12 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
+              className="h-11 pl-14 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
             />
           </div>
 
