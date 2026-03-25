@@ -43,7 +43,9 @@ const getDisponibilidad = async (req, res) => {
     const citasAgendadasQuery = `
       SELECT fechahora, duracionmin
       FROM citas
-      WHERE psicologaid = $1 AND DATE(fechahora) = $2 AND estado <> 'Cancelada'
+      WHERE psicologaid = $1
+        AND DATE(fechahora) = $2
+        AND COALESCE(LOWER(TRIM(estado)), '') NOT IN ('cancelada', 'cancelado')
     `;
     const citasAgendadasResult = await db.query(citasAgendadasQuery, [id, fecha]);
     const citasAgendadas = citasAgendadasResult.rows;

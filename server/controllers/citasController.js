@@ -59,7 +59,7 @@ const validarDisponibilidad = async ({ psicologaId, fechaHora, duracionMin, cita
       FROM citas
       WHERE psicologaid = $1
         AND DATE(fechahora) = $2
-        AND estado <> 'Cancelada'
+        AND COALESCE(LOWER(TRIM(estado)), '') NOT IN ('cancelada', 'cancelado')
         ${excluirClause}
     `,
     params
@@ -504,7 +504,9 @@ const getMiDisponibilidad = async (req, res) => {
       `
         SELECT fechahora, duracionmin
         FROM citas
-        WHERE psicologaid = $1 AND DATE(fechahora) = $2 AND estado <> 'Cancelada'
+        WHERE psicologaid = $1
+          AND DATE(fechahora) = $2
+          AND COALESCE(LOWER(TRIM(estado)), '') NOT IN ('cancelada', 'cancelado')
       `,
       [psicologaId, fecha]
     );
