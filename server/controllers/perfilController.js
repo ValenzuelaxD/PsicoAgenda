@@ -207,6 +207,29 @@ const actualizarMiPerfil = async (req, res) => {
     if (rol === 'psicologa') {
       await db.query(
         `
+        INSERT INTO pacientes (
+          usuarioid,
+          fechanacimiento,
+          genero,
+          direccion
+        )
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (usuarioid)
+        DO UPDATE SET
+          fechanacimiento = EXCLUDED.fechanacimiento,
+          genero = EXCLUDED.genero,
+          direccion = EXCLUDED.direccion
+        `,
+        [
+          usuarioId,
+          fechaNacimiento || null,
+          genero || null,
+          direccion || null
+        ]
+      );
+
+      await db.query(
+        `
         INSERT INTO psicologas (
           usuarioid,
           cedulaprofesional,
