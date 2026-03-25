@@ -3,6 +3,9 @@ import { toast } from 'sonner';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
 interface SolicitudRegistroPsicologa {
@@ -24,6 +27,8 @@ export function AdminSolicitudes() {
   const [loading, setLoading] = useState(true);
   const [procesandoId, setProcesandoId] = useState<number | null>(null);
   const [solicitudes, setSolicitudes] = useState<SolicitudRegistroPsicologa[]>([]);
+  const [solicitudRechazoId, setSolicitudRechazoId] = useState<number | null>(null);
+  const [motivoRechazo, setMotivoRechazo] = useState('');
 
   const cargarSolicitudes = async () => {
     try {
@@ -81,8 +86,7 @@ export function AdminSolicitudes() {
     }
   };
 
-  const rechazarSolicitud = async (solicitudId: number) => {
-    const motivo = window.prompt('Motivo del rechazo (obligatorio):', '');
+  const rechazarSolicitud = async (solicitudId: number, motivo: string) => {
     if (!motivo || !motivo.trim()) {
       toast.error('Debes capturar un motivo para rechazar la solicitud.');
       return;
@@ -111,11 +115,32 @@ export function AdminSolicitudes() {
     }
   };
 
+  const abrirDialogoRechazo = (solicitudId: number) => {
+    setSolicitudRechazoId(solicitudId);
+    setMotivoRechazo('');
+  };
+
+  const cerrarDialogoRechazo = () => {
+    setSolicitudRechazoId(null);
+    setMotivoRechazo('');
+  };
+
+  const confirmarRechazo = async () => {
+    if (!solicitudRechazoId) return;
+
+    await rechazarSolicitud(solicitudRechazoId, motivoRechazo);
+    if (motivoRechazo.trim()) {
+      cerrarDialogoRechazo();
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div>
         <h1 className="text-slate-100 mb-1">Solicitudes de Psicologas</h1>
-        <p className="text-slate-300">Revisa, aprueba o rechaza las altas pendientes.</p>
+        <p className="text-slate-300">
+          Revisa, <span className="text-teal-300">aprueba</span> o <span className="text-rose-300">rechaza</span> las altas pendientes.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -133,7 +158,7 @@ export function AdminSolicitudes() {
         </Card>
         <Card className="bg-slate-800/50 border-rose-500/30">
           <CardContent className="pt-6">
-            <p className="text-slate-400 text-sm">Rechazadas</p>
+            <p className="text-rose-300 text-sm">Rechazadas</p>
             <p className="text-slate-100 text-2xl">{resumen.rechazadas}</p>
           </CardContent>
         </Card>
@@ -208,9 +233,9 @@ export function AdminSolicitudes() {
                       </Button>
                       <Button
                         type="button"
-                        onClick={() => rechazarSolicitud(solicitud.solicitudid)}
+                        onClick={() => abrirDialogoRechazo(solicitud.solicitudid)}
                         disabled={procesandoId === solicitud.solicitudid}
-                        className="bg-rose-600 hover:bg-rose-700 text-white"
+                        className="bg-rose-600 hover:bg-rose-700 text-rose-50 font-semibold"
                       >
                         Rechazar
                       </Button>
@@ -222,6 +247,47 @@ export function AdminSolicitudes() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={solicitudRechazoId !== null} onOpenChange={(open) => !open && cerrarDialogoRechazo()}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-slate-100 sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-rose-300">Rechazar Solicitud</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Captura el motivo del rechazo. Este motivo quedará registrado para auditoría.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="motivo-rechazo" className="text-slate-200">Motivo</Label>
+            <Textarea
+              id="motivo-rechazo"
+              value={motivoRechazo}
+              onChange={(event) => setMotivoRechazo(event.target.value)}
+              placeholder="Ejemplo: La cédula no coincide con la documentación enviada."
+              className="min-h-28 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={cerrarDialogoRechazo}
+              className="border-slate-600 text-slate-200 hover:bg-slate-700"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmarRechazo}
+              disabled={!motivoRechazo.trim() || (solicitudRechazoId !== null && procesandoId === solicitudRechazoId)}
+              className="bg-rose-600 hover:bg-rose-700 text-rose-50 font-semibold"
+            >
+              Confirmar Rechazo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
