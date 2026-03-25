@@ -329,8 +329,13 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   }
 
   const ahora = new Date();
-  const citasProximas = citas.filter(c => new Date(c.fechahora) >= ahora);
-  const citasPasadas = citas.filter(c => new Date(c.fechahora) < ahora);
+  const citasProximas = citas
+    .filter((c) => new Date(c.fechahora) >= ahora)
+    .sort((a, b) => new Date(a.fechahora).getTime() - new Date(b.fechahora).getTime());
+
+  const citasPasadas = citas
+    .filter((c) => new Date(c.fechahora) < ahora)
+    .sort((a, b) => new Date(b.fechahora).getTime() - new Date(a.fechahora).getTime());
   const citaConNotas = citasPasadas.find(c => c.citaid === citaNotasVisibles);
   const esMismoMes = (fecha: Date, referencia: Date) => fecha.getMonth() === referencia.getMonth() && fecha.getFullYear() === referencia.getFullYear();
   const esMismoDia = (fecha: Date, referencia: Date) => fecha.toDateString() === referencia.toDateString();
