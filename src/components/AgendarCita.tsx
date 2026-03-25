@@ -68,6 +68,22 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
     return horariosDisponibles.filter((horario: string) => horario > horaActual);
   };
 
+  const esFechaSeleccionable = (candidate: Date) => {
+    if (candidate < hoy) {
+      return false;
+    }
+
+    if (!psicologo) {
+      return true;
+    }
+
+    if (loadingCalendario) {
+      return false;
+    }
+
+    return fechasConDisponibilidadSet.has(formatearFechaLocal(candidate));
+  };
+
   const seleccionarProximoHorario = (fecha: string, horario: string) => {
     const siguienteFecha = new Date(`${fecha}T00:00:00`);
     setDate(siguienteFecha);
@@ -233,6 +249,17 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
 
     fetchDisponibilidadMes();
   }, [psicologo, mesCalendario]);
+
+  useEffect(() => {
+    if (!date || !psicologo || loadingCalendario) {
+      return;
+    }
+
+    if (!esFechaSeleccionable(date)) {
+      setDate(undefined);
+      setHora('');
+    }
+  }, [date, psicologo, loadingCalendario, fechasConDisponibilidadSet]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -462,7 +489,20 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                   <Calendar
                                     mode="single"
                                     selected={date}
-                                    onSelect={setDate}
+                                    onSelect={(nextDate) => {
+                                      if (!nextDate) {
+                                        setDate(undefined);
+                                        setHora('');
+                                        return;
+                                      }
+
+                                      if (!esFechaSeleccionable(nextDate)) {
+                                        return;
+                                      }
+
+                                      setDate(nextDate);
+                                      setHora('');
+                                    }}
                                     month={mesCalendario}
                                     onMonthChange={setMesCalendario}
                                     className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
@@ -472,21 +512,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     modifiersClassNames={{
                                       disponible: 'ring-1 ring-teal-400/40 bg-teal-500/10 text-teal-200',
                                     }}
-                                    disabled={(candidate) => {
-                                      if (candidate < hoy) {
-                                        return true;
-                                      }
-
-                                      if (!psicologo) {
-                                        return false;
-                                      }
-
-                                      if (loadingCalendario) {
-                                        return true;
-                                      }
-
-                                      return !fechasConDisponibilidadSet.has(formatearFechaLocal(candidate));
-                                    }}
+                                    disabled={(candidate) => !esFechaSeleccionable(candidate)}
                                   />
                                   {psicologo && loadingCalendario && (
                                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-xl bg-slate-900/70 backdrop-blur-[1px]">
