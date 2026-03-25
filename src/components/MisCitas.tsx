@@ -156,6 +156,32 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
   const formatearHoraInput = (fechaHora: string) => extraerFechaHoraLocal(fechaHora).hora;
 
+  const formatearFechaVisual = (fechaHora: string) => {
+    const fecha = formatearFechaInput(fechaHora);
+    if (!fecha) {
+      return '--/--/----';
+    }
+
+    const [year, month, day] = fecha.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatearHoraVisual = (fechaHora: string) => {
+    const hora = formatearHoraInput(fechaHora);
+    if (!hora) {
+      return '--:--';
+    }
+
+    const [hourRaw, minuteRaw] = hora.split(':').map(Number);
+    if (Number.isNaN(hourRaw) || Number.isNaN(minuteRaw)) {
+      return hora;
+    }
+
+    const sufijo = hourRaw >= 12 ? 'p.m.' : 'a.m.';
+    const hour12 = ((hourRaw + 11) % 12) + 1;
+    return `${hour12}:${String(minuteRaw).padStart(2, '0')}:00 ${sufijo}`;
+  };
+
   const actualizarFechaHoraCita = (cita: Cita, fecha: string, hora: string) => {
     // Mantener formato local y evitar conversiones a UTC mientras el usuario edita.
     return { ...cita, fechahora: `${fecha}T${hora}:00` };
@@ -373,11 +399,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
-                          <span>{new Date(cita.fechahora).toLocaleDateString()}</span>
+                          <span>{formatearFechaVisual(cita.fechahora)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
-                          <span>{new Date(cita.fechahora).toLocaleTimeString()}</span>
+                          <span>{formatearHoraVisual(cita.fechahora)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
@@ -454,11 +480,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
-                          <span>{new Date(cita.fechahora).toLocaleDateString()}</span>
+                          <span>{formatearFechaVisual(cita.fechahora)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
-                          <span>{new Date(cita.fechahora).toLocaleTimeString()}</span>
+                          <span>{formatearHoraVisual(cita.fechahora)}</span>
                         </div>
                       </div>
                     </div>
@@ -741,11 +767,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Calendar className="w-4 h-4" />
-                                  <span>{new Date(cita.fechahora).toLocaleDateString()}</span>
+                                  <span>{formatearFechaVisual(cita.fechahora)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Clock className="w-4 h-4" />
-                                  <span>{new Date(cita.fechahora).toLocaleTimeString()}</span>
+                                  <span>{formatearHoraVisual(cita.fechahora)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <MapPin className="w-4 h-4" />
@@ -978,11 +1004,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Calendar className="w-4 h-4" />
-                                  <span>{new Date(cita.fechahora).toLocaleDateString()}</span>
+                                  <span>{formatearFechaVisual(cita.fechahora)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Clock className="w-4 h-4" />
-                                  <span>{new Date(cita.fechahora).toLocaleTimeString()}</span>
+                                  <span>{formatearHoraVisual(cita.fechahora)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <MapPin className="w-4 h-4" />
@@ -1086,11 +1112,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 <div className="flex items-center gap-3 text-slate-300 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-teal-400 stroke-2" />
-                    <span className="text-sm">{new Date(citaConNotas.fechahora).toLocaleDateString()}</span>
+                    <span className="text-sm">{formatearFechaVisual(citaConNotas.fechahora)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-teal-400 stroke-2" />
-                    <span className="text-sm">{new Date(citaConNotas.fechahora).toLocaleTimeString()}</span>
+                    <span className="text-sm">{formatearHoraVisual(citaConNotas.fechahora)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-slate-300">
