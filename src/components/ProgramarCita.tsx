@@ -243,20 +243,20 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-teal-50 to-violet-50 border-teal-200 shadow-lg">
+            <Card className="bg-gradient-to-br from-teal-900/35 to-violet-900/35 border-teal-500/40 backdrop-blur-sm shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-800">
-                  <CalendarIcon className="w-5 h-5 stroke-2 text-teal-600" />
+                <CardTitle className="flex items-center gap-2 text-slate-100">
+                  <CalendarIcon className="w-5 h-5 stroke-2 text-teal-400" />
                   Resumen
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-slate-800">
-                <p><span className="font-medium">Paciente:</span> {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
-                <p><span className="font-medium">Fecha:</span> {date.toLocaleDateString('es-ES')}</p>
-                <p><span className="font-medium">Hora:</span> {hora || 'Pendiente'}</p>
-                <p><span className="font-medium">Duración:</span> {duracion} min</p>
-                <p><span className="font-medium">Modalidad:</span> {modalidad}</p>
-                <p><span className="font-medium">Horarios libres:</span> {loadingHorarios ? 'Consultando...' : horariosDisponibles.length}</p>
+              <CardContent className="space-y-2 text-slate-200">
+                <p><span className="font-medium text-teal-300">Paciente:</span> {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
+                <p><span className="font-medium text-violet-300">Fecha:</span> {date.toLocaleDateString('es-ES')}</p>
+                <p><span className="font-medium text-teal-300">Hora:</span> {hora || 'Pendiente'}</p>
+                <p><span className="font-medium text-violet-300">Duración:</span> {duracion} min</p>
+                <p><span className="font-medium text-teal-300">Modalidad:</span> {modalidad}</p>
+                <p><span className="font-medium text-violet-300">Horarios libres:</span> {loadingHorarios ? 'Consultando...' : horariosDisponibles.length}</p>
               </CardContent>
             </Card>
           </div>
