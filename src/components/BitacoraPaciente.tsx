@@ -207,7 +207,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar paciente..."
-              className="h-11 pl-9 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
+              className="h-11 pl-11 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
             />
           </div>
 
@@ -229,8 +229,8 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   setEditando(false);
                 }}
               >
-                <CardContent className="pt-3 pb-3">
-                  <div className="flex items-center gap-3">
+                <CardContent className="py-4">
+                  <div className="flex min-h-10 items-center gap-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-white stroke-2" />
                     </div>
