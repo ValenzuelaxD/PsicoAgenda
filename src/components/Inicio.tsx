@@ -20,6 +20,71 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const extraerFechaHoraLocal = (fechaHora?: string) => {
+    const valor = String(fechaHora || '').trim();
+    const matchLocal = valor.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
+
+    if (matchLocal) {
+      return { fecha: matchLocal[1], hora: matchLocal[2] };
+    }
+
+    const date = new Date(valor);
+    if (!Number.isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = `${date.getMonth() + 1}`.padStart(2, '0');
+      const day = `${date.getDate()}`.padStart(2, '0');
+      const hour = `${date.getHours()}`.padStart(2, '0');
+      const minute = `${date.getMinutes()}`.padStart(2, '0');
+      return { fecha: `${year}-${month}-${day}`, hora: `${hour}:${minute}` };
+    }
+
+    return { fecha: '', hora: '' };
+  };
+
+  const formatearHora12 = (hora: string) => {
+    const [hourRaw, minuteRaw] = hora.split(':').map(Number);
+    if (Number.isNaN(hourRaw) || Number.isNaN(minuteRaw)) {
+      return hora;
+    }
+
+    const sufijo = hourRaw >= 12 ? 'p.m.' : 'a.m.';
+    const hour12 = ((hourRaw + 11) % 12) + 1;
+    return `${hour12}:${String(minuteRaw).padStart(2, '0')}:00 ${sufijo}`;
+  };
+
+  const formatearFechaVisual = (fechaHora?: string) => {
+    const { fecha } = extraerFechaHoraLocal(fechaHora);
+    if (!fecha) {
+      return 'Sin fecha';
+    }
+    const [year, month, day] = fecha.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatearFechaHoraVisual = (fechaHora?: string) => {
+    const { fecha, hora } = extraerFechaHoraLocal(fechaHora);
+    if (!fecha || !hora) {
+      return 'Sin fecha';
+    }
+    return `${formatearFechaVisual(fechaHora)}, ${formatearHora12(hora)}`;
+  };
+
+  const formatearResumenProximaCita = (fechaHora?: string) => {
+    const { fecha, hora } = extraerFechaHoraLocal(fechaHora);
+    if (!fecha || !hora) {
+      return 'Sin fecha';
+    }
+
+    const dateLocal = new Date(`${fecha}T${hora}:00`);
+    const encabezado = dateLocal.toLocaleString('es-ES', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+
+    return `${encabezado}, ${hora}`;
+  };
+
   useEffect(() => {
     if (userType === 'admin') {
       setLoading(false);
@@ -126,7 +191,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-400 mb-1">Próxima Cita</p>
-                  <p className="text-slate-100">{pacienteData.proximaCita ? new Date(pacienteData.proximaCita).toLocaleString() : 'No hay citas'}</p>
+                  <p className="text-slate-100">{pacienteData.proximaCita ? formatearFechaHoraVisual(pacienteData.proximaCita) : 'No hay citas'}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
                   <Calendar className="w-6 h-6 text-white stroke-2" />
@@ -154,7 +219,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-400 mb-1">Última Sesión</p>
-                  <p className="text-slate-100">{pacienteData.ultimaSesion ? new Date(pacienteData.ultimaSesion).toLocaleDateString() : 'No hay sesiones'}</p>
+                  <p className="text-slate-100">{pacienteData.ultimaSesion ? formatearFechaVisual(pacienteData.ultimaSesion) : 'No hay sesiones'}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center shadow-lg">
                   <Clock className="w-6 h-6 text-slate-200 stroke-2" />
@@ -191,13 +256,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                             </p>
                             <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
                               <Clock className="w-3 h-3" />
-                              <span>{new Date(cita.fechahora).toLocaleString('es-ES', {
-                                weekday: 'short',
-                                day: 'numeric',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}</span>
+                              <span>{formatearResumenProximaCita(cita.fechahora)}</span>
                               <span>•</span>
                               <span>{cita.modalidad}</span>
                             </div>
@@ -360,7 +419,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                      <p className="text-white text-sm">{new Date(cita.fechahora).toLocaleTimeString()}</p>
+                      <p className="text-white text-sm">{formatearHora12(extraerFechaHoraLocal(cita.fechahora).hora)}</p>
                     </div>
                     <div>
                       <p className="text-slate-100 text-sm sm:text-base">{`${cita.paciente_nombre} ${cita.paciente_apellido}`}</p>
