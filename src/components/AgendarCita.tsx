@@ -198,6 +198,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
 
     const fetchDisponibilidadMes = async () => {
       setLoadingCalendario(true);
+      setFechasConDisponibilidad([]);
 
       try {
         const year = mesCalendario.getFullYear();
@@ -457,7 +458,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     </p>
                                   )}
                                 </div>
-                                <div className="p-4 sm:p-6 bg-slate-900/30">
+                                <div className="p-4 sm:p-6 bg-slate-900/30 relative">
                                   <Calendar
                                     mode="single"
                                     selected={date}
@@ -480,9 +481,20 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                         return false;
                                       }
 
+                                      if (loadingCalendario) {
+                                        return true;
+                                      }
+
                                       return !fechasConDisponibilidadSet.has(formatearFechaLocal(candidate));
                                     }}
                                   />
+                                  {psicologo && loadingCalendario && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-xl bg-slate-900/70 backdrop-blur-[1px]">
+                                      <div className="rounded-md border border-teal-500/40 bg-slate-800/90 px-4 py-2 text-sm text-teal-200">
+                                        Cargando disponibilidad...
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="mt-3 flex flex-wrap gap-2 text-xs">
                                     <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
                                       <span className="h-2 w-2 rounded-full bg-teal-400" />
