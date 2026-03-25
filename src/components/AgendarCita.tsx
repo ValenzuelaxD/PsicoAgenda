@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Calendar } from './ui/calendar';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
-import { Check, Calendar as CalendarIcon } from 'lucide-react';
+import { Check, Calendar as CalendarIcon, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { motion, AnimatePresence } from 'motion/react';
@@ -38,6 +38,52 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const [tiposCita, setTiposCita] = useState<string[]>([]);
   const [loadingInicial, setLoadingInicial] = useState(true);
   const [loadingHorarios, setLoadingHorarios] = useState(false);
+  const [loadingProximos, setLoadingProximos] = useState(false);
+  const [loadingCalendario, setLoadingCalendario] = useState(false);
+  const [mesCalendario, setMesCalendario] = useState<Date>(new Date());
+  const [proximosHorarios, setProximosHorarios] = useState<Array<{ fecha: string; etiqueta: string; horarios: string[] }>>([]);
+  const [fechasConDisponibilidad, setFechasConDisponibilidad] = useState<string[]>([]);
+
+  const fechasConDisponibilidadSet = useMemo(() => new Set(fechasConDisponibilidad), [fechasConDisponibilidad]);
+
+  const obtenerFechasProximas = (dias = 7) => {
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+
+    return Array.from({ length: dias }, (_, index) => {
+      const fecha = new Date(base);
+      fecha.setDate(base.getDate() + index);
+      return fecha;
+    });
+  };
+
+  const filtrarHorariosPasados = (fechaSeleccionada: string, horariosDisponibles: string[]) => {
+    const esHoy = formatearFechaLocal(new Date()) === fechaSeleccionada;
+    if (!esHoy) {
+      return horariosDisponibles;
+    }
+
+    const ahora = new Date();
+    const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+    return horariosDisponibles.filter((horario: string) => horario > horaActual);
+  };
+
+  const seleccionarProximoHorario = (fecha: string, horario: string) => {
+    const siguienteFecha = new Date(`${fecha}T00:00:00`);
+    setDate(siguienteFecha);
+    setHora(horario);
+  };
+
+  const usarPrimerDisponible = () => {
+    if (proximosHorarios.length === 0) {
+      toast.error('No hay horarios próximos disponibles para este profesional.');
+      return;
+    }
+
+    const primerDia = proximosHorarios[0];
+    seleccionarProximoHorario(primerDia.fecha, primerDia.horarios[0]);
+    toast.success('Se seleccionó el primer horario disponible.');
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -74,21 +120,12 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
           const response = await apiFetch(`${API_ENDPOINTS.PSICOLOGAS}/${psicologo}/disponibilidad?fecha=${fechaSeleccionada}`);
           if (response.ok) {
             const data = await response.json();
-            
-            // Filtrar horarios que ya han pasado si es hoy
-            let horariosValidos = data;
-            const esHoy = formatearFechaLocal(new Date()) === fechaSeleccionada;
-            
-            if (esHoy && Array.isArray(data)) {
-              const ahora = new Date();
-              const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-              horariosValidos = data.filter((horario: string) => horario > horaActual);
-              
-              if (horariosValidos.length === 0) {
-                toast.error('No hay horarios disponibles para hoy. Selecciona otra fecha.');
-              }
+
+            const horariosValidos = filtrarHorariosPasados(fechaSeleccionada, Array.isArray(data) ? data : []);
+            if (horariosValidos.length === 0 && fechaSeleccionada === formatearFechaLocal(new Date())) {
+              toast.error('No hay horarios disponibles para hoy. Selecciona otra fecha.');
             }
-            
+
             setHorarios(horariosValidos);
           } else {
             const errorData = await response.json().catch(() => null);
@@ -109,6 +146,92 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
       setHorarios([]);
     }
   }, [psicologo, date]);
+
+  useEffect(() => {
+    if (!psicologo) {
+      setProximosHorarios([]);
+      return;
+    }
+
+    const fetchProximosHorarios = async () => {
+      setLoadingProximos(true);
+      try {
+        const fechas = obtenerFechasProximas(7);
+        const resultados = await Promise.all(
+          fechas.map(async (fechaDate) => {
+            const fecha = formatearFechaLocal(fechaDate);
+            const response = await apiFetch(`${API_ENDPOINTS.PSICOLOGAS}/${psicologo}/disponibilidad?fecha=${fecha}`);
+            if (!response.ok) {
+              return null;
+            }
+
+            const data = await response.json();
+            const horarios = filtrarHorariosPasados(fecha, Array.isArray(data) ? data : []);
+            if (horarios.length === 0) {
+              return null;
+            }
+
+            return {
+              fecha,
+              etiqueta: fechaDate.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit' }),
+              horarios,
+            };
+          })
+        );
+
+        setProximosHorarios(resultados.filter((item): item is { fecha: string; etiqueta: string; horarios: string[] } => item !== null));
+      } catch {
+        setProximosHorarios([]);
+      } finally {
+        setLoadingProximos(false);
+      }
+    };
+
+    fetchProximosHorarios();
+  }, [psicologo]);
+
+  useEffect(() => {
+    if (!psicologo) {
+      setFechasConDisponibilidad([]);
+      return;
+    }
+
+    const fetchDisponibilidadMes = async () => {
+      setLoadingCalendario(true);
+
+      try {
+        const year = mesCalendario.getFullYear();
+        const month = mesCalendario.getMonth();
+        const lastDay = new Date(year, month + 1, 0).getDate();
+
+        const fechasMes = Array.from({ length: lastDay }, (_, index) => {
+          const fecha = new Date(year, month, index + 1);
+          return formatearFechaLocal(fecha);
+        });
+
+        const resultados = await Promise.all(
+          fechasMes.map(async (fecha) => {
+            const response = await apiFetch(`${API_ENDPOINTS.PSICOLOGAS}/${psicologo}/disponibilidad?fecha=${fecha}`);
+            if (!response.ok) {
+              return null;
+            }
+
+            const data = await response.json();
+            const horarios = filtrarHorariosPasados(fecha, Array.isArray(data) ? data : []);
+            return horarios.length > 0 ? fecha : null;
+          })
+        );
+
+        setFechasConDisponibilidad(resultados.filter((fecha): fecha is string => fecha !== null));
+      } catch {
+        setFechasConDisponibilidad([]);
+      } finally {
+        setLoadingCalendario(false);
+      }
+    };
+
+    fetchDisponibilidadMes();
+  }, [psicologo, mesCalendario]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -263,6 +386,49 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                       </SelectContent>
                                     </Select>
                                   </div>
+
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <Label className="text-slate-200 flex items-center gap-2">
+                                        <CalendarDays className="w-4 h-4" />
+                                        Próximos horarios disponibles
+                                      </Label>
+                                      {loadingProximos && <span className="text-xs text-slate-400">Buscando...</span>}
+                                    </div>
+                                    <div className="rounded-lg border border-slate-600 bg-slate-700/30 p-3 space-y-3">
+                                      {!psicologo ? (
+                                        <p className="text-sm text-slate-400">Selecciona un psicólogo para ver sugerencias rápidas.</p>
+                                      ) : loadingProximos ? (
+                                        <p className="text-sm text-slate-400">Consultando próximos espacios...</p>
+                                      ) : proximosHorarios.length === 0 ? (
+                                        <p className="text-sm text-slate-400">No hay horarios próximos disponibles.</p>
+                                      ) : (
+                                        <>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="w-full border-teal-500/40 text-teal-300 hover:bg-teal-500/10"
+                                            onClick={usarPrimerDisponible}
+                                          >
+                                            Usar primer horario disponible
+                                          </Button>
+                                          <div className="flex flex-wrap gap-2">
+                                            {proximosHorarios.slice(0, 6).map((item) => (
+                                              <Button
+                                                key={`${item.fecha}-${item.horarios[0]}`}
+                                                type="button"
+                                                variant="outline"
+                                                className="border-slate-500 text-slate-200 hover:bg-slate-600/50"
+                                                onClick={() => seleccionarProximoHorario(item.fecha, item.horarios[0])}
+                                              >
+                                                {item.etiqueta} · {item.horarios[0]}
+                                              </Button>
+                                            ))}
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
                   
                                   <div className="space-y-2">
                                     <Label htmlFor="notas" className="text-slate-200">Notas Adicionales (Opcional)</Label>
@@ -285,15 +451,52 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                 <div className="px-6 pt-6 pb-0">
                                   <h3 className="text-slate-100 font-semibold">Solicitar Fecha</h3>
                                   <p className="text-slate-400 text-sm">Elige el dia para tu sesion</p>
+                                  {psicologo && (
+                                    <p className="text-xs text-teal-300 mt-1">
+                                      {loadingCalendario ? 'Actualizando disponibilidad del calendario...' : 'Se muestran solo fechas con horarios disponibles'}
+                                    </p>
+                                  )}
                                 </div>
                                 <div className="p-4 sm:p-6 bg-slate-900/30">
                                   <Calendar
                                     mode="single"
                                     selected={date}
                                     onSelect={setDate}
+                                    month={mesCalendario}
+                                    onMonthChange={setMesCalendario}
                                     className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
-                                    disabled={(date) => date < hoy}
+                                    modifiers={{
+                                      disponible: (candidate) => fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
+                                    }}
+                                    modifiersClassNames={{
+                                      disponible: 'ring-1 ring-teal-400/40 bg-teal-500/10 text-teal-200',
+                                    }}
+                                    disabled={(candidate) => {
+                                      if (candidate < hoy) {
+                                        return true;
+                                      }
+
+                                      if (!psicologo) {
+                                        return false;
+                                      }
+
+                                      return !fechasConDisponibilidadSet.has(formatearFechaLocal(candidate));
+                                    }}
                                   />
+                                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                                    <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
+                                      <span className="h-2 w-2 rounded-full bg-teal-400" />
+                                      Con horarios para este psicólogo
+                                    </div>
+                                    <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
+                                      <span className="h-2 w-2 rounded-full bg-slate-500" />
+                                      Sin horarios para este psicólogo
+                                    </div>
+                                    <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
+                                      <span className="h-2 w-2 rounded-full bg-teal-600" />
+                                      Día seleccionado
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                   
