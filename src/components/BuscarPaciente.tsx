@@ -29,8 +29,14 @@ interface BuscarPacienteProps {
 }
 
 interface HistorialPaciente {
-  historial: HistorialClinico[];
-  estadisticas: any;
+  sesiones: HistorialClinico[];
+  estadisticas: {
+    totalSesiones: number;
+    progresoGeneral: number;
+    ultimaSesion: string;
+    tiempoEnTerapia: string;
+  };
+  objetivosTerapeuticos: Array<{ nombre: string; progreso: number }>;
 }
 
 const obtenerNombreCompletoPaciente = (paciente: Partial<Paciente> | null | undefined) => {
@@ -117,15 +123,24 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
           });
           if (response.ok) {
             const data = await response.json();
+            const sesiones = Array.isArray(data)
+              ? [...data].sort(
+                  (a, b) =>
+                    new Date(b.fechaentrada).getTime() - new Date(a.fechaentrada).getTime()
+                )
+              : [];
             
             // Calcular estadísticas desde los datos reales
-            const totalSesiones = data.length;
-            const ultimaSesion = data.length > 0 ? new Date(data[0].fechaentrada).toLocaleDateString('es-ES') : 'N/A';
+            const totalSesiones = sesiones.length;
+            const ultimaSesion =
+              sesiones.length > 0
+                ? new Date(sesiones[0].fechaentrada).toLocaleDateString('es-ES')
+                : 'N/A';
             
             // Calcular tiempo en terapia (desde la primera sesión hasta ahora)
             let tiempoEnTerapia = 'N/A';
-            if (data.length > 0) {
-              const primeraFecha = new Date(data[data.length - 1].fechaentrada);
+            if (sesiones.length > 0) {
+              const primeraFecha = new Date(sesiones[sesiones.length - 1].fechaentrada);
               const ahora = new Date();
               const diferenciaDias = Math.floor((ahora.getTime() - primeraFecha.getTime()) / (1000 * 60 * 60 * 24));
               
@@ -145,7 +160,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
             const progresoGeneral = Math.min(Math.round((totalSesiones / 10) * 100), 100);
             
             setHistorialActual({
-              sesiones: data,
+              sesiones,
               estadisticas: {
                 totalSesiones,
                 progresoGeneral,
@@ -233,6 +248,16 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
       toast.error(err.message);
     }
   };
+
+  const sesionesTotalesClinicas =
+    historialActual?.estadisticas?.totalSesiones ?? pacienteSeleccionado?.sesionesTotales ?? 0;
+
+  const ultimaSesionClinica =
+    historialActual?.estadisticas?.ultimaSesion && historialActual.estadisticas.ultimaSesion !== 'N/A'
+      ? historialActual.estadisticas.ultimaSesion
+      : (pacienteSeleccionado?.ultimaCita
+          ? new Date(pacienteSeleccionado.ultimaCita).toLocaleDateString('es-ES')
+          : 'N/A');
 
 
   return (
@@ -362,11 +387,11 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                               <p className="text-slate-400 mb-1">Sesiones Totales</p>
-                              <p className="text-teal-400 text-2xl font-semibold">{pacienteSeleccionado.sesionesTotales}</p>
+                              <p className="text-teal-400 text-2xl font-semibold">{sesionesTotalesClinicas}</p>
                             </div>
                             <div>
                               <p className="text-slate-400 mb-1">Última Cita</p>
-                              <p className="text-violet-400 font-medium">{pacienteSeleccionado.ultimaCita ? new Date(pacienteSeleccionado.ultimaCita).toLocaleDateString() : 'N/A'}</p>
+                              <p className="text-violet-400 font-medium">{ultimaSesionClinica}</p>
                             </div>
                             <div>
                               <p className="text-slate-400 mb-1">Próxima Cita</p>
@@ -463,7 +488,9 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                               <CardContent className="pt-6">
                                 <div className="text-center">
                                   <p className="text-slate-300 mb-1">Última Sesión</p>
-                                  <p className="text-violet-400 text-3xl font-semibold">{historialActual.estadisticas.ultimaSesion}</p>
+                                  <p className="text-violet-400 text-xl sm:text-2xl font-semibold leading-tight text-center break-words px-1">
+                                    {historialActual.estadisticas.ultimaSesion}
+                                  </p>
                                 </div>
                               </CardContent>
                             </Card>
