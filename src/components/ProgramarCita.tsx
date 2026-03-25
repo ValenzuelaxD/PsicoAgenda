@@ -29,6 +29,8 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   hoy.setHours(0, 0, 0, 0);
   const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
   const inicioMesSiguiente = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+  const finMesSiguiente = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0);
+  finMesSiguiente.setHours(23, 59, 59, 999);
 
   const [date, setDate] = useState<Date>(new Date());
   const [pacienteId, setPacienteId] = useState('');
@@ -68,7 +70,27 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
       return false;
     }
 
+    if (candidateDate > finMesSiguiente) {
+      return false;
+    }
+
     return fechasConDisponibilidadSet.has(formatDate(candidateDate));
+  };
+
+  const manejarCambioMes = (nextMonth: Date) => {
+    const mesNormalizado = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
+
+    if (mesNormalizado < inicioMesActual) {
+      setMesCalendario(inicioMesActual);
+      return;
+    }
+
+    if (mesNormalizado > inicioMesSiguiente) {
+      setMesCalendario(inicioMesSiguiente);
+      return;
+    }
+
+    setMesCalendario(mesNormalizado);
   };
 
   const seleccionarDiaDisponible = (fecha: string) => {
@@ -178,7 +200,6 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   useEffect(() => {
     const fetchDisponibilidad = async () => {
       setLoadingHorarios(true);
-      setHora('');
 
       try {
         const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fechaSeleccionada}`);
@@ -188,9 +209,12 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
           throw new Error(data.message || 'No fue posible consultar la disponibilidad.');
         }
 
-        setHorariosDisponibles(Array.isArray(data) ? data : []);
+        const horarios = Array.isArray(data) ? data : [];
+        setHorariosDisponibles(horarios);
+        setHora((prev) => (prev && horarios.includes(prev) ? prev : ''));
       } catch (error: any) {
         setHorariosDisponibles([]);
+        setHora('');
         toast.error(error.message || 'Error al consultar disponibilidad.');
       } finally {
         setLoadingHorarios(false);
@@ -258,7 +282,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
             <Card>
               <CardHeader>
                 <CardTitle>Detalles de la Cita</CardTitle>
-                <CardDescription>Los cambios se guardan directamente en el backend.</CardDescription>
+                <CardDescription>Completa la informacion para registrar la cita.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -386,7 +410,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                     setHora('');
                   }}
                   month={mesCalendario}
-                  onMonthChange={setMesCalendario}
+                  onMonthChange={manejarCambioMes}
                   fromMonth={inicioMesActual}
                   toMonth={inicioMesSiguiente}
                   className="rounded-md border w-full max-w-full"
