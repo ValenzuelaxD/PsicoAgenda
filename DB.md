@@ -120,3 +120,59 @@ CREATE TABLE Notificaciones (
   FOREIGN KEY (CitaID) REFERENCES Citas(CitaID)
 );
 
+
+-- =============================================
+-- MIGRACION INCREMENTAL (BD YA EXISTENTE)
+-- Flujo de aprobacion de registro para psicologas por rol admin
+-- =============================================
+
+-- 1) Crear tabla de solicitudes de registro para psicologas.
+--    Nota: NO crea usuarios activos; solo almacena solicitudes pendientes.
+CREATE TABLE IF NOT EXISTS SolicitudesRegistroPsicologas (
+  SolicitudID             SERIAL PRIMARY KEY,
+  Nombre                  VARCHAR(100)  NOT NULL,
+  ApellidoPaterno         VARCHAR(100)  NOT NULL,
+  ApellidoMaterno         VARCHAR(100),
+  Correo                  VARCHAR(150)  NOT NULL,
+  ContrasenaHash          VARCHAR(256)  NOT NULL,
+  Telefono                VARCHAR(15),
+  CedulaProfesional       VARCHAR(20)   NOT NULL,
+  Especialidad            VARCHAR(150),
+  EstadoSolicitud         VARCHAR(20)   NOT NULL DEFAULT 'Pendiente'
+                                      CHECK (EstadoSolicitud IN ('Pendiente', 'Aprobada', 'Rechazada')),
+  MotivoRevision          VARCHAR(500),
+  UsuarioAdminRevisionID  INTEGER,
+  UsuarioCreadoID         INTEGER,
+  FechaSolicitud          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FechaRevision           TIMESTAMP,
+  FOREIGN KEY (UsuarioAdminRevisionID) REFERENCES Usuarios(UsuarioID),
+  FOREIGN KEY (UsuarioCreadoID) REFERENCES Usuarios(UsuarioID)
+);
+
+-- 2) Asegurar que no exista mas de una solicitud pendiente por correo.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_solicitudes_psico_correo_pendiente
+  ON SolicitudesRegistroPsicologas (Correo)
+  WHERE EstadoSolicitud = 'Pendiente';
+
+-- 3) Asegurar que no exista mas de una solicitud pendiente por cedula.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_solicitudes_psico_cedula_pendiente
+  ON SolicitudesRegistroPsicologas (CedulaProfesional)
+  WHERE EstadoSolicitud = 'Pendiente';
+
+-- 4) Indices para bandeja admin (consulta por estado y fecha).
+CREATE INDEX IF NOT EXISTS ix_solicitudes_psico_estado_fecha
+  ON SolicitudesRegistroPsicologas (EstadoSolicitud, FechaSolicitud DESC);
+
+-- 5) (Opcional) Insertar usuario admin semilla si no existe.
+--    Reemplaza el hash por uno real de bcrypt antes de ejecutar en produccion.
+-- INSERT INTO Usuarios (Nombre, ApellidoPaterno, Correo, ContrasenaHash, Rol, Activo)
+-- SELECT 'Admin', 'Sistema', 'admin@psicoagenda.com', '$2b$10$REEMPLAZAR_HASH_BCRYPT', 'admin', TRUE
+-- WHERE NOT EXISTS (
+--   SELECT 1 FROM Usuarios WHERE Correo = 'admin@psicoagenda.com'
+-- );
+
+-- 6) Recomendacion operacional:
+--    - El endpoint publico de registro de psicologa debe insertar aqui.
+--    - Solo un admin debe poder cambiar EstadoSolicitud a Aprobada/Rechazada.
+--    - Al aprobar: crear registro en Usuarios + Psicologas dentro de una transaccion.
+
