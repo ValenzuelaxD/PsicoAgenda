@@ -562,11 +562,11 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
                                       <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
                                         <span className="h-2 w-2 rounded-full bg-teal-400" />
-                                        Dias con horarios disponibles
+                                        Verde: dias con horarios disponibles
                                       </div>
                                       <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
                                         <span className="h-2 w-2 rounded-full bg-slate-500" />
-                                        Dias sin horarios disponibles
+                                        Gris: dias sin horarios disponibles
                                       </div>
                                     </div>
                                   </div>
