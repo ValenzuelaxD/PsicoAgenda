@@ -18,6 +18,9 @@ interface AgendarCitaProps {
 export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
+  const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const finMesActual = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  finMesActual.setHours(23, 59, 59, 999);
 
   const formatearFechaLocal = (fecha: Date) => {
     const year = fecha.getFullYear();
@@ -70,6 +73,10 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
 
   const esFechaSeleccionable = (candidate: Date) => {
     if (candidate < hoy) {
+      return false;
+    }
+
+    if (candidate > finMesActual) {
       return false;
     }
 
@@ -505,6 +512,8 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     }}
                                     month={mesCalendario}
                                     onMonthChange={setMesCalendario}
+                                    fromMonth={inicioMesActual}
+                                    toMonth={inicioMesActual}
                                     className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
                                     modifiers={{
                                       disponible: (candidate) => fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
