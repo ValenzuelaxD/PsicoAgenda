@@ -10,7 +10,7 @@ import { API_ENDPOINTS } from '../utils/api';
 
 interface InicioProps {
   userName: string;
-  userType: 'psicologo' | 'paciente';
+  userType: 'psicologo' | 'paciente' | 'admin';
   onNavigate: (view: ViewType) => void;
 }
 
@@ -21,6 +21,12 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (userType === 'admin') {
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -70,6 +76,35 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
 
   if (error) {
     return <div>Error: {error}</div>
+  }
+
+  if (userType === 'admin') {
+    return (
+      <div className="max-w-5xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
+        <div>
+          <h1 className="text-slate-100 mb-2">Bienvenido/a, {userName}</h1>
+          <p className="text-slate-300">
+            Gestiona las solicitudes de alta de psicologas y su aprobación.
+          </p>
+        </div>
+
+        <Card className="cursor-pointer hover:shadow-xl transition-all border-teal-500/30 bg-slate-800/50 backdrop-blur-sm" onClick={() => onNavigate('admin-solicitudes')}>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <FileText className="w-6 h-6 text-white stroke-2" />
+              </div>
+              <div>
+                <h3 className="text-white mb-1">Revisar Solicitudes</h3>
+                <p className="text-slate-300">
+                  Accede a la bandeja para aprobar o rechazar registros de psicologas.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   // Contenido para Paciente

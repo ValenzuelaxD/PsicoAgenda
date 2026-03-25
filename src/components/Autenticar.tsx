@@ -12,7 +12,7 @@ import { validarEmail, validarCedulaProfesional } from '../utils/validators';
 import { API_ENDPOINTS } from '../utils/api';
 
 interface AutenticarProps {
-  onLogin: (name: string, type: 'psicologo' | 'paciente') => void;
+  onLogin: (name: string, type: 'psicologo' | 'paciente' | 'admin') => void;
 }
 
 export function Autenticar({ onLogin }: AutenticarProps) {
@@ -76,7 +76,11 @@ export function Autenticar({ onLogin }: AutenticarProps) {
       localStorage.setItem('user', JSON.stringify(data.user));
 
       // Obtener el tipo de usuario correcto desde la respuesta
-      const userType = data.user.rol === 'psicologa' ? 'psicologo' : 'paciente';
+      const userType = data.user.rol === 'admin'
+        ? 'admin'
+        : data.user.rol === 'psicologa'
+          ? 'psicologo'
+          : 'paciente';
       const userName = data.user.nombre || loginEmail.split('@')[0];
       
       onLogin(userName, userType);

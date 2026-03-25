@@ -245,6 +245,22 @@ const register = async (req, res) => {
       });
     }
 
+    if (error.code === '42501') {
+      return res.status(503).json({
+        success: false,
+        message: 'Permisos de base de datos insuficientes para registrar solicitudes. Ejecuta los GRANT de migración.',
+        error: error.message,
+      });
+    }
+
+    if (error.code === '42P01') {
+      return res.status(503).json({
+        success: false,
+        message: 'La tabla de solicitudes no existe. Aplica la migración en DB.md antes de registrar.',
+        error: error.message,
+      });
+    }
+
     console.error("Error en el registro:", error);
     return res.status(500).json({ 
       success: false,

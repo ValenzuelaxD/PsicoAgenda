@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Home, Calendar, CalendarCheck, FileText, User, LogOut, Users, Search, BookOpen, CalendarDays } from 'lucide-react';
+import { Home, Calendar, CalendarCheck, FileText, User, LogOut, Users, Search, BookOpen, CalendarDays, ShieldCheck } from 'lucide-react';
 import { ViewType } from './Dashboard';
 import { toast } from 'sonner';
 import logo from '../assets/8073927aac7f277f9a509202fa2f1e9e38c58702.png';
@@ -17,7 +17,7 @@ import {
 
 interface SidebarProps {
   currentView: ViewType;
-  userType: 'psicologo' | 'paciente';
+  userType: 'psicologo' | 'paciente' | 'admin';
   onNavigate: (view: ViewType) => void;
   onLogout: () => void;
   isMobile?: boolean;
@@ -51,7 +51,16 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
     { id: 'perfil' as ViewType, label: 'Mi Perfil', icon: User },
   ];
 
-  const menuItems = userType === 'psicologo' ? psicologoMenuItems : pacienteMenuItems;
+  const adminMenuItems = [
+    { id: 'admin-solicitudes' as ViewType, label: 'Solicitudes Psicologas', icon: ShieldCheck },
+    { id: 'perfil' as ViewType, label: 'Mi Perfil', icon: User },
+  ];
+
+  const menuItems = userType === 'admin'
+    ? adminMenuItems
+    : userType === 'psicologo'
+      ? psicologoMenuItems
+      : pacienteMenuItems;
 
   const handleLogout = () => {
     toast.success('Cerrando sesión...', {
@@ -72,7 +81,9 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
           className="flex flex-col items-center gap-2"
         >
           <img src={logo} alt="PsicoAgenda" className={`${isMobile ? 'h-16' : 'h-20'} w-auto`} />
-          <p className="text-teal-400 text-center text-sm">{userType === 'psicologo' ? 'Panel Psicologo' : 'Panel Paciente'}</p>
+          <p className="text-teal-400 text-center text-sm">
+            {userType === 'admin' ? 'Panel Admin' : userType === 'psicologo' ? 'Panel Psicologo' : 'Panel Paciente'}
+          </p>
         </motion.div>
       </div>
 

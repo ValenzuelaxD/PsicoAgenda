@@ -45,6 +45,11 @@ export const API_ENDPOINTS = {
 
   // Reportes
   REPORTES_CITAS: `${API_BASE_URL}/api/reportes/citas`,
+
+  // Admin - Solicitudes de psicologas
+  ADMIN_SOLICITUDES_PSICOLOGAS: `${API_BASE_URL}/api/admin/solicitudes-psicologas`,
+  ADMIN_APROBAR_SOLICITUD_PSICOLOGA: (id: number) => `${API_BASE_URL}/api/admin/solicitudes-psicologas/${id}/aprobar`,
+  ADMIN_RECHAZAR_SOLICITUD_PSICOLOGA: (id: number) => `${API_BASE_URL}/api/admin/solicitudes-psicologas/${id}/rechazar`,
 };
 
 /**

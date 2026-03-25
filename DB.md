@@ -176,3 +176,15 @@ CREATE INDEX IF NOT EXISTS ix_solicitudes_psico_estado_fecha
 --    - Solo un admin debe poder cambiar EstadoSolicitud a Aprobada/Rechazada.
 --    - Al aprobar: crear registro en Usuarios + Psicologas dentro de una transaccion.
 
+-- 7) Permisos para usuario de aplicacion (IMPORTANTE en BD existente).
+--    Si tu backend conecta con otro usuario (por ejemplo "PsicoAgenda"),
+--    debes otorgarle permisos sobre la nueva tabla y su secuencia:
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE SolicitudesRegistroPsicologas TO "PsicoAgenda";
+-- GRANT USAGE, SELECT ON SEQUENCE solicitudesregistropsicologas_solicitudid_seq TO "PsicoAgenda";
+
+-- 8) (Opcional recomendado) permisos por defecto para objetos nuevos en schema public.
+-- ALTER DEFAULT PRIVILEGES IN SCHEMA public
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "PsicoAgenda";
+-- ALTER DEFAULT PRIVILEGES IN SCHEMA public
+-- GRANT USAGE, SELECT ON SEQUENCES TO "PsicoAgenda";
+

@@ -32,7 +32,7 @@ import { Cita, ESTADO_CITA, MODALIDAD_CITA } from '../utils/types';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
 interface MisCitasProps {
-  userType: 'psicologo' | 'paciente';
+  userType: 'psicologo' | 'paciente' | 'admin';
   onNavigate: (view: ViewType) => void;
 }
 

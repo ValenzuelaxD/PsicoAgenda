@@ -13,20 +13,23 @@ import { BuscarPaciente } from './BuscarPaciente';
 import { BitacoraPaciente } from './BitacoraPaciente';
 import { VerificarDisponibilidad } from './VerificarDisponibilidad';
 import { NotificationCenter } from './NotificationCenter';
+import { AdminSolicitudes } from './AdminSolicitudes';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../utils/api';
 
 interface DashboardProps {
   userName: string;
-  userType: 'psicologo' | 'paciente';
+  userType: 'psicologo' | 'paciente' | 'admin';
   onLogout: () => void;
 }
 
 export type ViewType = 'inicio' | 'agendar' | 'citas' | 'historial' | 'perfil' | 
-  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda';
+  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda' | 'admin-solicitudes';
 
 export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
-  const [currentView, setCurrentView] = useState<ViewType>('inicio');
+  const [currentView, setCurrentView] = useState<ViewType>(
+    userType === 'admin' ? 'admin-solicitudes' : 'inicio'
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<number | undefined>(undefined);
   const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
@@ -105,6 +108,8 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
         return <BitacoraPaciente pacienteId={selectedPacienteId} />;
       case 'mi-agenda':
         return <VerificarDisponibilidad onNavigate={handleNavigate} />;
+      case 'admin-solicitudes':
+        return <AdminSolicitudes />;
       default:
         return <Inicio userName={userName} userType={userType} onNavigate={handleNavigate} />;
     }

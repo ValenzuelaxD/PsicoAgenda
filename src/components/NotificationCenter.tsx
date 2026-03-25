@@ -17,7 +17,7 @@ interface Notification {
 }
 
 interface NotificationCenterProps {
-  userType: 'psicologo' | 'paciente';
+  userType: 'psicologo' | 'paciente' | 'admin';
 }
 
 export function NotificationCenter({ userType }: NotificationCenterProps) {

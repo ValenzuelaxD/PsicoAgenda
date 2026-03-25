@@ -43,9 +43,10 @@ async function fixPermissions() {
       `GRANT USAGE, SELECT ON SEQUENCE psicologas_psicologaid_seq TO "PsicoAgenda";`,
       `GRANT USAGE, SELECT ON SEQUENCE citas_citaid_seq TO "PsicoAgenda";`,
       `GRANT USAGE, SELECT ON SEQUENCE agendas_agendaid_seq TO "PsicoAgenda";`,
-      `GRANT USAGE, SELECT ON SEQUENCE historialclinico_historiaid_seq TO "PsicoAgenda";`,
+      `GRANT USAGE, SELECT ON SEQUENCE historialclinico_historialid_seq TO "PsicoAgenda";`,
       `GRANT USAGE, SELECT ON SEQUENCE notificaciones_notificacionid_seq TO "PsicoAgenda";`,
       `GRANT USAGE, SELECT ON SEQUENCE solicitudesreagenda_solicitudid_seq TO "PsicoAgenda";`,
+      `GRANT USAGE, SELECT ON SEQUENCE solicitudesregistropsicologas_solicitudid_seq TO "PsicoAgenda";`,
     ];
 
     // Conectar a psicoagenda como admin

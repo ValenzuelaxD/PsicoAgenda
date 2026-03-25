@@ -20,7 +20,7 @@ import { API_ENDPOINTS } from '../utils/api';
 
 interface PerfilProps {
   userName: string;
-  userType: 'psicologo' | 'paciente';
+  userType: 'psicologo' | 'paciente' | 'admin';
 }
 
 export function Perfil({ userName, userType }: PerfilProps) {

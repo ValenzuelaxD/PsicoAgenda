@@ -9,7 +9,7 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
-  const [userType, setUserType] = useState<'psicologo' | 'paciente'>('paciente');
+  const [userType, setUserType] = useState<'psicologo' | 'paciente' | 'admin'>('paciente');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -23,7 +23,13 @@ export default function App() {
         try {
           const userData = JSON.parse(user);
           setUserName(userData.nombre || 'Usuario');
-          setUserType(userData.rol === 'psicologa' ? 'psicologo' : 'paciente');
+          setUserType(
+            userData.rol === 'admin'
+              ? 'admin'
+              : userData.rol === 'psicologa'
+                ? 'psicologo'
+                : 'paciente'
+          );
           setIsAuthenticated(true);
         } catch (err) {
           console.error('Error al restaurar sesión:', err);
@@ -40,7 +46,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLogin = (name: string, type: 'psicologo' | 'paciente') => {
+  const handleLogin = (name: string, type: 'psicologo' | 'paciente' | 'admin') => {
     // Verificar que el token exista antes de permitir login
     const token = localStorage.getItem('token');
     if (!token) {
