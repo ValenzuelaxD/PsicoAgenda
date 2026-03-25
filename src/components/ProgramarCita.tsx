@@ -47,6 +47,13 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   const [guardando, setGuardando] = useState(false);
   const [disponibilidadPorFecha, setDisponibilidadPorFecha] = useState<Record<string, number>>({});
 
+  const clampMonth = (monthDate: Date) => {
+    const normalizado = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+    if (normalizado < inicioMesActual) return inicioMesActual;
+    if (normalizado > inicioMesSiguiente) return inicioMesSiguiente;
+    return normalizado;
+  };
+
   const fechaSeleccionada = useMemo(() => formatDate(date), [date]);
   const pacienteSeleccionado = pacientes.find((paciente: Paciente) => String(paciente.pacienteid) === pacienteId);
   const fechasConDisponibilidadSet = useMemo(() => new Set(Object.keys(disponibilidadPorFecha)), [disponibilidadPorFecha]);
@@ -78,20 +85,15 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   };
 
   const manejarCambioMes = (nextMonth: Date) => {
-    const mesNormalizado = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
-
-    if (mesNormalizado < inicioMesActual) {
-      setMesCalendario(inicioMesActual);
-      return;
-    }
-
-    if (mesNormalizado > inicioMesSiguiente) {
-      setMesCalendario(inicioMesSiguiente);
-      return;
-    }
-
-    setMesCalendario(mesNormalizado);
+    setMesCalendario(clampMonth(nextMonth));
   };
+
+  useEffect(() => {
+    const mesSeguro = clampMonth(mesCalendario);
+    if (mesSeguro.getTime() !== new Date(mesCalendario.getFullYear(), mesCalendario.getMonth(), 1).getTime()) {
+      setMesCalendario(mesSeguro);
+    }
+  }, [mesCalendario]);
 
   const seleccionarDiaDisponible = (fecha: string) => {
     const siguienteFecha = new Date(`${fecha}T00:00:00`);
@@ -186,12 +188,18 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
     if (!esFechaDisponible(date)) {
       const primeraFecha = Object.keys(disponibilidadPorFecha)
         .sort((a, b) => a.localeCompare(b))
-        .find((fecha) => fecha >= formatDate(hoy));
+        .find((fecha) => {
+          if (fecha < formatDate(hoy)) {
+            return false;
+          }
+          const fechaDate = new Date(`${fecha}T00:00:00`);
+          return fechaDate <= finMesSiguiente;
+        });
 
       if (primeraFecha) {
         const primeraFechaDisponible = new Date(`${primeraFecha}T00:00:00`);
         setDate(primeraFechaDisponible);
-        setMesCalendario(new Date(primeraFechaDisponible.getFullYear(), primeraFechaDisponible.getMonth(), 1));
+        setMesCalendario(clampMonth(primeraFechaDisponible));
       }
       setHora('');
     }
