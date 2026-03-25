@@ -170,7 +170,7 @@ export function Autenticar({ onLogin }: AutenticarProps) {
       }
 
       toast.success('¡Registro exitoso!', { 
-        description: 'Tu cuenta de psicólogo ha sido creada. Ahora puedes iniciar sesión.' 
+        description: 'Tu solicitud fue enviada. Un administrador revisará tu registro antes de habilitar el acceso.' 
       });
       
       // Resetear el formulario de registro
@@ -179,13 +179,7 @@ export function Autenticar({ onLogin }: AutenticarProps) {
       setRegisterPassword('');
       setCedulaProfesional('');
       
-      // Auto-llenar el email en el formulario de login
-      setLoginEmail(registerEmail);
-      
-      // Cambiar al tab de login después de un breve delay
-      setTimeout(() => {
-        setTabActivo('login');
-      }, 1000);
+      // Mantener al usuario en registro para evitar intentar login antes de la aprobación admin.
     } catch (err: any) {
       toast.error('Error al registrar', { description: err.message });
       console.error('Error en register:', err);

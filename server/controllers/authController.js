@@ -102,10 +102,19 @@ const login = async (req, res) => {
 
 /**
  * Maneja el registro de un nuevo usuario.
- * Crea la entrada en Usuarios y también en Pacientes o Psicologas según corresponda.
+ * Crea una solicitud pendiente para alta de psicologa.
  */
 const register = async (req, res) => {
-  let { nombre, apellidoPaterno, apellidoMaterno, correo, password, cedulaProfesional } = req.body;
+  let {
+    nombre,
+    apellidoPaterno,
+    apellidoMaterno,
+    correo,
+    password,
+    telefono,
+    cedulaProfesional,
+    especialidad,
+  } = req.body;
 
   if (nombre && (!apellidoPaterno || !String(apellidoPaterno).trim())) {
     const nombreDividido = dividirNombreCompleto(nombre);
@@ -122,9 +131,6 @@ const register = async (req, res) => {
     });
   }
 
-  // Registro público restringido: solo se permite registro de psicólogas.
-  const rol = 'psicologa';
-
   // Validar que tenga cédula profesional.
   if (!cedulaProfesional) {
     return res.status(400).json({ 
@@ -138,7 +144,7 @@ const register = async (req, res) => {
     client = await db.getClient();
     await client.query('BEGIN');
 
-    // Verificar si el usuario ya existe
+    // Verificar si el correo ya existe en usuarios.
     const existingUser = await client.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correo.toLowerCase()]);
     if (existingUser.rows.length > 0) {
       await client.query('ROLLBACK');
@@ -148,39 +154,65 @@ const register = async (req, res) => {
       });
     }
 
+    // Verificar si la cédula ya existe en psicologas.
+    const existingCedula = await client.query('SELECT psicologaid FROM psicologas WHERE cedulaprofesional = $1', [cedulaProfesional]);
+    if (existingCedula.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: 'La cédula profesional ya está registrada.'
+      });
+    }
+
+    // Evitar duplicado de solicitud pendiente por correo o cédula.
+    const existingPending = await client.query(
+      `
+      SELECT solicitudid
+      FROM solicitudesregistropsicologas
+      WHERE estadosolicitud = 'Pendiente'
+        AND (correo = $1 OR cedulaprofesional = $2)
+      LIMIT 1
+      `,
+      [correo.toLowerCase(), cedulaProfesional]
+    );
+    if (existingPending.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: 'Ya existe una solicitud pendiente con ese correo o cédula.'
+      });
+    }
+
     // Genera un "salt" y luego "hashea" la contraseña
     const salt = await bcrypt.genSalt(10);
     const contrasenaHash = await bcrypt.hash(password, salt);
 
-    // Guarda el nuevo usuario en la base de datos con la contraseña hasheada
-    const newUser = await client.query(
-      'INSERT INTO usuarios (nombre, apellidopaterno, apellidomaterno, correo, contrasenahash, rol, activo) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING usuarioid, nombre, apellidopaterno, apellidomaterno, correo, rol',
-      [nombre, apellidoPaterno, apellidoMaterno || null, correo.toLowerCase(), contrasenaHash, rol, true]
+    // Crear solicitud de registro en estado pendiente.
+    const solicitudResult = await client.query(
+      `
+      INSERT INTO solicitudesregistropsicologas
+      (nombre, apellidopaterno, apellidomaterno, correo, contrasenahash, telefono, cedulaprofesional, especialidad, estadosolicitud)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pendiente')
+      RETURNING solicitudid, nombre, apellidopaterno, apellidomaterno, correo, cedulaprofesional, estadosolicitud, fechasolicitud
+      `,
+      [
+        nombre,
+        apellidoPaterno,
+        apellidoMaterno || null,
+        correo.toLowerCase(),
+        contrasenaHash,
+        telefono || null,
+        cedulaProfesional,
+        especialidad || 'Psicologia General'
+      ]
     );
-    
-    const usuarioId = newUser.rows[0].usuarioid;
-
-    console.log(`Registrando usuario ${rol}: ${usuarioId}`);
-
-    await client.query(
-      'INSERT INTO psicologas (usuarioid, cedulaprofesional, especialidad) VALUES ($1, $2, $3)',
-      [usuarioId, cedulaProfesional, 'Psicología General']
-    );
-    console.log(`Psicólogo creado: ${usuarioId}`);
 
     await client.query('COMMIT');
     
     return res.status(201).json({ 
       success: true,
-      message: "Usuario registrado con éxito", 
-      user: { 
-        id: usuarioId,
-        nombre: newUser.rows[0].nombre,
-        apellidoPaterno: newUser.rows[0].apellidopaterno,
-        apellidoMaterno: newUser.rows[0].apellidomaterno,
-        correo: newUser.rows[0].correo,
-        rol: newUser.rows[0].rol
-      } 
+      message: 'Solicitud enviada. Un administrador revisará tu registro de psicóloga.',
+      solicitud: solicitudResult.rows[0]
     });
 
   } catch (error) {
@@ -196,14 +228,14 @@ const register = async (req, res) => {
       if (String(error.constraint || '').includes('cedulaprofesional')) {
         return res.status(409).json({
           success: false,
-          message: 'La cédula profesional ya está registrada.'
+          message: 'La cédula profesional ya existe en una solicitud pendiente o en un perfil activo.'
         });
       }
 
       if (String(error.constraint || '').includes('correo')) {
         return res.status(409).json({
           success: false,
-          message: 'El correo ya está registrado.'
+          message: 'El correo ya existe en una solicitud pendiente o en una cuenta activa.'
         });
       }
 

@@ -32,4 +32,24 @@ const protegerRuta = (req, res, next) => {
   }
 };
 
-module.exports = { protegerRuta };
+const autorizarRol = (...rolesPermitidos) => {
+  return (req, res, next) => {
+    if (!req.user || !req.user.rol) {
+      return res.status(401).json({
+        success: false,
+        message: 'No autorizado, usuario sin rol valido.',
+      });
+    }
+
+    if (!rolesPermitidos.includes(req.user.rol)) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para esta accion.',
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = { protegerRuta, autorizarRol };
