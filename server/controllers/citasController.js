@@ -260,25 +260,30 @@ const crearCita = async (req, res) => {
 
     const duracionFinal = Number(duracionMin || 60);
     const modalidadFinal = modalidad || 'Presencial';
+    const notasPacienteFinal = rol === 'paciente' ? notas || null : null;
+    const notasPsicologaFinal = rol === 'psicologa' ? notas || null : null;
     const disponibilidad = await validarDisponibilidad({ psicologaId: citaPsicologaId, fechaHora, duracionMin: duracionFinal });
     if (!disponibilidad.disponible) {
       return res.status(409).json({ message: disponibilidad.message });
     }
 
-    const result = await db.query(
+    // Si existe una cita cancelada en el mismo slot, se reutiliza para respetar
+    // la restricción UNIQUE(psicologaid, fechahora) sin tocar el esquema.
+    let result = await db.query(
       `
-        INSERT INTO citas (
-          pacienteid,
-          psicologaid,
-          fechahora,
-          duracionmin,
-          estado,
-          modalidad,
-          notaspaciente,
-          notaspsicologa,
-          fechamodificacion
-        )
-        VALUES ($1, $2, $3, $4, 'Pendiente', $5, $6, $7, NOW())
+        UPDATE citas
+        SET pacienteid = $1,
+            psicologaid = $2,
+            fechahora = $3,
+            duracionmin = $4,
+            estado = 'Pendiente',
+            modalidad = $5,
+            notaspaciente = $6,
+            notaspsicologa = $7,
+            fechamodificacion = NOW()
+        WHERE psicologaid = $2
+          AND fechahora = $3
+          AND COALESCE(LOWER(TRIM(estado)), '') IN ('cancelada', 'cancelado')
         RETURNING citaid
       `,
       [
@@ -287,10 +292,39 @@ const crearCita = async (req, res) => {
         fechaHora,
         duracionFinal,
         modalidadFinal,
-        rol === 'paciente' ? notas || null : null,
-        rol === 'psicologa' ? notas || null : null,
+        notasPacienteFinal,
+        notasPsicologaFinal,
       ]
     );
+
+    if (result.rows.length === 0) {
+      result = await db.query(
+        `
+          INSERT INTO citas (
+            pacienteid,
+            psicologaid,
+            fechahora,
+            duracionmin,
+            estado,
+            modalidad,
+            notaspaciente,
+            notaspsicologa,
+            fechamodificacion
+          )
+          VALUES ($1, $2, $3, $4, 'Pendiente', $5, $6, $7, NOW())
+          RETURNING citaid
+        `,
+        [
+          citaPacienteId,
+          citaPsicologaId,
+          fechaHora,
+          duracionFinal,
+          modalidadFinal,
+          notasPacienteFinal,
+          notasPsicologaFinal,
+        ]
+      );
+    }
 
     const contexto = await getContextoCita(result.rows[0].citaid);
     if (contexto) {

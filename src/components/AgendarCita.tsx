@@ -151,8 +151,8 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
       setTimeout(() => {
         onNavigate('citas');
       }, 1500);
-    } catch (error) {
-      toast.error('Error al agendar la cita.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Error al agendar la cita.');
     }
   };
 
