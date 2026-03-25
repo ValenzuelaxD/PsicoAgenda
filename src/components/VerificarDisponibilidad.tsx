@@ -114,6 +114,13 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
   const bloquesDisponibles = agendas.filter((agenda) => agenda.disponible).length;
   const horasTotales = agendas.reduce((total, agenda) => total + Math.max(0, calcularDuracion(agenda.horainicio, agenda.horafin)), 0);
   const diasConfigurados = Object.values(agendasPorDia).filter((bloques) => bloques.length > 0).length;
+  const resumenBloqueEnEdicion = agendaEnEdicion
+    ? `${formularioEdicion.diasemana} ${normalizarHora(formularioEdicion.horainicio)}-${normalizarHora(formularioEdicion.horafin)}`
+    : '';
+  const estadoBloqueEdicion = formularioEdicion.disponible ? 'Activo' : 'Pausado';
+  const claseEstadoBloqueEdicion = formularioEdicion.disponible
+    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+    : 'border-slate-500/40 bg-slate-500/10 text-slate-200';
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -641,6 +648,13 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
             <DialogDescription className="text-slate-400">
               Actualiza los datos de este horario de atención en una ventana independiente.
             </DialogDescription>
+            {agendaEnEdicion && (
+              <div className={`mt-2 inline-flex w-fit items-center gap-2 rounded-md border px-3 py-1 text-sm ${claseEstadoBloqueEdicion}`}>
+                <span className="font-medium">{estadoBloqueEdicion}</span>
+                <span className="opacity-70">•</span>
+                <span>Editando: {resumenBloqueEnEdicion}</span>
+              </div>
+            )}
           </DialogHeader>
 
           <form onSubmit={handleGuardarEdicion} className="space-y-4">
