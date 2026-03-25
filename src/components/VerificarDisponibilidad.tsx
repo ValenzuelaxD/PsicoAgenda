@@ -121,6 +121,9 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
   const claseEstadoBloqueEdicion = formularioEdicion.disponible
     ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
     : 'border-slate-500/40 bg-slate-500/10 text-slate-200';
+  const claseBotonGuardarEdicion = formularioEdicion.disponible
+    ? 'flex-1 bg-emerald-600 hover:bg-emerald-700'
+    : 'flex-1 bg-slate-600 hover:bg-slate-700';
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -718,7 +721,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700" disabled={guardando}>
+              <Button type="submit" className={claseBotonGuardarEdicion} disabled={guardando}>
                 <Save className="w-4 h-4 mr-2 stroke-2" />
                 {guardando ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
