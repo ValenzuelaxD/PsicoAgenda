@@ -4,8 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { UserCircle, Lock, Mail, FileCheck } from 'lucide-react';
+import { Lock, Mail, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '../assets/8073927aac7f277f9a509202fa2f1e9e38c58702.png';
 import { LoadingSplash } from './LoadingSplash';
@@ -19,7 +18,6 @@ interface AutenticarProps {
 export function Autenticar({ onLogin }: AutenticarProps) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [loginUserType, setLoginUserType] = useState<'psicologo' | 'paciente'>('paciente');
 
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
@@ -230,32 +228,6 @@ export function Autenticar({ onLogin }: AutenticarProps) {
                 {/* Tab de Inicio de Sesión */}
                 <TabsContent value="login">
                   <form onSubmit={handleLoginSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-user-type" className="text-slate-200">Tipo de Usuario</Label>
-                      <Select
-                        value={loginUserType}
-                        onValueChange={(value: 'psicologo' | 'paciente') => setLoginUserType(value)}
-                      >
-                        <SelectTrigger id="login-user-type" className="border-slate-600 bg-slate-700 text-slate-100">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          <SelectItem value="paciente">
-                            <div className="flex items-center gap-2">
-                              <UserCircle className="w-4 h-4 stroke-2" />
-                              <span>Paciente</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="psicologo">
-                            <div className="flex items-center gap-2">
-                              <FileCheck className="w-4 h-4 stroke-2" />
-                              <span>Psicólogo</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="login-email" className="text-slate-200">Correo Electrónico</Label>
                       <div className="relative">
