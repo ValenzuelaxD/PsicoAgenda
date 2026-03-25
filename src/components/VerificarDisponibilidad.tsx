@@ -12,6 +12,7 @@ import { ViewType } from './Dashboard';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 import { Agenda } from '../utils/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface VerificarDisponibilidadProps {
   onNavigate: (view: ViewType) => void;
@@ -24,10 +25,17 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [agendaEnEdicion, setAgendaEnEdicion] = useState<Agenda | null>(null);
+  const [modalEdicionAbierto, setModalEdicionAbierto] = useState(false);
   const [mostraGuia, setMostraGuia] = useState(false);
   const [mostraPreview, setMostraPreview] = useState(false);
   const [diasExpandidos, setDiasExpandidos] = useState<Record<string, boolean>>({});
   const [formulario, setFormulario] = useState({
+    diasemana: 'Lunes',
+    horainicio: '09:00',
+    horafin: '10:00',
+    disponible: true,
+  });
+  const [formularioEdicion, setFormularioEdicion] = useState({
     diasemana: 'Lunes',
     horainicio: '09:00',
     horafin: '10:00',
@@ -67,7 +75,6 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
   };
 
   const resetFormulario = () => {
-    setAgendaEnEdicion(null);
     setFormulario({ diasemana: 'Lunes', horainicio: '09:00', horafin: '10:00', disponible: true });
   };
 
@@ -113,9 +120,8 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
     setGuardando(true);
 
     try {
-      const endpoint = agendaEnEdicion ? `${API_ENDPOINTS.AGENDAS}/${agendaEnEdicion.agendaid}` : API_ENDPOINTS.AGENDAS;
-      const response = await apiFetch(endpoint, {
-        method: agendaEnEdicion ? 'PUT' : 'POST',
+      const response = await apiFetch(API_ENDPOINTS.AGENDAS, {
+        method: 'POST',
         body: JSON.stringify(formulario),
       });
       const data = await response.json();
@@ -124,10 +130,8 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
         throw new Error(data.message || 'No fue posible guardar el horario.');
       }
 
-      toast.success(agendaEnEdicion ? 'Horario actualizado ✓' : 'Horario agregado ✓', {
-        description: agendaEnEdicion 
-          ? `${formulario.diasemana} ${normalizarHora(formulario.horainicio)}-${normalizarHora(formulario.horafin)} actualizado`
-          : `${formulario.diasemana} ${normalizarHora(formulario.horainicio)}-${normalizarHora(formulario.horafin)} agregado`,
+      toast.success('Horario agregado ✓', {
+        description: `${formulario.diasemana} ${normalizarHora(formulario.horainicio)}-${normalizarHora(formulario.horafin)} agregado`,
       });
 
       resetFormulario();
@@ -141,12 +145,46 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
 
   const iniciarEdicion = (agenda: Agenda) => {
     setAgendaEnEdicion(agenda);
-    setFormulario({
+    setFormularioEdicion({
       diasemana: agenda.diasemana,
       horainicio: normalizarHora(agenda.horainicio),
       horafin: normalizarHora(agenda.horafin),
       disponible: agenda.disponible,
     });
+    setModalEdicionAbierto(true);
+  };
+
+  const handleGuardarEdicion = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!agendaEnEdicion) {
+      return;
+    }
+
+    setGuardando(true);
+
+    try {
+      const response = await apiFetch(`${API_ENDPOINTS.AGENDAS}/${agendaEnEdicion.agendaid}`, {
+        method: 'PUT',
+        body: JSON.stringify(formularioEdicion),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'No fue posible guardar el horario.');
+      }
+
+      toast.success('Horario actualizado ✓', {
+        description: `${formularioEdicion.diasemana} ${normalizarHora(formularioEdicion.horainicio)}-${normalizarHora(formularioEdicion.horafin)} actualizado`,
+      });
+
+      setModalEdicionAbierto(false);
+      setAgendaEnEdicion(null);
+      await cargarAgenda();
+    } catch (error: any) {
+      toast.error(error.message || 'Error al guardar el bloque.');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const toggleDisponibilidad = async (agenda: Agenda) => {
@@ -192,7 +230,8 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
 
       setAgendas((prev) => prev.filter((item) => item.agendaid !== agenda.agendaid));
       if (agendaEnEdicion?.agendaid === agenda.agendaid) {
-        resetFormulario();
+        setModalEdicionAbierto(false);
+        setAgendaEnEdicion(null);
       }
       toast.success('🗑️ Horario eliminado', {
         description: `${agenda.diasemana} ${normalizarHora(agenda.horainicio)}-${normalizarHora(agenda.horafin)} ha sido eliminado`,
@@ -321,13 +360,11 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 h-fit">
           <CardHeader>
             <CardTitle className="text-slate-100 flex items-center gap-2">
-              {agendaEnEdicion ? <Pencil className="w-5 h-5 text-amber-400 stroke-2" /> : <Plus className="w-5 h-5 text-teal-400 stroke-2" />}
-              {agendaEnEdicion ? 'Editar Horario' : 'Nuevo Horario'}
+              <Plus className="w-5 h-5 text-teal-400 stroke-2" />
+              Nuevo Horario
             </CardTitle>
             <CardDescription className="text-slate-400">
-              {agendaEnEdicion 
-                ? 'Actualiza los datos de este horario de atención'
-                : 'Agrega un nuevo horario en el que estés disponible'}
+              Agrega un nuevo horario en el que estés disponible
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -393,14 +430,9 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700" disabled={guardando}>
-                  {agendaEnEdicion ? <Save className="w-4 h-4 mr-2 stroke-2" /> : <Plus className="w-4 h-4 mr-2 stroke-2" />}
-                  {guardando ? 'Guardando...' : agendaEnEdicion ? 'Guardar Cambios' : 'Agregar Horario'}
+                  <Plus className="w-4 h-4 mr-2 stroke-2" />
+                  {guardando ? 'Guardando...' : 'Agregar Horario'}
                 </Button>
-                {agendaEnEdicion && (
-                  <Button type="button" variant="outline" onClick={resetFormulario} className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto">
-                    Cancelar
-                  </Button>
-                )}
               </div>
             </form>
           </CardContent>
@@ -590,6 +622,107 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
           </CardContent>
         </Card>
       </div>
+
+      <Dialog
+        open={modalEdicionAbierto}
+        onOpenChange={(open) => {
+          setModalEdicionAbierto(open);
+          if (!open) {
+            setAgendaEnEdicion(null);
+          }
+        }}
+      >
+        <DialogContent className="bg-slate-800 border-slate-700 text-slate-200 max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-slate-100 flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-amber-400 stroke-2" />
+              Editar Horario
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Actualiza los datos de este horario de atención en una ventana independiente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleGuardarEdicion} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-diasemana" className="text-slate-200">Día de la semana</Label>
+              <Select
+                value={formularioEdicion.diasemana}
+                onValueChange={(value) => setFormularioEdicion((prev) => ({ ...prev, diasemana: value }))}
+              >
+                <SelectTrigger id="edit-diasemana" className="bg-slate-700/50 border-slate-600 text-slate-100">
+                  <SelectValue placeholder="Selecciona un día" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIAS_SEMANA.map((dia) => (
+                    <SelectItem key={dia} value={dia}>{dia}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-horainicio" className="text-slate-200">Hora inicio</Label>
+                <Input
+                  id="edit-horainicio"
+                  type="time"
+                  value={formularioEdicion.horainicio}
+                  onChange={(event) => setFormularioEdicion((prev) => ({ ...prev, horainicio: event.target.value }))}
+                  className="bg-slate-700/50 border-slate-600 text-slate-100"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-horafin" className="text-slate-200">Hora fin</Label>
+                <Input
+                  id="edit-horafin"
+                  type="time"
+                  value={formularioEdicion.horafin}
+                  onChange={(event) => setFormularioEdicion((prev) => ({ ...prev, horafin: event.target.value }))}
+                  className="bg-slate-700/50 border-slate-600 text-slate-100"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-900/40 p-4">
+              <div>
+                <p className="text-slate-100 font-medium">Mostrar a Pacientes</p>
+                <p className="text-xs text-slate-400 mt-1">Si está activo, los pacientes ven este horario. Si lo desactivas, se oculta pero puedes reactivarlo después.</p>
+              </div>
+              <Switch
+                checked={formularioEdicion.disponible}
+                onCheckedChange={(checked) => setFormularioEdicion((prev) => ({ ...prev, disponible: checked }))}
+              />
+            </div>
+
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-slate-300 space-y-2">
+              <p><span className="text-amber-300 font-semibold">Duración:</span> {Math.max(0, calcularDuracion(formularioEdicion.horainicio, formularioEdicion.horafin)).toFixed(1)} horas</p>
+              <p><span className="text-amber-300 font-semibold">Espacios disponibles:</span> {Math.max(0, calcularDuracion(formularioEdicion.horainicio, formularioEdicion.horafin))}</p>
+              <p className="text-xs text-amber-200">Cada espacio dura 60 minutos para que el paciente pueda agendar</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700" disabled={guardando}>
+                <Save className="w-4 h-4 mr-2 stroke-2" />
+                {guardando ? 'Guardando...' : 'Guardar Cambios'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setModalEdicionAbierto(false);
+                  setAgendaEnEdicion(null);
+                }}
+                className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
