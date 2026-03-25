@@ -122,8 +122,8 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
     ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
     : 'border-slate-500/40 bg-slate-500/10 text-slate-200';
   const claseBotonGuardarEdicion = formularioEdicion.disponible
-    ? 'flex-1 bg-emerald-600 hover:bg-emerald-700'
-    : 'flex-1 bg-slate-600 hover:bg-slate-700';
+    ? 'flex-1 bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-300/80 text-white shadow-sm'
+    : 'flex-1 bg-slate-600 hover:bg-slate-700 border-2 border-slate-300/80 text-white shadow-sm';
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
