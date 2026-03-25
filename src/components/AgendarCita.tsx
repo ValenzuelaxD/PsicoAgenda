@@ -92,22 +92,22 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
     return fechasConDisponibilidadSet.has(formatearFechaLocal(candidate));
   };
 
-  const seleccionarProximoHorario = (fecha: string, horario: string) => {
+  const seleccionarProximoDia = (fecha: string) => {
     const siguienteFecha = new Date(`${fecha}T00:00:00`);
     setDate(siguienteFecha);
     setMesCalendario(new Date(siguienteFecha.getFullYear(), siguienteFecha.getMonth(), 1));
-    setHora(horario);
+    setHora('');
   };
 
-  const usarPrimerDisponible = () => {
+  const usarPrimerDiaDisponible = () => {
     if (proximosHorarios.length === 0) {
-      toast.error('No hay horarios próximos disponibles para este profesional.');
+      toast.error('No hay dias proximos disponibles para este profesional.');
       return;
     }
 
     const primerDia = proximosHorarios[0];
-    seleccionarProximoHorario(primerDia.fecha, primerDia.horarios[0]);
-    toast.success('Se seleccionó el primer horario disponible.');
+    seleccionarProximoDia(primerDia.fecha);
+    toast.success('Se selecciono el primer dia disponible. Ahora elige tu horario.');
   };
 
   useEffect(() => {
@@ -433,13 +433,13 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     <div className="flex items-center justify-between">
                                       <Label className="text-slate-200 flex items-center gap-2">
                                         <CalendarDays className="w-4 h-4" />
-                                        Próximos horarios disponibles (reserva rápida)
+                                        Próximos dias disponibles
                                       </Label>
                                       {loadingProximos && <span className="text-xs text-slate-400">Buscando...</span>}
                                     </div>
                                     <div className="rounded-lg border border-slate-600 bg-slate-700/30 p-3 space-y-3">
                                       {!psicologo ? (
-                                        <p className="text-sm text-slate-400">Selecciona un psicólogo para ver horarios sugeridos.</p>
+                                        <p className="text-sm text-slate-400">Selecciona un psicologo para ver dias sugeridos.</p>
                                       ) : loadingProximos ? (
                                         <p className="text-sm text-slate-400">Consultando próximos espacios...</p>
                                       ) : proximosHorarios.length === 0 ? (
@@ -450,37 +450,32 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                             type="button"
                                             variant="outline"
                                             className="w-full border-teal-500/40 text-teal-300 hover:bg-teal-500/10"
-                                            onClick={usarPrimerDisponible}
+                                            onClick={usarPrimerDiaDisponible}
                                           >
-                                            Usar primer horario disponible
+                                            Usar primer dia disponible
                                           </Button>
                                           <div className="flex flex-wrap gap-2">
-                                            {proximosHorarios.slice(0, 6).flatMap((item) =>
-                                              item.horarios.slice(0, 2).map((horarioItem) => {
-                                                const activo =
-                                                  date &&
-                                                  formatearFechaLocal(date) === item.fecha &&
-                                                  hora === horarioItem;
+                                            {proximosHorarios.slice(0, 6).map((item) => {
+                                              const activo = date && formatearFechaLocal(date) === item.fecha;
 
-                                                return (
-                                                  <Button
-                                                    key={`${item.fecha}-${horarioItem}`}
-                                                    type="button"
-                                                    variant="outline"
-                                                    className={activo
-                                                      ? 'border-teal-400 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-                                                      : 'border-slate-500 text-slate-200 hover:bg-slate-600/50'
-                                                    }
-                                                    onClick={() => seleccionarProximoHorario(item.fecha, horarioItem)}
-                                                  >
-                                                    {item.etiqueta} · {horarioItem}
-                                                  </Button>
-                                                );
-                                              })
-                                            )}
+                                              return (
+                                                <Button
+                                                  key={item.fecha}
+                                                  type="button"
+                                                  variant="outline"
+                                                  className={activo
+                                                    ? 'border-teal-400 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+                                                    : 'border-slate-500 text-slate-200 hover:bg-slate-600/50'
+                                                  }
+                                                  onClick={() => seleccionarProximoDia(item.fecha)}
+                                                >
+                                                  {item.etiqueta} · {item.horarios.length} horarios
+                                                </Button>
+                                              );
+                                            })}
                                           </div>
                                           <p className="text-xs text-slate-400">
-                                            La selección principal se realiza aquí. El calendario queda en modo visual para referencia.
+                                            Primero selecciona el dia aqui y despues elige la hora en el apartado Horario.
                                           </p>
                                         </>
                                       )}
@@ -511,7 +506,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     <p className="text-slate-400 text-sm">Vista informativa de disponibilidad del mes actual</p>
                                     {psicologo && (
                                       <p className="text-xs text-teal-300 mt-1">
-                                        {loadingCalendario ? 'Actualizando disponibilidad del calendario...' : 'La reserva se realiza desde “Próximos horarios disponibles”.'}
+                                        {loadingCalendario ? 'Actualizando disponibilidad del calendario...' : 'La seleccion se realiza desde "Proximos dias disponibles" y "Horario".'}
                                       </p>
                                     )}
                                   </div>
