@@ -229,9 +229,9 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => setMostrarPanel(false)}
-                        className={`hover:bg-slate-700 p-0 ${isMobile ? 'h-11 w-11 mr-2' : 'h-9 w-9'}`}
+                        className={`hover:bg-slate-700 p-0 ${isMobile ? 'h-11 w-11 mr-2' : 'h-6 w-6'}`}
                       >
-                        <X className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} stroke-2 text-slate-300`} />
+                        <X className={`${isMobile ? 'w-6 h-6' : 'w-4 h-4'} stroke-2 text-slate-300`} />
                       </Button>
                     </div>
                   </div>
