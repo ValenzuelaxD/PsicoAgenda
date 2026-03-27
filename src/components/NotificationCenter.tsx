@@ -227,11 +227,19 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                       )}
                       <Button
                         variant="ghost"
-                        size="sm"
                         onClick={() => setMostrarPanel(false)}
-                        className={`hover:bg-slate-700 p-0 ${isMobile ? 'h-14 w-14 mr-2 rounded-xl' : 'h-6 w-6'}`}
+                        className={`hover:bg-slate-700 p-0 ${isMobile ? 'mr-0 rounded-2xl' : 'h-6 w-6'}`}
+                        style={
+                          isMobile
+                            ? {
+                                width: '72px',
+                                height: '72px',
+                                marginRight: '-8px'
+                              }
+                            : undefined
+                        }
                       >
-                        <X className={`${isMobile ? 'w-8 h-8' : 'w-4 h-4'} stroke-2 text-slate-300`} />
+                        <X className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} stroke-2 text-slate-300`} />
                       </Button>
                     </div>
                   </div>
