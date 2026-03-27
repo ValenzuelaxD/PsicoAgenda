@@ -225,28 +225,14 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                           Marcar leídas
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      <button
+                        type="button"
                         onClick={() => setMostrarPanel(false)}
-                        className={`hover:bg-slate-700 p-0 ${isMobile ? 'mr-0 rounded-2xl' : 'h-6 w-6'}`}
-                        style={
-                          isMobile
-                            ? {
-                                width: '72px',
-                                height: '72px',
-                                marginRight: '-8px'
-                              }
-                            : undefined
-                        }
                         aria-label="Cerrar notificaciones"
+                        className="inline-flex items-center justify-center -mr-2 h-12 w-12 rounded-xl text-slate-200 hover:bg-slate-700 active:scale-95 transition sm:mr-0 sm:h-8 sm:w-8"
                       >
-                        {isMobile ? (
-                          <span className="text-4xl leading-none text-slate-300">×</span>
-                        ) : (
-                          <X className="w-4 h-4 stroke-2 text-slate-300" />
-                        )}
-                      </Button>
+                        <span className="leading-none text-4xl sm:text-xl">×</span>
+                      </button>
                     </div>
                   </div>
                 </div>
