@@ -229,9 +229,10 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                         type="button"
                         onClick={() => setMostrarPanel(false)}
                         aria-label="Cerrar notificaciones"
-                        className="inline-flex items-center justify-center -mr-2 h-12 w-12 rounded-xl text-slate-200 hover:bg-slate-700 active:scale-95 transition sm:mr-0 sm:h-8 sm:w-8"
+                        className="inline-flex items-center justify-center -mr-2 rounded-xl text-slate-200 hover:bg-slate-700 active:scale-95 transition"
+                        style={{ width: '64px', height: '64px' }}
                       >
-                        <span className="leading-none text-4xl sm:text-xl">×</span>
+                        <X className="text-slate-200" style={{ width: '34px', height: '34px', strokeWidth: 2.75 }} />
                       </button>
                     </div>
                   </div>
