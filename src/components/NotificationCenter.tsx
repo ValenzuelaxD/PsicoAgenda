@@ -64,27 +64,22 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
       return;
     }
 
-    const scrollY = window.scrollY;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
     const originalOverflow = document.body.style.overflow;
-    const originalPosition = document.body.style.position;
-    const originalTop = document.body.style.top;
-    const originalWidth = document.body.style.width;
     const originalOverscrollBehavior = document.body.style.overscrollBehavior;
 
     // Lock page scroll while the notifications panel is open.
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'none';
     document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
     document.body.style.overscrollBehavior = 'none';
 
     return () => {
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscrollBehavior;
       document.body.style.overflow = originalOverflow;
-      document.body.style.position = originalPosition;
-      document.body.style.top = originalTop;
-      document.body.style.width = originalWidth;
       document.body.style.overscrollBehavior = originalOverscrollBehavior;
-      window.scrollTo(0, scrollY);
     };
   }, [mostrarPanel]);
 
@@ -174,23 +169,21 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
       {/* Panel de notificaciones */}
       <AnimatePresence initial={false} mode="wait">
         {mostrarPanel && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={() => setMostrarPanel(false)}
-            />
-
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-black/50"
+            onClick={() => setMostrarPanel(false)}
+          >
             {/* Panel lateral */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed inset-y-0 right-0 h-[100dvh] w-[min(calc(100vw-12px),360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col overflow-hidden will-change-transform"
+              onClick={(event) => event.stopPropagation()}
+              className="absolute inset-y-0 right-0 h-[100dvh] w-[min(92vw,360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl flex flex-col overflow-hidden will-change-transform"
             >
               {/* Header */}
               <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30 flex-shrink-0">
@@ -230,7 +223,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
               {/* Lista de notificaciones */}
               <div
                 className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-3 space-y-2"
-                style={{ WebkitOverflowScrolling: 'touch' }}
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
               >
                 {loading ? (
                   <div className="text-center py-12">
@@ -318,7 +311,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                 </p>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
