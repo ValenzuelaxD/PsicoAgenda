@@ -64,16 +64,27 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
       return;
     }
 
+    const scrollY = window.scrollY;
     const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    const originalTop = document.body.style.top;
+    const originalWidth = document.body.style.width;
     const originalOverscrollBehavior = document.body.style.overscrollBehavior;
 
     // Lock page scroll while the notifications panel is open.
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
     document.body.style.overscrollBehavior = 'none';
 
     return () => {
       document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.top = originalTop;
+      document.body.style.width = originalWidth;
       document.body.style.overscrollBehavior = originalOverscrollBehavior;
+      window.scrollTo(0, scrollY);
     };
   }, [mostrarPanel]);
 
@@ -179,9 +190,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-              onWheel={(event) => event.stopPropagation()}
-              onTouchMove={(event) => event.stopPropagation()}
-              className="fixed inset-y-0 right-0 h-[100dvh] w-[min(100vw,360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col overflow-hidden will-change-transform"
+              className="fixed inset-y-0 right-0 h-[100dvh] w-[min(calc(100vw-12px),360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col overflow-hidden will-change-transform"
             >
               {/* Header */}
               <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30 flex-shrink-0">
@@ -220,10 +229,8 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
 
               {/* Lista de notificaciones */}
               <div
-                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-auto p-3 space-y-2"
+                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-3 space-y-2"
                 style={{ WebkitOverflowScrolling: 'touch' }}
-                onWheel={(event) => event.stopPropagation()}
-                onTouchMove={(event) => event.stopPropagation()}
               >
                 {loading ? (
                   <div className="text-center py-12">
