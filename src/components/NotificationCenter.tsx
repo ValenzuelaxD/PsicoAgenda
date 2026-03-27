@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { Bell, X, Check, Calendar, Clock, AlertCircle, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -64,22 +65,13 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
       return;
     }
 
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    const originalHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
     const originalOverflow = document.body.style.overflow;
-    const originalOverscrollBehavior = document.body.style.overscrollBehavior;
 
     // Lock page scroll while the notifications panel is open.
-    document.documentElement.style.overflow = 'hidden';
-    document.documentElement.style.overscrollBehavior = 'none';
     document.body.style.overflow = 'hidden';
-    document.body.style.overscrollBehavior = 'none';
 
     return () => {
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      document.documentElement.style.overscrollBehavior = originalHtmlOverscrollBehavior;
       document.body.style.overflow = originalOverflow;
-      document.body.style.overscrollBehavior = originalOverscrollBehavior;
     };
   }, [mostrarPanel]);
 
@@ -167,153 +159,156 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
       </motion.button>
 
       {/* Panel de notificaciones */}
-      <AnimatePresence initial={false} mode="wait">
-        {mostrarPanel && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-black/50"
-            onClick={() => setMostrarPanel(false)}
-          >
-            {/* Panel lateral */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence initial={false} mode="wait">
+          {mostrarPanel && (
             <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-              onClick={(event) => event.stopPropagation()}
-              className="absolute inset-y-0 right-0 h-[100dvh] w-[min(92vw,360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl flex flex-col overflow-hidden will-change-transform"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1000] bg-black/50"
+              onClick={() => setMostrarPanel(false)}
             >
-              {/* Header */}
-              <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 stroke-2 text-teal-400" />
-                    <h2 className="text-slate-100 text-sm">Notificaciones</h2>
-                    {notificacionesNoLeidas > 0 && (
-                      <Badge className="bg-teal-500 text-white text-xs px-1.5 py-0 h-4">
-                        {notificacionesNoLeidas}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {notificacionesNoLeidas > 0 && (
+              {/* Panel lateral */}
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                onClick={(event) => event.stopPropagation()}
+                className="absolute inset-y-0 right-0 h-[100dvh] w-[min(92vw,360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl grid grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden will-change-transform"
+              >
+                {/* Header */}
+                <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4 stroke-2 text-teal-400" />
+                      <h2 className="text-slate-100 text-sm">Notificaciones</h2>
+                      {notificacionesNoLeidas > 0 && (
+                        <Badge className="bg-teal-500 text-white text-xs px-1.5 py-0 h-4">
+                          {notificacionesNoLeidas}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {notificacionesNoLeidas > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={marcarTodasComoLeidas}
+                          className="text-teal-400 hover:text-teal-300 hover:bg-slate-700 text-[10px] h-6 px-2"
+                        >
+                          Marcar leídas
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={marcarTodasComoLeidas}
-                        className="text-teal-400 hover:text-teal-300 hover:bg-slate-700 text-[10px] h-6 px-2"
+                        onClick={() => setMostrarPanel(false)}
+                        className="hover:bg-slate-700 h-6 w-6 p-0"
                       >
-                        Marcar leídas
+                        <X className="w-4 h-4 stroke-2 text-slate-300" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setMostrarPanel(false)}
-                      className="hover:bg-slate-700 h-6 w-6 p-0"
-                    >
-                      <X className="w-4 h-4 stroke-2 text-slate-300" />
-                    </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Lista de notificaciones */}
-              <div
-                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-3 space-y-2"
-                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
-              >
-                {loading ? (
-                  <div className="text-center py-12">
-                    <p className="text-slate-400">Cargando...</p>
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-12">
-                    <p className="text-red-400">{error}</p>
-                  </div>
-                ) : notificaciones.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Bell className="w-12 h-12 stroke-2 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400">No tienes notificaciones</p>
-                  </div>
-                ) : (
-                  notificaciones.map((notificacion, index) => (
-                    <motion.div
-                      key={notificacion.notificacionid}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Card
-                        className={`bg-slate-700/50 border-slate-600 hover:bg-slate-700 transition-all cursor-pointer ${
-                          !notificacion.leida ? 'border-l-4 border-l-teal-500' : ''
-                        }`}
+                {/* Lista de notificaciones */}
+                <div
+                  className="min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
+                  {loading ? (
+                    <div className="text-center py-12">
+                      <p className="text-slate-400">Cargando...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-12">
+                      <p className="text-red-400">{error}</p>
+                    </div>
+                  ) : notificaciones.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Bell className="w-12 h-12 stroke-2 text-slate-600 mx-auto mb-3" />
+                      <p className="text-slate-400">No tienes notificaciones</p>
+                    </div>
+                  ) : (
+                    notificaciones.map((notificacion, index) => (
+                      <motion.div
+                        key={notificacion.notificacionid}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex gap-3">
-                            <div className="flex-shrink-0">
-                              {getIcono(notificacion.tipo)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <h3 className="text-slate-100 text-sm">
-                                  {notificacion.titulo}
-                                </h3>
-                                {!notificacion.leida && (
-                                  <Badge className="bg-teal-500 text-white text-xs px-1.5 py-0 h-5 flex-shrink-0">
-                                    Nueva
-                                  </Badge>
-                                )}
+                        <Card
+                          className={`bg-slate-700/50 border-slate-600 hover:bg-slate-700 transition-all cursor-pointer ${
+                            !notificacion.leida ? 'border-l-4 border-l-teal-500' : ''
+                          }`}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex gap-3">
+                              <div className="flex-shrink-0">
+                                {getIcono(notificacion.tipo)}
                               </div>
-                              <p className="text-slate-400 text-sm mb-2">
-                                {notificacion.descripcion}
-                              </p>
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-500 text-xs">
-                                  {new Date(notificacion.fechacreacion).toLocaleString()}
-                                </span>
-                                <div className="flex gap-1">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <h3 className="text-slate-100 text-sm">
+                                    {notificacion.titulo}
+                                  </h3>
                                   {!notificacion.leida && (
+                                    <Badge className="bg-teal-500 text-white text-xs px-1.5 py-0 h-5 flex-shrink-0">
+                                      Nueva
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-slate-400 text-sm mb-2">
+                                  {notificacion.descripcion}
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-500 text-xs">
+                                    {new Date(notificacion.fechacreacion).toLocaleString()}
+                                  </span>
+                                  <div className="flex gap-1">
+                                    {!notificacion.leida && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => marcarComoLeida(notificacion.notificacionid)}
+                                        className="h-7 px-2 text-teal-400 hover:text-teal-300 hover:bg-slate-600"
+                                      >
+                                        <Check className="w-4 h-4 stroke-2" />
+                                      </Button>
+                                    )}
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => marcarComoLeida(notificacion.notificacionid)}
-                                      className="h-7 px-2 text-teal-400 hover:text-teal-300 hover:bg-slate-600"
+                                      onClick={() => eliminarNotificacion(notificacion.notificacionid)}
+                                      className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-slate-600"
                                     >
-                                      <Check className="w-4 h-4 stroke-2" />
+                                      <X className="w-4 h-4 stroke-2" />
                                     </Button>
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => eliminarNotificacion(notificacion.notificacionid)}
-                                    className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-slate-600"
-                                  >
-                                    <X className="w-4 h-4 stroke-2" />
-                                  </Button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))
-                )}
-              </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
 
-              {/* Footer */}
-              <div className="py-1 border-t border-slate-700 bg-slate-900/50 flex-shrink-0">
-                <p className="text-center text-slate-500 text-[9px]">
-                  RF_US_020
-                </p>
-              </div>
+                {/* Footer */}
+                <div className="py-1 border-t border-slate-700 bg-slate-900/50">
+                  <p className="text-center text-slate-500 text-[9px]">
+                    RF_US_020
+                  </p>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }
