@@ -227,6 +227,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                       )}
                       <Button
                         variant="ghost"
+                        size="icon"
                         onClick={() => setMostrarPanel(false)}
                         className={`hover:bg-slate-700 p-0 ${isMobile ? 'mr-0 rounded-2xl' : 'h-6 w-6'}`}
                         style={
@@ -238,8 +239,13 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                               }
                             : undefined
                         }
+                        aria-label="Cerrar notificaciones"
                       >
-                        <X className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} stroke-2 text-slate-300`} />
+                        {isMobile ? (
+                          <span className="text-4xl leading-none text-slate-300">×</span>
+                        ) : (
+                          <X className="w-4 h-4 stroke-2 text-slate-300" />
+                        )}
                       </Button>
                     </div>
                   </div>
