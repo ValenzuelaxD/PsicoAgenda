@@ -7,6 +7,7 @@ import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../utils/api';
+import useIsMobile from '../hooks/useIsMobile';
 
 interface Notification {
   notificacionid: string;
@@ -22,6 +23,7 @@ interface NotificationCenterProps {
 }
 
 export function NotificationCenter({ userType }: NotificationCenterProps) {
+  const isMobile = useIsMobile();
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,12 +183,24 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                 exit={{ x: '100%' }}
                 transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
                 onPointerDown={(event) => event.stopPropagation()}
-                className="absolute right-0 top-0 bottom-0 max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl flex flex-col overflow-hidden"
-                style={{
-                  height: '100dvh',
-                  width: 'min(92vw, 360px)',
-                  willChange: 'transform'
-                }}
+                className="absolute right-0 top-0 bottom-0 bg-slate-800 shadow-2xl flex flex-col overflow-hidden"
+                style={
+                  isMobile
+                    ? {
+                        height: '100dvh',
+                        width: '100vw',
+                        maxWidth: '100vw',
+                        paddingTop: 'env(safe-area-inset-top, 0px)',
+                        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                        willChange: 'transform'
+                      }
+                    : {
+                        height: '100dvh',
+                        width: 'min(92vw, 360px)',
+                        borderLeft: '1px solid rgb(51 65 85)',
+                        willChange: 'transform'
+                      }
+                }
               >
                 {/* Header */}
                 <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30">
