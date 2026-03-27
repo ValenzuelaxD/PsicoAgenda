@@ -229,9 +229,9 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => setMostrarPanel(false)}
-                        className="hover:bg-slate-700 h-6 w-6 p-0"
+                        className="hover:bg-slate-700 h-9 w-9 p-0"
                       >
-                        <X className="w-4 h-4 stroke-2 text-slate-300" />
+                        <X className="w-6 h-6 stroke-2 text-slate-300" />
                       </Button>
                     </div>
                   </div>
@@ -324,13 +324,6 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                       </motion.div>
                     ))
                   )}
-                </div>
-
-                {/* Footer */}
-                <div className="py-1 border-t border-slate-700 bg-slate-900/50">
-                  <p className="text-center text-slate-500 text-[9px]">
-                    RF_US_020
-                  </p>
                 </div>
               </motion.div>
             </motion.div>
