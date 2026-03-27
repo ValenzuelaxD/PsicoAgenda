@@ -143,7 +143,7 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
       </motion.button>
 
       {/* Panel de notificaciones */}
-      <AnimatePresence>
+      <AnimatePresence initial={false} mode="wait">
         {mostrarPanel && (
           <>
             {/* Overlay */}
@@ -157,11 +157,11 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
 
             {/* Panel lateral */}
             <motion.div
-              initial={{ x: 400 }}
+              initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: 400 }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="fixed right-0 top-0 h-[100dvh] w-[min(100vw,360px)] bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col"
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed inset-y-0 right-0 h-[100dvh] w-[min(100vw,360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col overflow-hidden will-change-transform"
             >
               {/* Header */}
               <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30 flex-shrink-0">
@@ -199,7 +199,10 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
               </div>
 
               {/* Lista de notificaciones */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              <div
+                className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-3 space-y-2"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
                 {loading ? (
                   <div className="text-center py-12">
                     <p className="text-slate-400">Cargando...</p>
