@@ -59,6 +59,24 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
     }
   }, [mostrarPanel]);
 
+  useEffect(() => {
+    if (!mostrarPanel) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    const originalOverscrollBehavior = document.body.style.overscrollBehavior;
+
+    // Lock page scroll while the notifications panel is open.
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.overscrollBehavior = originalOverscrollBehavior;
+    };
+  }, [mostrarPanel]);
+
 
   const notificacionesNoLeidas = notificaciones.filter((n) => !n.leida).length;
 
@@ -161,6 +179,8 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              onWheel={(event) => event.stopPropagation()}
+              onTouchMove={(event) => event.stopPropagation()}
               className="fixed inset-y-0 right-0 h-[100dvh] w-[min(100vw,360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col overflow-hidden will-change-transform"
             >
               {/* Header */}
@@ -200,8 +220,10 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
 
               {/* Lista de notificaciones */}
               <div
-                className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-3 space-y-2"
+                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-auto p-3 space-y-2"
                 style={{ WebkitOverflowScrolling: 'touch' }}
+                onWheel={(event) => event.stopPropagation()}
+                onTouchMove={(event) => event.stopPropagation()}
               >
                 {loading ? (
                   <div className="text-center py-12">
