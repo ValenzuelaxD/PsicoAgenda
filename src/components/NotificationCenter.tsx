@@ -166,8 +166,13 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[1000] bg-black/50"
-              onClick={() => setMostrarPanel(false)}
+              className="fixed inset-0 bg-black/50"
+              style={{ zIndex: 1000 }}
+              onPointerDown={(event) => {
+                if (event.target === event.currentTarget) {
+                  setMostrarPanel(false);
+                }
+              }}
             >
               {/* Panel lateral */}
               <motion.div
@@ -175,8 +180,13 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                onClick={(event) => event.stopPropagation()}
-                className="absolute inset-y-0 right-0 h-[100dvh] w-[min(92vw,360px)] max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl grid grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden will-change-transform"
+                onPointerDown={(event) => event.stopPropagation()}
+                className="absolute right-0 top-0 bottom-0 max-w-full bg-slate-800 border-l border-slate-700 shadow-2xl flex flex-col overflow-hidden"
+                style={{
+                  height: '100dvh',
+                  width: 'min(92vw, 360px)',
+                  willChange: 'transform'
+                }}
               >
                 {/* Header */}
                 <div className="px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-teal-900/30 to-violet-900/30">
@@ -215,8 +225,13 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
 
                 {/* Lista de notificaciones */}
                 <div
-                  className="min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2"
-                  style={{ WebkitOverflowScrolling: 'touch' }}
+                  className="flex-1 min-h-0 p-3 space-y-2"
+                  style={{
+                    overflowY: 'auto',
+                    overscrollBehavior: 'contain',
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-y'
+                  }}
                 >
                   {loading ? (
                     <div className="text-center py-12">
