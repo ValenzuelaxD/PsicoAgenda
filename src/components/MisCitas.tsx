@@ -1589,7 +1589,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
       {/* Modal de Edición de Cita */}
       <Dialog open={citaAEditar !== null} onOpenChange={() => setCitaAEditar(null)}>
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl max-h-[90vh] overflow-y-auto text-slate-200">
+        <DialogContent className="bg-slate-800 border-slate-700 max-w-4xl max-h-[90vh] overflow-y-auto text-slate-200">
           <DialogHeader>
             <DialogTitle className="text-slate-100 flex items-center gap-2">
               <Edit className="w-5 h-5 text-violet-400 stroke-2" />
@@ -1620,7 +1620,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               </div>
 
               {/* Campos Editables */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-6 items-start">
                 <div className="space-y-2">
                   <Label className="text-slate-200 flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-teal-400 stroke-2" />
