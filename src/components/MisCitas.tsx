@@ -284,8 +284,18 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   };
 
   const actualizarFechaHoraCita = (cita: Cita, fecha: string, hora: string) => {
-    // Mantener formato local y evitar conversiones a UTC mientras el usuario edita.
-    return { ...cita, fechahora: `${fecha}T${hora}:00` };
+    // Mantener formato local y evitar valores inválidos mientras el usuario edita.
+    const fechaActual = formatearFechaInput(cita.fechahora);
+    const horaActual = formatearHoraInput(cita.fechahora);
+
+    const fechaFinal = /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : fechaActual;
+    const horaFinal = /^\d{2}:\d{2}$/.test(hora) ? hora : (horaActual || '00:00');
+
+    if (!fechaFinal) {
+      return cita;
+    }
+
+    return { ...cita, fechahora: `${fechaFinal}T${horaFinal}:00` };
   };
 
   useEffect(() => {
@@ -1489,6 +1499,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <div className="rounded-md border border-slate-600 bg-slate-700/40 p-3">
                     <DateCalendar
                       mode="single"
+                      required
                       selected={convertirInputADate(formatearFechaInput(citaAReagendar.fechahora))}
                       month={mesCalendarioReagenda}
                       onMonthChange={setMesCalendarioReagenda}
@@ -1629,6 +1640,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <div className="rounded-md border border-slate-600 bg-slate-700/40 p-3">
                     <DateCalendar
                       mode="single"
+                      required
                       selected={convertirInputADate(formatearFechaInput(citaAEditar.fechahora))}
                       month={mesCalendarioEdicion}
                       onMonthChange={setMesCalendarioEdicion}
