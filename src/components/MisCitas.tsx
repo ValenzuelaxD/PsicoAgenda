@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -23,8 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Calendar as DateCalendar } from './ui/calendar';
 import { ViewType } from './Dashboard';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -57,6 +55,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const [loadingDiasEdicion, setLoadingDiasEdicion] = useState(false);
   const [mesCalendarioReagenda, setMesCalendarioReagenda] = useState(new Date());
   const [mesCalendarioEdicion, setMesCalendarioEdicion] = useState(new Date());
+  const inputFechaReagendaRef = useRef<HTMLInputElement | null>(null);
+  const inputFechaEdicionRef = useRef<HTMLInputElement | null>(null);
 
   const fetchCitas = async () => {
     try {
@@ -1487,52 +1487,37 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     <Calendar className="w-4 h-4 text-teal-400 stroke-2" />
                     Fecha
                   </Label>
-                  <Popover modal>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full justify-start border-slate-600 bg-slate-700 text-slate-100 hover:bg-slate-600"
-                      >
-                        <Calendar className="w-4 h-4 mr-2 text-teal-400" />
-                        {formatearFechaVisual(citaAReagendar.fechahora)}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 z-[70]" align="start">
-                      <DateCalendar
-                        mode="single"
-                        selected={convertirInputADate(formatearFechaInput(citaAReagendar.fechahora))}
-                        month={mesCalendarioReagenda}
-                        onMonthChange={setMesCalendarioReagenda}
-                        onSelect={(fecha) => {
-                          if (!fecha) {
-                            return;
-                          }
+                  <div className="relative">
+                    <Input
+                      ref={inputFechaReagendaRef}
+                      type="date"
+                      value={formatearFechaInput(citaAReagendar.fechahora)}
+                      onChange={(e) => setCitaAReagendar(actualizarFechaHoraCita(citaAReagendar, e.target.value, formatearHoraInput(citaAReagendar.fechahora)))}
+                      className="bg-slate-700 border-slate-600 text-slate-100 pr-10"
+                      min={obtenerFechaMinimaReagenda()}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-teal-300 hover:text-teal-200 hover:bg-slate-600"
+                      onClick={() => {
+                        const input = inputFechaReagendaRef.current as (HTMLInputElement & { showPicker?: () => void }) | null;
+                        if (!input) {
+                          return;
+                        }
 
-                          setCitaAReagendar(
-                            actualizarFechaHoraCita(
-                              citaAReagendar,
-                              formatearFechaLocal(fecha),
-                              formatearHoraInput(citaAReagendar.fechahora)
-                            )
-                          );
-                        }}
-                        fromDate={new Date(`${obtenerFechaMinimaReagenda()}T00:00:00`)}
-                        disabled={(candidate) => {
-                          const fecha = formatearFechaLocal(candidate);
-                          return candidate < new Date(`${obtenerFechaMinimaReagenda()}T00:00:00`) || !diasDisponiblesReagenda.includes(fecha);
-                        }}
-                        modifiers={{
-                          disponible: (candidate) => diasDisponiblesReagenda.includes(formatearFechaLocal(candidate)),
-                        }}
-                        modifiersClassNames={{
-                          disponible: 'ring-1 ring-blue-400/50 bg-blue-500/20 text-blue-200',
-                        }}
-                        className="bg-transparent"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {loadingDiasReagenda && <p className="text-xs text-slate-400">Cargando dias disponibles...</p>}
+                        if (typeof input.showPicker === 'function') {
+                          input.showPicker();
+                          return;
+                        }
+
+                        input.focus();
+                      }}
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -1636,52 +1621,37 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     <Calendar className="w-4 h-4 text-teal-400 stroke-2" />
                     Fecha
                   </Label>
-                  <Popover modal>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full justify-start border-slate-600 bg-slate-700 text-slate-100 hover:bg-slate-600"
-                      >
-                        <Calendar className="w-4 h-4 mr-2 text-teal-400" />
-                        {formatearFechaVisual(citaAEditar.fechahora)}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 z-[70]" align="start">
-                      <DateCalendar
-                        mode="single"
-                        selected={convertirInputADate(formatearFechaInput(citaAEditar.fechahora))}
-                        month={mesCalendarioEdicion}
-                        onMonthChange={setMesCalendarioEdicion}
-                        onSelect={(fecha) => {
-                          if (!fecha) {
-                            return;
-                          }
+                  <div className="relative">
+                    <Input
+                      ref={inputFechaEdicionRef}
+                      type="date"
+                      value={formatearFechaInput(citaAEditar.fechahora)}
+                      onChange={(e) => setCitaAEditar(actualizarFechaHoraCita(citaAEditar, e.target.value, formatearHoraInput(citaAEditar.fechahora)))}
+                      className="bg-slate-700 border-slate-600 text-slate-100 pr-10"
+                      min={obtenerFechaMinimaReagenda()}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-teal-300 hover:text-teal-200 hover:bg-slate-600"
+                      onClick={() => {
+                        const input = inputFechaEdicionRef.current as (HTMLInputElement & { showPicker?: () => void }) | null;
+                        if (!input) {
+                          return;
+                        }
 
-                          setCitaAEditar(
-                            actualizarFechaHoraCita(
-                              citaAEditar,
-                              formatearFechaLocal(fecha),
-                              formatearHoraInput(citaAEditar.fechahora)
-                            )
-                          );
-                        }}
-                        fromDate={new Date(`${obtenerFechaMinimaReagenda()}T00:00:00`)}
-                        disabled={(candidate) => {
-                          const fecha = formatearFechaLocal(candidate);
-                          return candidate < new Date(`${obtenerFechaMinimaReagenda()}T00:00:00`) || !diasDisponiblesEdicion.includes(fecha);
-                        }}
-                        modifiers={{
-                          disponible: (candidate) => diasDisponiblesEdicion.includes(formatearFechaLocal(candidate)),
-                        }}
-                        modifiersClassNames={{
-                          disponible: 'ring-1 ring-blue-400/50 bg-blue-500/20 text-blue-200',
-                        }}
-                        className="bg-transparent"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {loadingDiasEdicion && <p className="text-xs text-slate-400">Cargando dias disponibles...</p>}
+                        if (typeof input.showPicker === 'function') {
+                          input.showPicker();
+                          return;
+                        }
+
+                        input.focus();
+                      }}
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
