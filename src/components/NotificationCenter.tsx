@@ -5,6 +5,7 @@ import { Bell, X, Check, Calendar, Clock, AlertCircle, Info } from 'lucide-react
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../utils/api';
 import useIsMobile from '../hooks/useIsMobile';
@@ -14,7 +15,8 @@ interface Notification {
   tipo: 'cita' | 'recordatorio' | 'sistema' | 'info';
   titulo: string;
   descripcion: string;
-  fechacreacion: string;
+  fechacreacion?: string;
+  fechaenvio?: string;
   leida: boolean;
 }
 
@@ -139,6 +141,40 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
     }
   };
 
+  const getFechaNotificacion = (notificacion: Notification) => {
+    return notificacion.fechacreacion || notificacion.fechaenvio || '';
+  };
+
+  const formatearFechaNotificacion = (notificacion: Notification) => {
+    const fechaRaw = getFechaNotificacion(notificacion);
+    if (!fechaRaw) return 'Fecha no disponible';
+
+    const matchLocal = fechaRaw.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2})(?::\d{2})?$/);
+    if (matchLocal) {
+      const [, year, month, day, hour, minute] = matchLocal;
+      const hourNum = Number(hour);
+      const sufijo = hourNum >= 12 ? 'p.m.' : 'a.m.';
+      const hour12 = ((hourNum + 11) % 12) + 1;
+      return `${day}/${month}/${year}, ${hour12.toString().padStart(2, '0')}:${minute} ${sufijo}`;
+    }
+
+    const fecha = new Date(fechaRaw);
+    if (Number.isNaN(fecha.getTime())) return 'Fecha no disponible';
+
+    return fecha.toLocaleString('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const limpiarSegundosEnTexto = (texto: string) => {
+    return texto.replace(/(\b\d{1,2}:\d{2}):\d{2}(\s*[ap]\.?m\.?)/gi, '$1$2');
+  };
+
   return (
     <>
       {/* Botón de notificaciones */}
@@ -230,9 +266,9 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                         onClick={() => setMostrarPanel(false)}
                         aria-label="Cerrar notificaciones"
                         className="inline-flex items-center justify-center -mr-2 rounded-xl text-slate-200 hover:bg-slate-700 active:scale-95 transition"
-                        style={{ width: '64px', height: '64px' }}
+                        style={{ width: '44px', height: '44px' }}
                       >
-                        <X className="text-slate-200" style={{ width: '34px', height: '34px', strokeWidth: 2.75 }} />
+                        <X className="text-slate-200" style={{ width: '22px', height: '22px', strokeWidth: 2.5 }} />
                       </button>
                     </div>
                   </div>
@@ -269,59 +305,78 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <Card
-                          className={`bg-slate-700/50 border-slate-600 hover:bg-slate-700 transition-all cursor-pointer ${
-                            !notificacion.leida ? 'border-l-4 border-l-teal-500' : ''
-                          }`}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex gap-3">
-                              <div className="flex-shrink-0">
-                                {getIcono(notificacion.tipo)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2 mb-1">
-                                  <h3 className="text-slate-100 text-sm">
-                                    {notificacion.titulo}
-                                  </h3>
-                                  {!notificacion.leida && (
-                                    <Badge className="bg-teal-500 text-white text-xs px-1.5 py-0 h-5 flex-shrink-0">
-                                      Nueva
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-slate-400 text-sm mb-2">
-                                  {notificacion.descripcion}
-                                </p>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-slate-500 text-xs">
-                                    {new Date(notificacion.fechacreacion).toLocaleString()}
-                                  </span>
-                                  <div className="flex gap-1">
-                                    {!notificacion.leida && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => marcarComoLeida(notificacion.notificacionid)}
-                                        className="h-7 px-2 text-teal-400 hover:text-teal-300 hover:bg-slate-600"
+                        <HoverCard>
+                          <HoverCardTrigger asChild>
+                            <Card
+                              className={`bg-slate-700/50 border-slate-600 hover:bg-slate-700 transition-all cursor-pointer border-l-4 ${
+                                !notificacion.leida ? 'border-l-teal-500 shadow-[0_0_0_1px_rgba(20,184,166,0.18)]' : 'border-l-slate-500'
+                              }`}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex gap-3">
+                                  <div className="flex-shrink-0">
+                                    {getIcono(notificacion.tipo)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                      <h3 className="text-slate-100 text-sm">
+                                        {notificacion.titulo}
+                                      </h3>
+                                      <Badge
+                                        className={`text-white text-xs px-1.5 py-0 h-5 flex-shrink-0 ${
+                                          !notificacion.leida ? 'bg-teal-500' : 'bg-slate-500'
+                                        }`}
                                       >
-                                        <Check className="w-4 h-4 stroke-2" />
-                                      </Button>
-                                    )}
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => eliminarNotificacion(notificacion.notificacionid)}
-                                      className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-slate-600"
-                                    >
-                                      <X className="w-4 h-4 stroke-2" />
-                                    </Button>
+                                        {!notificacion.leida ? 'Nueva' : 'Leída'}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-slate-400 text-sm mb-2">
+                                      <span className="line-clamp-2 break-words">{limpiarSegundosEnTexto(notificacion.descripcion)}</span>
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-500 text-xs">
+                                        {formatearFechaNotificacion(notificacion)}
+                                      </span>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => marcarComoLeida(notificacion.notificacionid)}
+                                          disabled={notificacion.leida}
+                                          className={`h-7 px-2 hover:bg-slate-600 ${
+                                            notificacion.leida
+                                              ? 'text-slate-500 cursor-not-allowed'
+                                              : 'text-teal-400 hover:text-teal-300'
+                                          }`}
+                                        >
+                                          <Check className="w-4 h-4 stroke-2" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => eliminarNotificacion(notificacion.notificacionid)}
+                                          className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-slate-600"
+                                        >
+                                          <X className="w-4 h-4 stroke-2" />
+                                        </Button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
+                              </CardContent>
+                            </Card>
+                          </HoverCardTrigger>
+                          <HoverCardContent align="start" className="w-80 bg-slate-900 border-slate-700 text-slate-100">
+                            <div className="space-y-2 text-sm">
+                              <p className="text-teal-300">Detalle de notificación</p>
+                              <p className="break-words"><span className="text-slate-400">Título:</span> {notificacion.titulo}</p>
+                              <p><span className="text-slate-400">Tipo:</span> {notificacion.tipo}</p>
+                              <p><span className="text-slate-400">Estado:</span> {notificacion.leida ? 'Leída' : 'No leída'}</p>
+                              <p><span className="text-slate-400">Fecha:</span> {formatearFechaNotificacion(notificacion)}</p>
+                              <p className="break-words"><span className="text-slate-400">Mensaje:</span> {limpiarSegundosEnTexto(notificacion.descripcion)}</p>
                             </div>
-                          </CardContent>
-                        </Card>
+                          </HoverCardContent>
+                        </HoverCard>
                       </motion.div>
                     ))
                   )}

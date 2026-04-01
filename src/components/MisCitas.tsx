@@ -28,6 +28,7 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Cita, ESTADO_CITA, MODALIDAD_CITA } from '../utils/types';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
@@ -373,8 +374,10 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
         <TabsContent value="proximas" className="space-y-4 mt-6">
           {citasProximas.map((cita) => (
-            <Card key={cita.citaid} className="hover:shadow-lg transition-shadow bg-slate-800/50 backdrop-blur-sm border-slate-700">
-              <CardContent className="pt-6">
+            <HoverCard key={cita.citaid}>
+              <HoverCardTrigger asChild>
+                <Card className="hover:shadow-lg transition-shadow bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                  <CardContent className="pt-6">
                 {(() => {
                   const estadoVisual = obtenerEstiloEstado(cita.estado);
                   return (
@@ -455,8 +458,22 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                 </div>
                   );
                 })()}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </HoverCardTrigger>
+              <HoverCardContent align="start" className="w-80 bg-slate-900 border-slate-700 text-slate-100">
+                <div className="space-y-2 text-sm">
+                  <p className="text-teal-300">Resumen de la cita</p>
+                  <p><span className="text-slate-400">Modalidad:</span> {cita.modalidad}</p>
+                  <p><span className="text-slate-400">Duración:</span> {cita.duracionmin} min</p>
+                  <p><span className="text-slate-400">Estado:</span> {cita.estado}</p>
+                  <p className="break-words"><span className="text-slate-400">Ubicación:</span> {obtenerUbicacion(cita as Cita & { ubicacion?: string })}</p>
+                  {cita.notasresumen && (
+                    <p className="break-words"><span className="text-slate-400">Notas:</span> {cita.notasresumen}</p>
+                  )}
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           ))}
         </TabsContent>
 

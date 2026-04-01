@@ -16,28 +16,78 @@ function dividirNombreCompleto(nombreCompleto = '') {
 
 const getPacientes = async (req, res) => {
   try {
-    const result = await db.query(`
-      SELECT
-        u.usuarioid,
-        p.pacienteid,
-        u.nombre,
-        u.apellidopaterno,
-        u.apellidomaterno,
-        u.correo,
-        u.telefono,
-        p.fechanacimiento,
-        p.genero,
-        p.direccion,
-        p.motivoconsulta,
-        p.contactoemergencia,
-        p.telemergencia,
-        COUNT(c.citaid) FILTER (WHERE c.estado = 'Completada') AS sesionestotales
-      FROM usuarios u
-      JOIN pacientes p ON u.usuarioid = p.usuarioid
-      LEFT JOIN citas c ON c.pacienteid = p.pacienteid
-      WHERE u.rol = 'paciente' AND u.activo = true
-      GROUP BY u.usuarioid, p.pacienteid
-    `);
+    if (!req.user || !req.user.rol) {
+      return res.status(401).json({ message: 'No autorizado.' });
+    }
+
+    let result;
+
+    if (req.user.rol === 'psicologa') {
+      const psicologa = await db.query('SELECT psicologaid FROM psicologas WHERE usuarioid = $1', [req.user.id]);
+      if (psicologa.rows.length === 0) {
+        return res.status(404).json({ message: 'Perfil de psicóloga no encontrado.' });
+      }
+
+      const psicologaId = psicologa.rows[0].psicologaid;
+
+      result = await db.query(
+        `
+          SELECT
+            u.usuarioid,
+            p.pacienteid,
+            u.nombre,
+            u.apellidopaterno,
+            u.apellidomaterno,
+            u.correo,
+            u.telefono,
+            p.fechanacimiento,
+            p.genero,
+            p.direccion,
+            p.motivoconsulta,
+            p.contactoemergencia,
+            p.telemergencia,
+            COUNT(c.citaid) FILTER (WHERE c.estado = 'Completada') AS sesionestotales
+          FROM usuarios u
+          JOIN pacientes p ON u.usuarioid = p.usuarioid
+          LEFT JOIN citas c ON c.pacienteid = p.pacienteid AND c.psicologaid = $1
+          WHERE u.rol = 'paciente'
+            AND u.activo = true
+            AND EXISTS (
+              SELECT 1
+              FROM citas cx
+              WHERE cx.pacienteid = p.pacienteid
+                AND cx.psicologaid = $1
+            )
+          GROUP BY u.usuarioid, p.pacienteid
+        `,
+        [psicologaId]
+      );
+    } else if (req.user.rol === 'admin') {
+      result = await db.query(`
+        SELECT
+          u.usuarioid,
+          p.pacienteid,
+          u.nombre,
+          u.apellidopaterno,
+          u.apellidomaterno,
+          u.correo,
+          u.telefono,
+          p.fechanacimiento,
+          p.genero,
+          p.direccion,
+          p.motivoconsulta,
+          p.contactoemergencia,
+          p.telemergencia,
+          COUNT(c.citaid) FILTER (WHERE c.estado = 'Completada') AS sesionestotales
+        FROM usuarios u
+        JOIN pacientes p ON u.usuarioid = p.usuarioid
+        LEFT JOIN citas c ON c.pacienteid = p.pacienteid
+        WHERE u.rol = 'paciente' AND u.activo = true
+        GROUP BY u.usuarioid, p.pacienteid
+      `);
+    } else {
+      return res.status(403).json({ message: 'No tienes permisos para consultar pacientes.' });
+    }
 
     const pacientes = result.rows.map(p => ({
       ...p,

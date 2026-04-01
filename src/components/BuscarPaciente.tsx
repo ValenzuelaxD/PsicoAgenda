@@ -11,6 +11,7 @@ import { Progress } from './ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -318,32 +319,47 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                   </h2>
                   <div className="space-y-3">
                     {pacientesFiltrados.map((paciente) => (
-                      <Card
-                        key={paciente.pacienteid}
-                        className={`cursor-pointer transition-all hover:shadow-md bg-slate-800/50 backdrop-blur-sm border-slate-700 ${
-                          pacienteSeleccionado?.pacienteid === paciente.pacienteid
-                            ? 'border-teal-500 bg-gradient-to-r from-teal-900/30 to-violet-900/30 shadow-lg'
-                            : ''
-                        }`}
-                        onClick={() => setPacienteSeleccionado(paciente)}
-                      >
-                        <CardContent className="pt-4 pb-4">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-                                <User className="w-5 h-5 text-white stroke-2" />
+                      <HoverCard key={paciente.pacienteid}>
+                        <HoverCardTrigger asChild>
+                          <Card
+                            className={`cursor-pointer transition-all hover:shadow-md bg-slate-800/50 backdrop-blur-sm border-slate-700 ${
+                              pacienteSeleccionado?.pacienteid === paciente.pacienteid
+                                ? 'border-teal-500 bg-gradient-to-r from-teal-900/30 to-violet-900/30 shadow-lg'
+                                : ''
+                            }`}
+                            onClick={() => setPacienteSeleccionado(paciente)}
+                          >
+                            <CardContent className="pt-4 pb-4">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+                                    <User className="w-5 h-5 text-white stroke-2" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-white font-medium">{obtenerNombreCompletoPaciente(paciente)}</p>
+                                    <p className="text-slate-400">{paciente.edad} años</p>
+                                  </div>
+                                </div>
+                                <Badge variant={paciente.estado === 'activo' ? 'default' : 'secondary'} className={paciente.estado === 'activo' ? 'bg-teal-600' : ''}>
+                                  {paciente.estado}
+                                </Badge>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-white font-medium">{obtenerNombreCompletoPaciente(paciente)}</p>
-                                <p className="text-slate-400">{paciente.edad} años</p>
-                              </div>
-                            </div>
-                            <Badge variant={paciente.estado === 'activo' ? 'default' : 'secondary'} className={paciente.estado === 'activo' ? 'bg-teal-600' : ''}>
-                              {paciente.estado}
-                            </Badge>
+                            </CardContent>
+                          </Card>
+                        </HoverCardTrigger>
+                        <HoverCardContent align="start" className="w-80 bg-slate-900 border-slate-700 text-slate-100">
+                          <div className="space-y-2 text-sm">
+                            <p className="text-teal-300">Ficha rápida</p>
+                            <p className="break-words"><span className="text-slate-400">Nombre:</span> {obtenerNombreCompletoPaciente(paciente)}</p>
+                            <p><span className="text-slate-400">Edad:</span> {paciente.edad ? `${paciente.edad} años` : 'No registrada'}</p>
+                            <p className="break-words"><span className="text-slate-400">Correo:</span> {paciente.email || 'No registrado'}</p>
+                            <p className="break-words"><span className="text-slate-400">Teléfono:</span> {paciente.telefono || 'No registrado'}</p>
+                            {paciente.motivoconsulta && (
+                              <p className="break-words"><span className="text-slate-400">Motivo:</span> {paciente.motivoconsulta}</p>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
+                        </HoverCardContent>
+                      </HoverCard>
                     ))}
                   </div>
                 </div>

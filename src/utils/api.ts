@@ -52,6 +52,19 @@ export const API_ENDPOINTS = {
   ADMIN_RECHAZAR_SOLICITUD_PSICOLOGA: (id: number) => `${API_BASE_URL}/api/admin/solicitudes-psicologas/${id}/rechazar`,
 };
 
+function getClientLocalDateTime(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  // Se envía sin zona para conservar exactamente la hora local del navegador.
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 /**
  * Función auxiliar para hacer fetch con error handling consistente
  */
@@ -67,6 +80,9 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
+
+    headers.set('x-client-local-datetime', getClientLocalDateTime());
+    headers.set('x-client-timezone', Intl.DateTimeFormat().resolvedOptions().timeZone || '');
 
     return fetch(endpoint, {
       ...options,

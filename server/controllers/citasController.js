@@ -23,6 +23,13 @@ const construirFechaHora = (fecha, hora) => {
   return Number.isNaN(fechaHora.getTime()) ? null : fechaHora;
 };
 
+const obtenerFechaClienteDesdeRequest = (req) => {
+  const valor = String(req.headers['x-client-local-datetime'] || '').trim();
+  // Formato esperado: YYYY-MM-DD HH:mm:ss
+  const valido = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(valor);
+  return valido ? valor : null;
+};
+
 const validarDisponibilidad = async ({ psicologaId, fechaHora, duracionMin, citaIdExcluir = null }) => {
   const diaSemana = DIAS_SEMANA[fechaHora.getDay()];
   const fecha = fechaHora.toISOString().slice(0, 10);
@@ -78,12 +85,23 @@ const validarDisponibilidad = async ({ psicologaId, fechaHora, duracionMin, cita
   return { disponible: true };
 };
 
-const crearNotificacion = async ({ usuarioId, citaId, tipo, mensaje }) => {
+const crearNotificacion = async ({ usuarioId, citaId, tipo, mensaje, fechaEnvio }) => {
   if (!usuarioId || !mensaje) {
     return;
   }
 
   try {
+    if (fechaEnvio) {
+      await db.query(
+        `
+          INSERT INTO notificaciones (usuarioid, citaid, tipo, mensaje, fechaenvio)
+          VALUES ($1, $2, $3, $4, $5)
+        `,
+        [usuarioId, citaId || null, tipo, mensaje, fechaEnvio]
+      );
+      return;
+    }
+
     await db.query(
       `
         INSERT INTO notificaciones (usuarioid, citaid, tipo, mensaje)
@@ -328,17 +346,20 @@ const crearCita = async (req, res) => {
 
     const contexto = await getContextoCita(result.rows[0].citaid);
     if (contexto) {
+      const fechaCliente = obtenerFechaClienteDesdeRequest(req);
       await crearNotificacion({
         usuarioId: contexto.paciente_usuarioid,
         citaId: contexto.citaid,
         tipo: 'Confirmacion',
         mensaje: `Tu cita con ${contexto.psicologa_nombre} ${contexto.psicologa_apellido} fue programada para ${new Date(contexto.fechahora).toLocaleString('es-MX')}.`,
+        fechaEnvio: fechaCliente,
       });
       await crearNotificacion({
         usuarioId: contexto.psicologa_usuarioid,
         citaId: contexto.citaid,
         tipo: 'Confirmacion',
         mensaje: `Se programó una cita con ${contexto.paciente_nombre} ${contexto.paciente_apellido} para ${new Date(contexto.fechahora).toLocaleString('es-MX')}.`,
+        fechaEnvio: fechaCliente,
       });
     }
 
@@ -404,6 +425,7 @@ const actualizarCita = async (req, res) => {
 
     const contextoActualizado = await getContextoCita(id);
     if (contextoActualizado) {
+      const fechaCliente = obtenerFechaClienteDesdeRequest(req);
       const destinatario = req.user.rol === 'paciente' ? contextoActualizado.psicologa_usuarioid : contextoActualizado.paciente_usuarioid;
       const nombreContraparte = req.user.rol === 'paciente'
         ? `${contextoActualizado.paciente_nombre} ${contextoActualizado.paciente_apellido}`
@@ -414,6 +436,7 @@ const actualizarCita = async (req, res) => {
         citaId: Number(id),
         tipo: 'Reagenda',
         mensaje: `La cita con ${nombreContraparte} fue actualizada para ${new Date(contextoActualizado.fechahora).toLocaleString('es-MX')}.`,
+        fechaEnvio: fechaCliente,
       });
     }
 
@@ -451,12 +474,14 @@ const confirmarCita = async (req, res) => {
 
     const contexto = await getContextoCita(id);
     if (contexto) {
+      const fechaCliente = obtenerFechaClienteDesdeRequest(req);
       const destinatario = req.user.rol === 'paciente' ? contexto.psicologa_usuarioid : contexto.paciente_usuarioid;
       await crearNotificacion({
         usuarioId: destinatario,
         citaId: Number(id),
         tipo: 'Confirmacion',
         mensaje: `La cita del ${new Date(contexto.fechahora).toLocaleString('es-MX')} fue confirmada.`,
+        fechaEnvio: fechaCliente,
       });
     }
 
@@ -488,12 +513,14 @@ const cancelarCita = async (req, res) => {
 
     const contexto = await getContextoCita(id);
     if (contexto) {
+      const fechaCliente = obtenerFechaClienteDesdeRequest(req);
       const destinatario = req.user.rol === 'paciente' ? contexto.psicologa_usuarioid : contexto.paciente_usuarioid;
       await crearNotificacion({
         usuarioId: destinatario,
         citaId: Number(id),
         tipo: 'Cancelacion',
         mensaje: `La cita del ${new Date(contexto.fechahora).toLocaleString('es-MX')} fue cancelada.`,
+        fechaEnvio: fechaCliente,
       });
     }
 

@@ -4,7 +4,17 @@ const getMisNotificaciones = async (req, res) => {
   const usuarioId = req.user.id;
 
   try {
-    const result = await db.query('SELECT notificacionid, tipo, mensaje, leida, fechaenvio FROM notificaciones WHERE usuarioid = $1 ORDER BY fechaenvio DESC', [usuarioId]);
+    const result = await db.query(`
+      SELECT
+        notificacionid,
+        tipo,
+        mensaje,
+        leida,
+        TO_CHAR(fechaenvio, 'YYYY-MM-DD HH24:MI:SS') AS fechaenvio
+      FROM notificaciones
+      WHERE usuarioid = $1
+      ORDER BY fechaenvio DESC
+    `, [usuarioId]);
     
     const notificaciones = result.rows.map(n => {
       let titulo = '';
