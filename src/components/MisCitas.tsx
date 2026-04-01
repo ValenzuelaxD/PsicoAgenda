@@ -1487,7 +1487,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     <Calendar className="w-4 h-4 text-teal-400 stroke-2" />
                     Fecha
                   </Label>
-                  <Popover>
+                  <Popover modal>
                     <PopoverTrigger asChild>
                       <Button
                         type="button"
@@ -1498,7 +1498,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         {formatearFechaVisual(citaAReagendar.fechahora)}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700" align="start">
+                    <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 z-[70]" align="start">
                       <DateCalendar
                         mode="single"
                         selected={convertirInputADate(formatearFechaInput(citaAReagendar.fechahora))}
@@ -1636,7 +1636,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     <Calendar className="w-4 h-4 text-teal-400 stroke-2" />
                     Fecha
                   </Label>
-                  <Popover>
+                  <Popover modal>
                     <PopoverTrigger asChild>
                       <Button
                         type="button"
@@ -1647,7 +1647,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         {formatearFechaVisual(citaAEditar.fechahora)}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700" align="start">
+                    <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 z-[70]" align="start">
                       <DateCalendar
                         mode="single"
                         selected={convertirInputADate(formatearFechaInput(citaAEditar.fechahora))}
