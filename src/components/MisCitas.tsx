@@ -45,6 +45,10 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const [citas, setCitas] = useState<Cita[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [horasDisponiblesReagenda, setHorasDisponiblesReagenda] = useState<string[]>([]);
+  const [horasDisponiblesEdicion, setHorasDisponiblesEdicion] = useState<string[]>([]);
+  const [loadingHorasReagenda, setLoadingHorasReagenda] = useState(false);
+  const [loadingHorasEdicion, setLoadingHorasEdicion] = useState(false);
 
   const fetchCitas = async () => {
     try {
@@ -196,10 +200,105 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     return !Number.isNaN(fechaHora.getTime()) && fechaHora < new Date();
   };
 
+  const filtrarHorariosPasados = (fechaSeleccionada: string, horariosDisponibles: string[]) => {
+    const hoy = obtenerFechaMinimaReagenda();
+    if (fechaSeleccionada !== hoy) {
+      return horariosDisponibles;
+    }
+
+    const ahora = new Date();
+    const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+    return horariosDisponibles.filter((horario) => horario > horaActual);
+  };
+
+  const obtenerHorasDisponibles = async (cita: Cita, fechaSeleccionada: string) => {
+    if (!cita.psicologaid || !fechaSeleccionada) {
+      return [];
+    }
+
+    const params = new URLSearchParams({ fecha: fechaSeleccionada });
+    params.set('citaIdExcluir', String(cita.citaid));
+
+    const response = await apiFetch(`${API_ENDPOINTS.PSICOLOGAS}/${cita.psicologaid}/disponibilidad?${params.toString()}`);
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    const horarios = Array.isArray(data) ? data : [];
+    return filtrarHorariosPasados(fechaSeleccionada, horarios);
+  };
+
   const actualizarFechaHoraCita = (cita: Cita, fecha: string, hora: string) => {
     // Mantener formato local y evitar conversiones a UTC mientras el usuario edita.
     return { ...cita, fechahora: `${fecha}T${hora}:00` };
   };
+
+  useEffect(() => {
+    if (!citaAReagendar) {
+      setHorasDisponiblesReagenda([]);
+      return;
+    }
+
+    const cargarHoras = async () => {
+      setLoadingHorasReagenda(true);
+      try {
+        const fechaSeleccionada = formatearFechaInput(citaAReagendar.fechahora);
+        const horaSeleccionada = formatearHoraInput(citaAReagendar.fechahora);
+        const disponibles = await obtenerHorasDisponibles(citaAReagendar, fechaSeleccionada);
+        setHorasDisponiblesReagenda(disponibles);
+
+        if (disponibles.length > 0 && !disponibles.includes(horaSeleccionada)) {
+          setCitaAReagendar((prev) => {
+            if (!prev) {
+              return prev;
+            }
+
+            return actualizarFechaHoraCita(prev, fechaSeleccionada, disponibles[0]);
+          });
+        }
+      } catch {
+        setHorasDisponiblesReagenda([]);
+      } finally {
+        setLoadingHorasReagenda(false);
+      }
+    };
+
+    cargarHoras();
+  }, [citaAReagendar?.citaid, citaAReagendar?.fechahora]);
+
+  useEffect(() => {
+    if (!citaAEditar) {
+      setHorasDisponiblesEdicion([]);
+      return;
+    }
+
+    const cargarHoras = async () => {
+      setLoadingHorasEdicion(true);
+      try {
+        const fechaSeleccionada = formatearFechaInput(citaAEditar.fechahora);
+        const horaSeleccionada = formatearHoraInput(citaAEditar.fechahora);
+        const disponibles = await obtenerHorasDisponibles(citaAEditar, fechaSeleccionada);
+        setHorasDisponiblesEdicion(disponibles);
+
+        if (disponibles.length > 0 && !disponibles.includes(horaSeleccionada)) {
+          setCitaAEditar((prev) => {
+            if (!prev) {
+              return prev;
+            }
+
+            return actualizarFechaHoraCita(prev, fechaSeleccionada, disponibles[0]);
+          });
+        }
+      } catch {
+        setHorasDisponiblesEdicion([]);
+      } finally {
+        setLoadingHorasEdicion(false);
+      }
+    };
+
+    cargarHoras();
+  }, [citaAEditar?.citaid, citaAEditar?.fechahora]);
 
 
   const handleCancelarCita = async () => {
@@ -250,6 +349,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
         if (esFechaHoraPasada(fechaSeleccionada, horaSeleccionada)) {
           toast.error('No puedes reagendar una cita en una fecha u hora pasada.');
+          return;
+        }
+
+        if (horasDisponiblesEdicion.length === 0 || !horasDisponiblesEdicion.includes(horaSeleccionada)) {
+          toast.error('Selecciona una hora disponible para la fecha elegida.');
           return;
         }
 
@@ -320,6 +424,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
         if (esFechaHoraPasada(fechaSeleccionada, horaSeleccionada)) {
           toast.error('No puedes reagendar una cita en una fecha u hora pasada.');
+          return;
+        }
+
+        if (horasDisponiblesReagenda.length === 0 || !horasDisponiblesReagenda.includes(horaSeleccionada)) {
+          toast.error('Selecciona una hora disponible para la fecha elegida.');
           return;
         }
 
@@ -1274,13 +1383,23 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     <Clock className="w-4 h-4 text-teal-400 stroke-2" />
                     Hora
                   </Label>
-                  <Input
-                    type="time"
+                  <Select
                     value={formatearHoraInput(citaAReagendar.fechahora)}
-                    onChange={(e) => setCitaAReagendar(actualizarFechaHoraCita(citaAReagendar, formatearFechaInput(citaAReagendar.fechahora), e.target.value))}
-                    className="bg-slate-700 border-slate-600 text-slate-100"
-                    required
-                  />
+                    onValueChange={(value) => setCitaAReagendar(actualizarFechaHoraCita(citaAReagendar, formatearFechaInput(citaAReagendar.fechahora), value))}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
+                      <SelectValue placeholder={loadingHorasReagenda ? 'Cargando horarios...' : 'Selecciona una hora'} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {loadingHorasReagenda && <SelectItem value="__loading_reagenda" disabled>Cargando horarios...</SelectItem>}
+                      {!loadingHorasReagenda && horasDisponiblesReagenda.length === 0 && (
+                        <SelectItem value="__sin_horas_reagenda" disabled>No hay horarios disponibles</SelectItem>
+                      )}
+                      {!loadingHorasReagenda && horasDisponiblesReagenda.map((horaDisponible) => (
+                        <SelectItem key={horaDisponible} value={horaDisponible}>{horaDisponible}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -1375,13 +1494,23 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     <Clock className="w-4 h-4 text-teal-400 stroke-2" />
                     Hora
                   </Label>
-                  <Input
-                    type="time"
+                  <Select
                     value={formatearHoraInput(citaAEditar.fechahora)}
-                    onChange={(e) => setCitaAEditar(actualizarFechaHoraCita(citaAEditar, formatearFechaInput(citaAEditar.fechahora), e.target.value))}
-                    className="bg-slate-700 border-slate-600 text-slate-100"
-                    required
-                  />
+                    onValueChange={(value) => setCitaAEditar(actualizarFechaHoraCita(citaAEditar, formatearFechaInput(citaAEditar.fechahora), value))}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
+                      <SelectValue placeholder={loadingHorasEdicion ? 'Cargando horarios...' : 'Selecciona una hora'} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {loadingHorasEdicion && <SelectItem value="__loading_edicion" disabled>Cargando horarios...</SelectItem>}
+                      {!loadingHorasEdicion && horasDisponiblesEdicion.length === 0 && (
+                        <SelectItem value="__sin_horas_edicion" disabled>No hay horarios disponibles</SelectItem>
+                      )}
+                      {!loadingHorasEdicion && horasDisponiblesEdicion.map((horaDisponible) => (
+                        <SelectItem key={horaDisponible} value={horaDisponible}>{horaDisponible}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
