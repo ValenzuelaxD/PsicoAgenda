@@ -17,7 +17,7 @@ const getPsicologas = async (req, res) => {
 
 const getDisponibilidad = async (req, res) => {
   const { id } = req.params;
-  const { fecha } = req.query;
+  const { fecha, citaIdExcluir } = req.query;
 
   try {
     if (!fecha) {
@@ -40,14 +40,19 @@ const getDisponibilidad = async (req, res) => {
     }
 
     // 2. Obtener las citas ya agendadas para esa fecha
+    const citaIdExcluirNum = Number(citaIdExcluir);
+    const excluirCita = Number.isInteger(citaIdExcluirNum) && citaIdExcluirNum > 0;
+
     const citasAgendadasQuery = `
       SELECT fechahora, duracionmin
       FROM citas
       WHERE psicologaid = $1
         AND DATE(fechahora) = $2
         AND COALESCE(LOWER(TRIM(estado)), '') NOT IN ('cancelada', 'cancelado')
+        ${excluirCita ? 'AND citaid <> $3' : ''}
     `;
-    const citasAgendadasResult = await db.query(citasAgendadasQuery, [id, fecha]);
+    const citasAgendadasParams = excluirCita ? [id, fecha, citaIdExcluirNum] : [id, fecha];
+    const citasAgendadasResult = await db.query(citasAgendadasQuery, citasAgendadasParams);
     const citasAgendadas = citasAgendadasResult.rows;
 
     // 3. Generar los horarios disponibles
