@@ -23,6 +23,14 @@ const construirFechaHora = (fecha, hora) => {
   return Number.isNaN(fechaHora.getTime()) ? null : fechaHora;
 };
 
+const esFechaHoraPasada = (fechaHora) => {
+  if (!(fechaHora instanceof Date) || Number.isNaN(fechaHora.getTime())) {
+    return false;
+  }
+
+  return fechaHora < new Date();
+};
+
 const obtenerFechaClienteDesdeRequest = (req) => {
   const valor = String(req.headers['x-client-local-datetime'] || '').trim();
   // Formato esperado: YYYY-MM-DD HH:mm:ss
@@ -276,6 +284,10 @@ const crearCita = async (req, res) => {
       return res.status(400).json({ message: 'Fecha u hora inválida.' });
     }
 
+    if (esFechaHoraPasada(fechaHora)) {
+      return res.status(400).json({ message: 'No puedes agendar una cita en una fecha u hora pasada.' });
+    }
+
     const duracionFinal = Number(duracionMin || 60);
     const modalidadFinal = modalidad || 'Presencial';
     const notasPacienteFinal = rol === 'paciente' ? notas || null : null;
@@ -384,6 +396,14 @@ const actualizarCita = async (req, res) => {
     const fechaBase = fecha || new Date(contexto.fechahora).toISOString().slice(0, 10);
     const horaBase = hora || new Date(contexto.fechahora).toTimeString().slice(0, 5);
     const nuevaFechaHora = construirFechaHora(fechaBase, horaBase);
+    if (!nuevaFechaHora) {
+      return res.status(400).json({ message: 'Fecha u hora inválida.' });
+    }
+
+    if (esFechaHoraPasada(nuevaFechaHora)) {
+      return res.status(400).json({ message: 'No puedes reagendar una cita en una fecha u hora pasada.' });
+    }
+
     const nuevaDuracion = Number(duracionMin || contexto.duracionmin || 60);
     const nuevaModalidad = modalidad || contexto.modalidad;
     const nuevoEstado = req.user.rol === 'psicologa'

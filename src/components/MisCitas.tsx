@@ -183,6 +183,19 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     return `${hour12}:${String(minuteRaw).padStart(2, '0')}:00 ${sufijo}`;
   };
 
+  const obtenerFechaMinimaReagenda = () => {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = `${hoy.getMonth() + 1}`.padStart(2, '0');
+    const day = `${hoy.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const esFechaHoraPasada = (fecha: string, hora: string) => {
+    const fechaHora = new Date(`${fecha}T${String(hora).slice(0, 5)}:00`);
+    return !Number.isNaN(fechaHora.getTime()) && fechaHora < new Date();
+  };
+
   const actualizarFechaHoraCita = (cita: Cita, fecha: string, hora: string) => {
     // Mantener formato local y evitar conversiones a UTC mientras el usuario edita.
     return { ...cita, fechahora: `${fecha}T${hora}:00` };
@@ -232,11 +245,19 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     e.preventDefault();
     if (citaAEditar) {
       try {
+        const fechaSeleccionada = formatearFechaInput(citaAEditar.fechahora);
+        const horaSeleccionada = formatearHoraInput(citaAEditar.fechahora);
+
+        if (esFechaHoraPasada(fechaSeleccionada, horaSeleccionada)) {
+          toast.error('No puedes reagendar una cita en una fecha u hora pasada.');
+          return;
+        }
+
         const response = await apiFetch(`${API_ENDPOINTS.CITAS}/${citaAEditar.citaid}`, {
           method: 'PUT',
           body: JSON.stringify({
-            fecha: formatearFechaInput(citaAEditar.fechahora),
-            hora: formatearHoraInput(citaAEditar.fechahora),
+            fecha: fechaSeleccionada,
+            hora: horaSeleccionada,
             modalidad: citaAEditar.modalidad,
             estado: citaAEditar.estado,
             notasPsicologa: citaAEditar.notaspsicologa || '',
@@ -294,11 +315,19 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     e.preventDefault();
     if (citaAReagendar) {
       try {
+        const fechaSeleccionada = formatearFechaInput(citaAReagendar.fechahora);
+        const horaSeleccionada = formatearHoraInput(citaAReagendar.fechahora);
+
+        if (esFechaHoraPasada(fechaSeleccionada, horaSeleccionada)) {
+          toast.error('No puedes reagendar una cita en una fecha u hora pasada.');
+          return;
+        }
+
         const response = await apiFetch(`${API_ENDPOINTS.CITAS}/${citaAReagendar.citaid}`, {
           method: 'PUT',
           body: JSON.stringify({
-            fecha: formatearFechaInput(citaAReagendar.fechahora),
-            hora: formatearHoraInput(citaAReagendar.fechahora),
+            fecha: fechaSeleccionada,
+            hora: horaSeleccionada,
             modalidad: citaAReagendar.modalidad,
             estado: ESTADO_CITA.PENDIENTE,
             notasPaciente: citaAReagendar.notaspaciente || citaAReagendar.notas || '',
@@ -1235,6 +1264,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     value={formatearFechaInput(citaAReagendar.fechahora)}
                     onChange={(e) => setCitaAReagendar(actualizarFechaHoraCita(citaAReagendar, e.target.value, formatearHoraInput(citaAReagendar.fechahora)))}
                     className="bg-slate-700 border-slate-600 text-slate-100"
+                    min={obtenerFechaMinimaReagenda()}
                     required
                   />
                 </div>
@@ -1335,6 +1365,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     value={formatearFechaInput(citaAEditar.fechahora)}
                     onChange={(e) => setCitaAEditar(actualizarFechaHoraCita(citaAEditar, e.target.value, formatearHoraInput(citaAEditar.fechahora)))}
                     className="bg-slate-700 border-slate-600 text-slate-100"
+                    min={obtenerFechaMinimaReagenda()}
                     required
                   />
                 </div>
