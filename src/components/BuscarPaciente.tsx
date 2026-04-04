@@ -332,8 +332,16 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                             <CardContent className="pt-4 pb-4">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-start gap-3">
-                                  <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-                                    <User className="w-5 h-5 text-white stroke-2" />
+                                  <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+                                    {paciente.fotoperfil ? (
+                                      <img
+                                        src={paciente.fotoperfil}
+                                        alt={`Foto de ${obtenerNombreCompletoPaciente(paciente) || 'paciente'}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <User className="w-5 h-5 text-white stroke-2" />
+                                    )}
                                   </div>
                                   <div className="min-w-0">
                                     <p className="text-white font-medium">{obtenerNombreCompletoPaciente(paciente)}</p>

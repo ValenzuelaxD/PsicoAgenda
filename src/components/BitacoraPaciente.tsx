@@ -231,8 +231,16 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               >
                 <CardContent className="py-4">
                   <div className="flex min-h-10 items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-white stroke-2" />
+                    <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {paciente.fotoperfil ? (
+                        <img
+                          src={paciente.fotoperfil}
+                          alt={`Foto de ${paciente.nombre || 'paciente'}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-4 h-4 text-white stroke-2" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <p className="text-white font-medium text-sm truncate">
@@ -257,8 +265,16 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <User className="w-6 h-6 text-white stroke-2" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {pacienteSeleccionado.fotoperfil ? (
+                        <img
+                          src={pacienteSeleccionado.fotoperfil}
+                          alt={`Foto de ${pacienteSeleccionado.nombre || 'paciente'}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-6 h-6 text-white stroke-2" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-white font-semibold">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -31,6 +31,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [fotoPerfil, setFotoPerfil] = useState('');
+  const [nombreArchivoFoto, setNombreArchivoFoto] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [direccion, setDireccion] = useState('');
   const [genero, setGenero] = useState('');
@@ -50,6 +51,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
   const [passwordActual, setPasswordActual] = useState('');
   const [passwordNueva, setPasswordNueva] = useState('');
   const [passwordConfirmar, setPasswordConfirmar] = useState('');
+  const archivoFotoInputRef = useRef<HTMLInputElement | null>(null);
 
   // Estado para valores originales (para cancelar)
   const [valoresOriginales, setValoresOriginales] = useState({
@@ -282,6 +284,45 @@ export function Perfil({ userName, userType }: PerfilProps) {
     }
   };
 
+  const handleFotoPerfilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+
+    if (!archivo.type.startsWith('image/')) {
+      setNombreArchivoFoto('');
+      if (archivoFotoInputRef.current) archivoFotoInputRef.current.value = '';
+      toast.error('Archivo no válido', {
+        description: 'Selecciona una imagen en formato válido.'
+      });
+      return;
+    }
+
+    const limiteBytes = 2 * 1024 * 1024;
+    if (archivo.size > limiteBytes) {
+      setNombreArchivoFoto('');
+      if (archivoFotoInputRef.current) archivoFotoInputRef.current.value = '';
+      toast.error('Imagen demasiado grande', {
+        description: 'La imagen no debe superar los 2MB.'
+      });
+      return;
+    }
+
+    setNombreArchivoFoto(archivo.name);
+
+    const lector = new FileReader();
+    lector.onload = () => {
+      if (typeof lector.result !== 'string') {
+        toast.error('No se pudo procesar la imagen');
+        return;
+      }
+      setFotoPerfil(lector.result);
+    };
+    lector.onerror = () => {
+      toast.error('No se pudo leer la imagen');
+    };
+    lector.readAsDataURL(archivo);
+  };
+
 
 
   if (isLoading) {
@@ -397,6 +438,69 @@ export function Perfil({ userName, userType }: PerfilProps) {
                     className="pl-10 bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
                     placeholder="Calle, número, colonia, ciudad"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="foto-perfil" className="text-slate-200">Foto de Perfil</Label>
+                <div className="flex items-center gap-3 pt-1 pb-2">
+                  <div className="w-20 h-20 rounded-full bg-slate-700 border border-slate-600 overflow-hidden flex items-center justify-center">
+                    {fotoPerfil ? (
+                      <img
+                        src={fotoPerfil}
+                        alt="Vista previa de foto de perfil"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-5 h-5 text-slate-400" />
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Sube una imagen (JPG, PNG, WEBP). Tamaño máximo: 2MB.
+                  </p>
+                </div>
+                <input
+                  ref={archivoFotoInputRef}
+                  id="foto-perfil"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFotoPerfilChange}
+                  hidden
+                  style={{ display: 'none' }}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    className="bg-teal-600 hover:bg-teal-700 text-white"
+                    onClick={() => archivoFotoInputRef.current?.click()}
+                  >
+                    Elegir foto
+                  </Button>
+                  <span className="text-sm text-slate-300">
+                    {nombreArchivoFoto || (fotoPerfil ? 'Foto cargada' : 'No se ha seleccionado archivo')}
+                  </span>
+                  {fotoPerfil && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      onClick={() => {
+                        setFotoPerfil('');
+                        setNombreArchivoFoto('');
+                        if (archivoFotoInputRef.current) archivoFotoInputRef.current.value = '';
+                      }}
+                    >
+                      Quitar
+                    </Button>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Formatos permitidos: imagen. Se recomienda una foto cuadrada para mejor visualización.
+                  </p>
                 </div>
               </div>
             </div>

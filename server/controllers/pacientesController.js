@@ -14,6 +14,15 @@ function dividirNombreCompleto(nombreCompleto = '') {
   return { nombre, apellidoPaterno, apellidoMaterno };
 }
 
+function construirUrlFoto(req, fotoPerfil) {
+  if (!fotoPerfil) return '';
+  if (/^https?:\/\//i.test(fotoPerfil) || fotoPerfil.startsWith('data:')) return fotoPerfil;
+  if (fotoPerfil.startsWith('/uploads/')) {
+    return `${req.protocol}://${req.get('host')}${fotoPerfil}`;
+  }
+  return fotoPerfil;
+}
+
 const getPacientes = async (req, res) => {
   try {
     if (!req.user || !req.user.rol) {
@@ -40,6 +49,7 @@ const getPacientes = async (req, res) => {
             u.apellidomaterno,
             u.correo,
             u.telefono,
+            u.fotoperfil,
             p.fechanacimiento,
             p.genero,
             p.direccion,
@@ -58,7 +68,7 @@ const getPacientes = async (req, res) => {
               WHERE cx.pacienteid = p.pacienteid
                 AND cx.psicologaid = $1
             )
-          GROUP BY u.usuarioid, p.pacienteid
+          GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil
         `,
         [psicologaId]
       );
@@ -72,6 +82,7 @@ const getPacientes = async (req, res) => {
           u.apellidomaterno,
           u.correo,
           u.telefono,
+          u.fotoperfil,
           p.fechanacimiento,
           p.genero,
           p.direccion,
@@ -83,7 +94,7 @@ const getPacientes = async (req, res) => {
         JOIN pacientes p ON u.usuarioid = p.usuarioid
         LEFT JOIN citas c ON c.pacienteid = p.pacienteid
         WHERE u.rol = 'paciente' AND u.activo = true
-        GROUP BY u.usuarioid, p.pacienteid
+        GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil
       `);
     } else {
       return res.status(403).json({ message: 'No tienes permisos para consultar pacientes.' });
@@ -91,6 +102,7 @@ const getPacientes = async (req, res) => {
 
     const pacientes = result.rows.map(p => ({
       ...p,
+      fotoperfil: construirUrlFoto(req, p.fotoperfil),
       edad: p.fechanacimiento
         ? new Date().getFullYear() - new Date(p.fechanacimiento).getFullYear()
         : null,

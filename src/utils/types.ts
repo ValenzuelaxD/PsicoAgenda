@@ -65,6 +65,7 @@ export interface Paciente {
   correo?: string;
   email?: string;
   telefono?: string;
+  fotoperfil?: string;
   edad?: number;
   sesionesTotales?: number;
 }
@@ -88,6 +89,7 @@ export interface Cita {
   // Campos derivados
   paciente_nombre?: string;
   paciente_apellido?: string;
+  paciente_fotoperfil?: string;
   psicologa_nombre?: string;
   psicologa_apellido?: string;
   notas?: string;

@@ -95,6 +95,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const [busquedaAgenda, setBusquedaAgenda] = useState('');
   const [filtroPaciente, setFiltroPaciente] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [filtroEstadoProximas, setFiltroEstadoProximas] = useState('todos');
   const [citaSeleccionadaAgenda, setCitaSeleccionadaAgenda] = useState<number | null>(null);
 
   const listaPacientesUnicos = Array.from(new Set(citas.map(c => `${c.paciente_nombre} ${c.paciente_apellido}`)));
@@ -600,6 +601,11 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     .filter((c) => new Date(c.fechahora) >= ahora)
     .sort((a, b) => new Date(a.fechahora).getTime() - new Date(b.fechahora).getTime());
 
+  const citasProximasFiltradas =
+    userType === 'psicologo' && filtroEstadoProximas !== 'todos'
+      ? citasProximas.filter((c) => esEstado(c.estado, filtroEstadoProximas))
+      : citasProximas;
+
   const citasPasadas = citas
     .filter((c) => new Date(c.fechahora) < ahora)
     .sort((a, b) => new Date(b.fechahora).getTime() - new Date(a.fechahora).getTime());
@@ -639,7 +645,58 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
         </TabsList>
 
         <TabsContent value="proximas" className="space-y-4 mt-6">
-          {citasProximas.map((cita) => (
+          {userType === 'psicologo' && (
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <p className="text-slate-200 flex items-center gap-2">
+                    <Filter className="w-4 h-4 stroke-2" />
+                    Filtrar por estado
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={filtroEstadoProximas === 'todos' ? 'default' : 'outline'}
+                      className={filtroEstadoProximas === 'todos' ? 'bg-teal-600 hover:bg-teal-700 text-white' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}
+                      onClick={() => setFiltroEstadoProximas('todos')}
+                    >
+                      Todos
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={filtroEstadoProximas === ESTADO_CITA.PENDIENTE ? 'default' : 'outline'}
+                      className={filtroEstadoProximas === ESTADO_CITA.PENDIENTE ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'border-amber-700 text-amber-300 hover:bg-amber-600/20'}
+                      onClick={() => setFiltroEstadoProximas(ESTADO_CITA.PENDIENTE)}
+                    >
+                      Pendientes
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={filtroEstadoProximas === ESTADO_CITA.CONFIRMADA ? 'default' : 'outline'}
+                      className={filtroEstadoProximas === ESTADO_CITA.CONFIRMADA ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-700 text-green-300 hover:bg-green-600/20'}
+                      onClick={() => setFiltroEstadoProximas(ESTADO_CITA.CONFIRMADA)}
+                    >
+                      Confirmadas
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={filtroEstadoProximas === ESTADO_CITA.CANCELADA ? 'default' : 'outline'}
+                      className={filtroEstadoProximas === ESTADO_CITA.CANCELADA ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-red-700 text-red-300 hover:bg-red-600/20'}
+                      onClick={() => setFiltroEstadoProximas(ESTADO_CITA.CANCELADA)}
+                    >
+                      Canceladas
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {citasProximasFiltradas.map((cita) => (
             <HoverCard key={cita.citaid}>
               <HoverCardTrigger asChild>
                 <Card className="hover:shadow-lg transition-shadow bg-slate-800/50 backdrop-blur-sm border-slate-700">
@@ -649,8 +706,14 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   return (
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
-                    <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                      {esModalidadEnLinea(cita.modalidad) ? (
+                    <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+                      {userType === 'psicologo' && cita.paciente_fotoperfil ? (
+                        <img
+                          src={cita.paciente_fotoperfil}
+                          alt={`Foto de ${cita.paciente_nombre || 'paciente'}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-white stroke-2" />
                       ) : (
                         <Calendar className="w-8 h-8 text-white stroke-2" />
@@ -741,6 +804,14 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               </HoverCardContent>
             </HoverCard>
           ))}
+
+          {citasProximasFiltradas.length === 0 && (
+            <Card className="bg-slate-800/30 backdrop-blur-sm border-slate-700">
+              <CardContent className="py-8 text-center text-slate-400">
+                No hay citas que coincidan con el filtro seleccionado.
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="pasadas" className="space-y-4 mt-6">
@@ -749,8 +820,14 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               <CardContent className="pt-6">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
-                    <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                      {esModalidadEnLinea(cita.modalidad) ? (
+                    <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {userType === 'psicologo' && cita.paciente_fotoperfil ? (
+                        <img
+                          src={cita.paciente_fotoperfil}
+                          alt={`Foto de ${cita.paciente_nombre || 'paciente'}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-slate-400" />
                       ) : (
                         <Calendar className="w-8 h-8 text-slate-400" />
@@ -1023,9 +1100,15 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                                   esModalidadEnLinea(cita.modalidad) 
                                     ? 'bg-gradient-to-br from-violet-500 to-violet-600' 
                                     : 'bg-gradient-to-br from-teal-500 to-teal-600'
-                                } rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}
+                                } rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden`}
                               >
-                                {esModalidadEnLinea(cita.modalidad) ? (
+                                {userType === 'psicologo' && cita.paciente_fotoperfil ? (
+                                  <img
+                                    src={cita.paciente_fotoperfil}
+                                    alt={`Foto de ${cita.paciente_nombre || 'paciente'}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : esModalidadEnLinea(cita.modalidad) ? (
                                   <Video className="w-8 h-8 text-white stroke-2" />
                                 ) : (
                                   <MapPin className="w-8 h-8 text-white stroke-2" />

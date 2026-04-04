@@ -1,5 +1,7 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 
 const GENEROS_PERMITIDOS = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir'];
 
@@ -21,6 +23,36 @@ function dividirNombreCompleto(nombreCompleto = '') {
   const apellidoMaterno = partes.length > 0 ? partes.join(' ') : null;
 
   return { nombre, apellidoPaterno, apellidoMaterno };
+}
+
+function construirUrlFoto(req, fotoPerfil) {
+  if (!fotoPerfil) return '';
+  if (/^https?:\/\//i.test(fotoPerfil) || fotoPerfil.startsWith('data:')) return fotoPerfil;
+  if (fotoPerfil.startsWith('/uploads/')) {
+    return `${req.protocol}://${req.get('host')}${fotoPerfil}`;
+  }
+  return fotoPerfil;
+}
+
+function guardarFotoDesdeDataUrl(dataUrl, usuarioId) {
+  const match = /^data:(image\/(png|jpeg|jpg|webp));base64,(.+)$/i.exec(dataUrl || '');
+  if (!match) return null;
+
+  const mimeType = match[1].toLowerCase();
+  const extension = mimeType.includes('png')
+    ? 'png'
+    : mimeType.includes('webp')
+      ? 'webp'
+      : 'jpg';
+
+  const uploadsDir = path.join(__dirname, '..', 'uploads', 'perfiles');
+  fs.mkdirSync(uploadsDir, { recursive: true });
+
+  const fileName = `perfil_${usuarioId}_${Date.now()}.${extension}`;
+  const filePath = path.join(uploadsDir, fileName);
+
+  fs.writeFileSync(filePath, Buffer.from(match[3], 'base64'));
+  return `/uploads/perfiles/${fileName}`;
 }
 
 const getMiPerfil = async (req, res) => {
@@ -78,7 +110,7 @@ const getMiPerfil = async (req, res) => {
         apellidoMaterno: row.apellidomaterno || '',
         email: row.correo,
         telefono: row.telefono || '',
-        fotoPerfil: row.fotoperfil || '',
+        fotoPerfil: construirUrlFoto(req, row.fotoperfil || ''),
         fechaRegistro: row.fecharegistro || null,
         fechaNacimiento: row.fechanacimiento || null,
         genero: row.genero || '',
@@ -156,6 +188,12 @@ const actualizarMiPerfil = async (req, res) => {
       });
     }
 
+    let fotoPerfilParaGuardar = fotoPerfil || null;
+    if (typeof fotoPerfil === 'string' && fotoPerfil.startsWith('data:image/')) {
+      const rutaGuardada = guardarFotoDesdeDataUrl(fotoPerfil, usuarioId);
+      fotoPerfilParaGuardar = rutaGuardada || null;
+    }
+
     await db.query(
       `
       UPDATE usuarios
@@ -167,7 +205,7 @@ const actualizarMiPerfil = async (req, res) => {
           fotoperfil = $6
         WHERE usuarioid = $7
       `,
-        [nombre, apellidoPaterno, apellidoMaterno, email.toLowerCase(), telefono || null, fotoPerfil || null, usuarioId]
+        [nombre, apellidoPaterno, apellidoMaterno, email.toLowerCase(), telefono || null, fotoPerfilParaGuardar, usuarioId]
     );
 
     if (rol === 'paciente') {
