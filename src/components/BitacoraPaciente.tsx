@@ -202,12 +202,12 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         <div className="min-w-0 flex flex-col gap-3 overflow-y-auto lg:pr-1 max-h-[36dvh] lg:max-h-none">
           {/* Buscador fijo al tope del panel */}
           <div className="relative sticky top-0 z-10 bg-slate-900 pb-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <Input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar paciente..."
-              className="h-11 pl-16 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
+              className="h-11 pl-20 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
             />
           </div>
 
