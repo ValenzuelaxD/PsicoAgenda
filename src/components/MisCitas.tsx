@@ -609,7 +609,6 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const citasPasadas = citas
     .filter((c) => new Date(c.fechahora) < ahora)
     .sort((a, b) => new Date(b.fechahora).getTime() - new Date(a.fechahora).getTime());
-  const sesionesCompletadas = citasPasadas.filter((c) => esEstado(c.estado, ESTADO_CITA.COMPLETADA)).length;
   const citaConNotas = citasPasadas.find(c => c.citaid === citaNotasVisibles);
   const esMismoMes = (fecha: Date, referencia: Date) => fecha.getMonth() === referencia.getMonth() && fecha.getFullYear() === referencia.getFullYear();
   const esMismoDia = (fecha: Date, referencia: Date) => fecha.toDateString() === referencia.toDateString();
@@ -819,9 +818,6 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           {citasPasadas.map((cita) => (
             <Card key={cita.citaid} className="bg-slate-800/30 backdrop-blur-sm border-slate-700">
               <CardContent className="pt-6">
-                {(() => {
-                  const estadoVisual = obtenerEstiloEstado(cita.estado);
-                  return (
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
                     <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -839,9 +835,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary" className={estadoVisual.badgeClass}>
-                          {estadoVisual.label}
-                        </Badge>
+                        
+                        <Badge variant="outline" className="border-slate-600 text-slate-400">Completada</Badge>
                       </div>
                       <div className="space-y-1 text-slate-400">
                         <div className="flex items-center gap-2">
@@ -869,8 +864,6 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     {userType === 'psicologo' ? 'Ver Bitácora' : 'Ver Notas'}
                   </Button>
                 </div>
-                  );
-                })()}
               </CardContent>
             </Card>
           ))}
@@ -1240,7 +1233,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-400 mb-1">Sesiones Completadas</p>
-                      <p className="text-slate-100">{sesionesCompletadas} sesiones</p>
+                      <p className="text-slate-100">{citasPasadas.length} sesiones</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
                       <FileText className="w-6 h-6 text-white stroke-2" />
