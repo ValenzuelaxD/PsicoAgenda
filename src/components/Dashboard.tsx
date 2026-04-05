@@ -167,13 +167,15 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
         <div className="sticky top-0 z-30 bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-4 py-3 sm:py-4">
           <div className="flex items-start sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3 min-w-0">
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="sm:hidden p-2 rounded-md bg-slate-700/30 text-slate-100"
-                aria-label="Abrir menú"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
+              {isMobile && (
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="p-2 rounded-md bg-slate-700/30 text-slate-100"
+                  aria-label="Abrir menú"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
               <div className="min-w-0">
                 <h2 className="text-slate-100 text-base sm:text-lg">PsicoAgenda</h2>
                 <p className="text-slate-400 text-xs sm:text-sm truncate">Sistema de gestion psicologica profesional</p>
