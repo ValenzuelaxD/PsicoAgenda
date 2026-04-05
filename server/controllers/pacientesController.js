@@ -1,5 +1,30 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
+let columnaSesionesCompletadasDisponible = null;
+
+async function verificarColumnaSesionesCompletadas() {
+  if (columnaSesionesCompletadasDisponible !== null) {
+    return columnaSesionesCompletadasDisponible;
+  }
+
+  try {
+    const result = await db.query(
+      `
+      SELECT COUNT(*)::int AS total
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'pacientes'
+        AND column_name = 'sesionescompletadas'
+      `
+    );
+
+    columnaSesionesCompletadasDisponible = result.rows[0]?.total === 1;
+  } catch (error) {
+    columnaSesionesCompletadasDisponible = false;
+  }
+
+  return columnaSesionesCompletadasDisponible;
+}
 
 function dividirNombreCompleto(nombreCompleto = '') {
   const partes = String(nombreCompleto).trim().split(/\s+/).filter(Boolean);
@@ -24,6 +49,8 @@ const getPacientes = async (req, res) => {
     if (!req.user || !req.user.rol) {
       return res.status(401).json({ message: 'No autorizado.' });
     }
+
+    const usarContadorPersistente = await verificarColumnaSesionesCompletadas();
 
     let result;
 
@@ -53,9 +80,15 @@ const getPacientes = async (req, res) => {
             p.motivoconsulta,
             p.contactoemergencia,
             p.telemergencia,
-            COALESCE(p.sesionescompletadas, 0) AS sesionestotales
+            ${usarContadorPersistente
+              ? 'COALESCE(p.sesionescompletadas, 0) AS sesionestotales'
+              : `COUNT(c.citaid) FILTER (
+                   WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
+                 ) AS sesionestotales`
+            }
           FROM usuarios u
           JOIN pacientes p ON u.usuarioid = p.usuarioid
+          ${usarContadorPersistente ? '' : 'LEFT JOIN citas c ON c.pacienteid = p.pacienteid AND c.psicologaid = $1'}
           WHERE u.rol = 'paciente'
             AND u.activo = true
             AND EXISTS (
@@ -64,6 +97,7 @@ const getPacientes = async (req, res) => {
               WHERE cx.pacienteid = p.pacienteid
                 AND cx.psicologaid = $1
             )
+          ${usarContadorPersistente ? '' : 'GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil_mime, u.fotoperfil_data'}
         `,
         [psicologaId]
       );
@@ -85,10 +119,17 @@ const getPacientes = async (req, res) => {
           p.motivoconsulta,
           p.contactoemergencia,
           p.telemergencia,
-          COALESCE(p.sesionescompletadas, 0) AS sesionestotales
+          ${usarContadorPersistente
+            ? 'COALESCE(p.sesionescompletadas, 0) AS sesionestotales'
+            : `COUNT(c.citaid) FILTER (
+                 WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
+               ) AS sesionestotales`
+          }
         FROM usuarios u
         JOIN pacientes p ON u.usuarioid = p.usuarioid
+        ${usarContadorPersistente ? '' : 'LEFT JOIN citas c ON c.pacienteid = p.pacienteid'}
         WHERE u.rol = 'paciente' AND u.activo = true
+        ${usarContadorPersistente ? '' : 'GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil_mime, u.fotoperfil_data'}
       `);
     } else {
       return res.status(403).json({ message: 'No tienes permisos para consultar pacientes.' });
