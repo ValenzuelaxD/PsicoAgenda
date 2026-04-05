@@ -301,7 +301,15 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                       {pacientes.map((paciente: Paciente) => (
                         <SelectItem key={paciente.pacienteid} value={String(paciente.pacienteid)}>
                           <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
+                            {paciente.fotoperfil ? (
+                              <img
+                                src={paciente.fotoperfil}
+                                alt={`${paciente.nombre} ${paciente.apellidopaterno}`}
+                                className="w-4 h-4 rounded-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-4 h-4" />
+                            )}
                             {`${paciente.nombre} ${paciente.apellidopaterno}`}
                           </div>
                         </SelectItem>

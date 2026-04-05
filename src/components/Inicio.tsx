@@ -47,7 +47,8 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
       return hora;
     }
 
-    return `${String(hourRaw).padStart(2, '0')}:${String(minuteRaw).padStart(2, '0')}`;
+    const sufijo = hourRaw >= 12 ? 'p.m.' : 'a.m.';
+    return `${String(hourRaw).padStart(2, '0')}:${String(minuteRaw).padStart(2, '0')} ${sufijo}`;
   };
 
   const formatearFechaVisual = (fechaHora?: string) => {
