@@ -1,5 +1,10 @@
 const db = require('../db');
 
+const construirFotoDesdeBd = (mimeType, dataBuffer) => {
+  if (!mimeType || !dataBuffer) return '';
+  return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
+};
+
 const getPacienteDashboard = async (req, res) => {
   const usuarioId = req.user.id;
 
@@ -68,7 +73,12 @@ const getPsicologoDashboard = async (req, res) => {
     const psicologaId = psicologaResult.rows[0].psicologaid;
 
     const citasHoyQuery = `
-      SELECT c.*, u.nombre as paciente_nombre, u.apellidopaterno as paciente_apellido
+      SELECT
+        c.*, 
+        u.nombre as paciente_nombre,
+        u.apellidopaterno as paciente_apellido,
+        u.fotoperfil_mime as paciente_fotoperfil_mime,
+        u.fotoperfil_data as paciente_fotoperfil_data
       FROM citas c
       JOIN pacientes p ON c.pacienteid = p.pacienteid
       JOIN usuarios u ON p.usuarioid = u.usuarioid
@@ -85,7 +95,10 @@ const getPsicologoDashboard = async (req, res) => {
     const citasPendientesResult = await db.query(citasPendientesQuery, [psicologaId]);
 
     res.json({
-      citasHoy: citasHoyResult.rows,
+      citasHoy: citasHoyResult.rows.map((row) => ({
+        ...row,
+        paciente_fotoperfil: construirFotoDesdeBd(row.paciente_fotoperfil_mime, row.paciente_fotoperfil_data),
+      })),
       pacientesActivos: parseInt(pacientesActivosResult.rows[0].count, 10),
       citasSemana: parseInt(citasSemanaResult.rows[0].count, 10),
       citasPendientes: parseInt(citasPendientesResult.rows[0].count, 10),
