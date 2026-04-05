@@ -53,7 +53,9 @@ const getPacientes = async (req, res) => {
             p.motivoconsulta,
             p.contactoemergencia,
             p.telemergencia,
-            COUNT(c.citaid) FILTER (WHERE c.estado = 'Completada') AS sesionestotales
+            COUNT(c.citaid) FILTER (
+              WHERE COALESCE(LOWER(TRIM(c.estado)), '') IN ('completada', 'completado')
+            ) AS sesionestotales
           FROM usuarios u
           JOIN pacientes p ON u.usuarioid = p.usuarioid
           LEFT JOIN citas c ON c.pacienteid = p.pacienteid AND c.psicologaid = $1
@@ -87,7 +89,9 @@ const getPacientes = async (req, res) => {
           p.motivoconsulta,
           p.contactoemergencia,
           p.telemergencia,
-          COUNT(c.citaid) FILTER (WHERE c.estado = 'Completada') AS sesionestotales
+          COUNT(c.citaid) FILTER (
+            WHERE COALESCE(LOWER(TRIM(c.estado)), '') IN ('completada', 'completado')
+          ) AS sesionestotales
         FROM usuarios u
         JOIN pacientes p ON u.usuarioid = p.usuarioid
         LEFT JOIN citas c ON c.pacienteid = p.pacienteid

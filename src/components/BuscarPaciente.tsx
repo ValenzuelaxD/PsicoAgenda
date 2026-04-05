@@ -149,8 +149,8 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                 )
               : [];
             
-            // Calcular estadísticas desde los datos reales
-            const totalSesiones = sesiones.length;
+            // Sesiones totales debe coincidir con Gestionar Citas (citas completadas).
+            const totalSesiones = Number(pacienteSeleccionado.sesionesTotales ?? 0);
             const ultimaSesion =
               sesiones.length > 0
                 ? new Date(sesiones[0].fechaentrada).toLocaleDateString('es-ES')
