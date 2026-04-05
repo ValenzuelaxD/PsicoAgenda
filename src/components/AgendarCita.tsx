@@ -380,25 +380,37 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                     setMesCalendario(new Date());
                   }} required>
                                       <SelectTrigger id="psicologo" className="bg-slate-700/50 border-slate-600 text-slate-200">
-                                        <SelectValue placeholder={loadingInicial ? 'Cargando profesionales...' : 'Elige un profesional'} />
+                                        <SelectValue 
+                                          placeholder={loadingInicial ? 'Cargando profesionales...' : 'Elige un profesional'}
+                                        />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {psicologos.map((psi) => (
-                                          <SelectItem key={psi.psicologaid} value={String(psi.psicologaid)}>
-                                            <div className="flex items-center gap-2">
-                                              {psi.fotoperfil ? (
-                                                <img
-                                                  src={psi.fotoperfil}
-                                                  alt={`${psi.nombre} ${psi.apellidopaterno}`}
-                                                  className="w-4 h-4 rounded-full object-cover"
-                                                />
-                                              ) : (
-                                                <User className="w-4 h-4" />
-                                              )}
-                                              {`${psi.nombre} ${psi.apellidopaterno}`}
-                                            </div>
-                                          </SelectItem>
-                                        ))}
+                                        {psicologos.map((psi) => {
+                                          const fotoBg = psi.fotoperfil ? `url(${psi.fotoperfil})` : 'none';
+                                          return (
+                                            <SelectItem 
+                                              key={psi.psicologaid} 
+                                              value={String(psi.psicologaid)}
+                                              className="flex items-center gap-2"
+                                            >
+                                              <span className="flex items-center gap-2">
+                                                {psi.fotoperfil ? (
+                                                  <img
+                                                    src={psi.fotoperfil}
+                                                    alt={`${psi.nombre} ${psi.apellidopaterno}`}
+                                                    className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                                                    onError={(e) => {
+                                                      (e.target as HTMLImageElement).style.display = 'none';
+                                                    }}
+                                                  />
+                                                ) : (
+                                                  <User className="w-5 h-5 flex-shrink-0" />
+                                                )}
+                                                {`${psi.nombre} ${psi.apellidopaterno}`}
+                                              </span>
+                                            </SelectItem>
+                                          );
+                                        })}
                                       </SelectContent>
                                     </Select>
                                   </div>
