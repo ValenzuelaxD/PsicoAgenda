@@ -14,13 +14,9 @@ function dividirNombreCompleto(nombreCompleto = '') {
   return { nombre, apellidoPaterno, apellidoMaterno };
 }
 
-function construirUrlFoto(req, fotoPerfil) {
-  if (!fotoPerfil) return '';
-  if (/^https?:\/\//i.test(fotoPerfil) || fotoPerfil.startsWith('data:')) return fotoPerfil;
-  if (fotoPerfil.startsWith('/uploads/')) {
-    return `${req.protocol}://${req.get('host')}${fotoPerfil}`;
-  }
-  return fotoPerfil;
+function construirFotoDesdeBd(mimeType, dataBuffer) {
+  if (!mimeType || !dataBuffer) return '';
+  return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
 }
 
 const getPacientes = async (req, res) => {
@@ -49,7 +45,8 @@ const getPacientes = async (req, res) => {
             u.apellidomaterno,
             u.correo,
             u.telefono,
-            u.fotoperfil,
+            u.fotoperfil_mime,
+            u.fotoperfil_data,
             p.fechanacimiento,
             p.genero,
             p.direccion,
@@ -68,7 +65,7 @@ const getPacientes = async (req, res) => {
               WHERE cx.pacienteid = p.pacienteid
                 AND cx.psicologaid = $1
             )
-          GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil
+          GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil_mime, u.fotoperfil_data
         `,
         [psicologaId]
       );
@@ -82,7 +79,8 @@ const getPacientes = async (req, res) => {
           u.apellidomaterno,
           u.correo,
           u.telefono,
-          u.fotoperfil,
+          u.fotoperfil_mime,
+          u.fotoperfil_data,
           p.fechanacimiento,
           p.genero,
           p.direccion,
@@ -94,7 +92,7 @@ const getPacientes = async (req, res) => {
         JOIN pacientes p ON u.usuarioid = p.usuarioid
         LEFT JOIN citas c ON c.pacienteid = p.pacienteid
         WHERE u.rol = 'paciente' AND u.activo = true
-        GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil
+        GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil_mime, u.fotoperfil_data
       `);
     } else {
       return res.status(403).json({ message: 'No tienes permisos para consultar pacientes.' });
@@ -102,7 +100,7 @@ const getPacientes = async (req, res) => {
 
     const pacientes = result.rows.map(p => ({
       ...p,
-      fotoperfil: construirUrlFoto(req, p.fotoperfil),
+      fotoperfil: construirFotoDesdeBd(p.fotoperfil_mime, p.fotoperfil_data),
       edad: p.fechanacimiento
         ? new Date().getFullYear() - new Date(p.fechanacimiento).getFullYear()
         : null,

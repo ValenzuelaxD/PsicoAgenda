@@ -2,7 +2,6 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 
 const GENEROS_PERMITIDOS = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir'];
-let fotoBdColumnsDisponibles = null;
 
 function construirNombreCompleto(usuario) {
   return [usuario.nombre, usuario.apellidopaterno, usuario.apellidomaterno]
@@ -24,15 +23,6 @@ function dividirNombreCompleto(nombreCompleto = '') {
   return { nombre, apellidoPaterno, apellidoMaterno };
 }
 
-function construirUrlFoto(req, fotoPerfil) {
-  if (!fotoPerfil) return '';
-  if (/^https?:\/\//i.test(fotoPerfil) || fotoPerfil.startsWith('data:')) return fotoPerfil;
-  if (fotoPerfil.startsWith('/uploads/')) {
-    return `${req.protocol}://${req.get('host')}${fotoPerfil}`;
-  }
-  return fotoPerfil;
-}
-
 function extraerFotoDesdeDataUrl(dataUrl) {
   const match = /^data:(image\/(png|jpeg|jpg|webp));base64,(.+)$/i.exec(dataUrl || '');
   if (!match) return null;
@@ -47,36 +37,10 @@ function construirFotoDesdeBd(mimeType, dataBuffer) {
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
 }
 
-async function verificarColumnasFotoBd() {
-  if (fotoBdColumnsDisponibles !== null) {
-    return fotoBdColumnsDisponibles;
-  }
-
-  try {
-    const result = await db.query(
-      `
-      SELECT COUNT(*)::int AS total
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = 'usuarios'
-        AND column_name IN ('fotoperfil_mime', 'fotoperfil_data')
-      `
-    );
-
-    fotoBdColumnsDisponibles = result.rows[0]?.total === 2;
-  } catch (error) {
-    fotoBdColumnsDisponibles = false;
-  }
-
-  return fotoBdColumnsDisponibles;
-}
-
 const getMiPerfil = async (req, res) => {
   const usuarioId = req.user.id;
 
   try {
-    const usarFotoBd = await verificarColumnasFotoBd();
-
     const result = await db.query(
       `
       SELECT
@@ -86,9 +50,8 @@ const getMiPerfil = async (req, res) => {
         u.apellidomaterno,
         u.correo,
         u.telefono,
-        u.fotoperfil,
-        ${usarFotoBd ? 'u.fotoperfil_mime,' : 'NULL::varchar AS fotoperfil_mime,'}
-        ${usarFotoBd ? 'u.fotoperfil_data,' : 'NULL::bytea AS fotoperfil_data,'}
+        u.fotoperfil_mime,
+        u.fotoperfil_data,
         u.fecharegistro,
         u.rol,
         p.fechanacimiento,
@@ -130,9 +93,7 @@ const getMiPerfil = async (req, res) => {
         apellidoMaterno: row.apellidomaterno || '',
         email: row.correo,
         telefono: row.telefono || '',
-        fotoPerfil: usarFotoBd
-          ? (construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data) || construirUrlFoto(req, row.fotoperfil || ''))
-          : construirUrlFoto(req, row.fotoperfil || ''),
+        fotoPerfil: construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data),
         fechaRegistro: row.fecharegistro || null,
         fechaNacimiento: row.fechanacimiento || null,
         genero: row.genero || '',
@@ -191,8 +152,6 @@ const actualizarMiPerfil = async (req, res) => {
   }
 
   try {
-    const usarFotoBd = await verificarColumnasFotoBd();
-
     const userResult = await db.query('SELECT rol FROM usuarios WHERE usuarioid = $1', [usuarioId]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({
@@ -212,11 +171,13 @@ const actualizarMiPerfil = async (req, res) => {
       });
     }
 
-    let fotoPerfilRuta = fotoPerfil || null;
     let fotoPerfilMime = null;
     let fotoPerfilData = null;
 
-    if (typeof fotoPerfil === 'string' && fotoPerfil.startsWith('data:image/')) {
+    if (typeof fotoPerfil === 'string' && fotoPerfil.trim() === '') {
+      fotoPerfilMime = null;
+      fotoPerfilData = null;
+    } else if (typeof fotoPerfil === 'string' && fotoPerfil.startsWith('data:image/')) {
       const fotoExtraida = extraerFotoDesdeDataUrl(fotoPerfil);
       if (!fotoExtraida) {
         return res.status(400).json({
@@ -225,64 +186,39 @@ const actualizarMiPerfil = async (req, res) => {
         });
       }
 
-      fotoPerfilRuta = null;
       fotoPerfilMime = fotoExtraida.mimeType;
       fotoPerfilData = fotoExtraida.buffer;
-    } else if (typeof fotoPerfil === 'string' && fotoPerfil.trim() === '') {
-      fotoPerfilRuta = null;
-      fotoPerfilMime = null;
-      fotoPerfilData = null;
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'fotoPerfil debe enviarse como data URL o cadena vacía.'
+      });
     }
 
-    if (usarFotoBd) {
-      await db.query(
-        `
-        UPDATE usuarios
-        SET nombre = $1,
-            apellidopaterno = $2,
-            apellidomaterno = $3,
-            correo = $4,
-            telefono = $5,
-            fotoperfil = $6,
-            fotoperfil_mime = $7,
-            fotoperfil_data = $8
-          WHERE usuarioid = $9
-        `,
-        [
-          nombre,
-          apellidoPaterno,
-          apellidoMaterno,
-          email.toLowerCase(),
-          telefono || null,
-          fotoPerfilRuta,
-          fotoPerfilMime,
-          fotoPerfilData,
-          usuarioId
-        ]
-      );
-    } else {
-      await db.query(
-        `
-        UPDATE usuarios
-        SET nombre = $1,
-            apellidopaterno = $2,
-            apellidomaterno = $3,
-            correo = $4,
-            telefono = $5,
-            fotoperfil = $6
-          WHERE usuarioid = $7
-        `,
-        [
-          nombre,
-          apellidoPaterno,
-          apellidoMaterno,
-          email.toLowerCase(),
-          telefono || null,
-          fotoPerfilRuta,
-          usuarioId
-        ]
-      );
-    }
+    await db.query(
+      `
+      UPDATE usuarios
+      SET nombre = $1,
+          apellidopaterno = $2,
+          apellidomaterno = $3,
+          correo = $4,
+          telefono = $5,
+          fotoperfil = NULL,
+          fotoperfil_mime = $6,
+          fotoperfil_data = $7
+        WHERE usuarioid = $8
+      `,
+      [
+        nombre,
+        apellidoPaterno,
+        apellidoMaterno,
+        email.toLowerCase(),
+        telefono || null,
+        fotoPerfilMime,
+        fotoPerfilData,
+        usuarioId
+      ]
+    );
 
     if (rol === 'paciente') {
       await db.query(

@@ -3,13 +3,9 @@ const db = require('../db');
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 const ESTADOS_EDITABLES = ['Pendiente', 'Confirmada', 'Cancelada', 'Completada', 'Reagendada'];
 
-const construirUrlFoto = (req, fotoPerfil) => {
-  if (!fotoPerfil) return '';
-  if (/^https?:\/\//i.test(fotoPerfil) || fotoPerfil.startsWith('data:')) return fotoPerfil;
-  if (fotoPerfil.startsWith('/uploads/')) {
-    return `${req.protocol}://${req.get('host')}${fotoPerfil}`;
-  }
-  return fotoPerfil;
+const construirFotoDesdeBd = (mimeType, dataBuffer) => {
+  if (!mimeType || !dataBuffer) return '';
+  return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
 };
 
 const getPacienteIdByUsuario = async (usuarioId) => {
@@ -230,7 +226,8 @@ const getMisCitas = async (req, res) => {
           COALESCE(h.observaciones, h.tratamiento, h.diagnostico, c.notaspsicologa, c.notaspaciente) AS notasresumen,
           u.nombre AS paciente_nombre,
           u.apellidopaterno AS paciente_apellido,
-          u.fotoperfil AS paciente_fotoperfil,
+          u.fotoperfil_mime AS paciente_fotoperfil_mime,
+          u.fotoperfil_data AS paciente_fotoperfil_data,
           ps.consultorio AS ubicacion
         FROM citas c
         JOIN pacientes p ON c.pacienteid = p.pacienteid
@@ -250,7 +247,9 @@ const getMisCitas = async (req, res) => {
     res.json(
       result.rows.map((row) => ({
         ...row,
-        paciente_fotoperfil: rol === 'psicologa' ? construirUrlFoto(req, row.paciente_fotoperfil || '') : row.paciente_fotoperfil,
+        paciente_fotoperfil: rol === 'psicologa'
+          ? construirFotoDesdeBd(row.paciente_fotoperfil_mime, row.paciente_fotoperfil_data)
+          : row.paciente_fotoperfil,
         notas: rol === 'psicologa' ? (row.notaspsicologa || '') : (row.notaspaciente || ''),
         notasresumen: row.notasresumen || row.notaspsicologa || row.notaspaciente || '',
       }))
