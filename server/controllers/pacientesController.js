@@ -53,12 +53,9 @@ const getPacientes = async (req, res) => {
             p.motivoconsulta,
             p.contactoemergencia,
             p.telemergencia,
-            COUNT(c.citaid) FILTER (
-              WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
-            ) AS sesionestotales
+            COALESCE(p.sesionescompletadas, 0) AS sesionestotales
           FROM usuarios u
           JOIN pacientes p ON u.usuarioid = p.usuarioid
-          LEFT JOIN citas c ON c.pacienteid = p.pacienteid AND c.psicologaid = $1
           WHERE u.rol = 'paciente'
             AND u.activo = true
             AND EXISTS (
@@ -67,7 +64,6 @@ const getPacientes = async (req, res) => {
               WHERE cx.pacienteid = p.pacienteid
                 AND cx.psicologaid = $1
             )
-          GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil_mime, u.fotoperfil_data
         `,
         [psicologaId]
       );
@@ -89,14 +85,10 @@ const getPacientes = async (req, res) => {
           p.motivoconsulta,
           p.contactoemergencia,
           p.telemergencia,
-          COUNT(c.citaid) FILTER (
-            WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
-          ) AS sesionestotales
+          COALESCE(p.sesionescompletadas, 0) AS sesionestotales
         FROM usuarios u
         JOIN pacientes p ON u.usuarioid = p.usuarioid
-        LEFT JOIN citas c ON c.pacienteid = p.pacienteid
         WHERE u.rol = 'paciente' AND u.activo = true
-        GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil_mime, u.fotoperfil_data
       `);
     } else {
       return res.status(403).json({ message: 'No tienes permisos para consultar pacientes.' });

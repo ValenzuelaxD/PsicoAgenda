@@ -69,16 +69,10 @@ const formatearUltimaSesionCompacta = (fechaISO: string | null | undefined) => {
 export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
   const [busqueda, setBusqueda] = useState('');
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [sesionesPorPaciente, setSesionesPorPaciente] = useState<Record<number, number>>({});
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<Paciente | null>(null);
   const [historialActual, setHistorialActual] = useState<HistorialPaciente | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const esCitaCompletada = (estado: unknown) => {
-    const normalizado = String(estado || '').trim().toLowerCase();
-    return normalizado.startsWith('complet');
-  };
 
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
   const [mostrarModalActualizar, setMostrarModalActualizar] = useState(false);
@@ -127,45 +121,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
         }
 
         const data = await response.json();
-        const pacientesBase = Array.isArray(data) ? data : [];
-
-        const citasResponse = await fetch(API_ENDPOINTS.CITAS, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        let pacientesConConteo = pacientesBase;
-        const conteoPlano: Record<number, number> = {};
-        if (citasResponse.ok) {
-          const citas = await citasResponse.json();
-          const conteoPorPaciente = new Map<number, number>();
-
-          (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
-            const pacienteId = Number(cita?.pacienteid);
-            if (!pacienteId || !esCitaCompletada(cita?.estado)) return;
-            conteoPorPaciente.set(pacienteId, (conteoPorPaciente.get(pacienteId) || 0) + 1);
-          });
-
-          pacientesConConteo = pacientesBase.map((paciente: any) => ({
-            ...paciente,
-            sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
-          }));
-
-          conteoPorPaciente.forEach((valor, key) => {
-            conteoPlano[key] = valor;
-          });
-        } else {
-          pacientesBase.forEach((paciente: any) => {
-            const id = Number(paciente?.pacienteid);
-            if (!id) return;
-            conteoPlano[id] = Number(paciente?.sesionesTotales ?? 0);
-          });
-        }
-
-        setPacientes(pacientesConConteo);
-        setSesionesPorPaciente(conteoPlano);
+        setPacientes(Array.isArray(data) ? data : []);
       } catch (err: any) {
         setError(err.message);
         toast.error(err.message);
@@ -313,13 +269,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
     }
   };
 
-  const sesionesTotalesClinicas =
-    (pacienteSeleccionado?.pacienteid
-      ? sesionesPorPaciente[Number(pacienteSeleccionado.pacienteid)]
-      : undefined)
-    ?? historialActual?.estadisticas?.totalSesiones
-    ?? pacienteSeleccionado?.sesionesTotales
-    ?? 0;
+  const sesionesTotalesClinicas = Number(pacienteSeleccionado?.sesionesTotales ?? 0);
 
   const ultimaSesionClinica =
     historialActual?.estadisticas?.ultimaSesion && historialActual.estadisticas.ultimaSesion !== 'N/A'

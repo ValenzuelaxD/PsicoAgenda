@@ -25,7 +25,6 @@ interface BitacoraPacienteProps {
 
 export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [sesionesPorPaciente, setSesionesPorPaciente] = useState<Record<number, number>>({});
   const [busqueda, setBusqueda] = useState('');
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<Paciente | null>(null);
   const [entradas, setEntradas] = useState<HistorialClinico[]>([]);
@@ -44,11 +43,6 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
   const [mostrarExito, setMostrarExito] = useState(false);
 
-  const esCitaCompletada = (estado: unknown) => {
-    const normalizado = String(estado || '').trim().toLowerCase();
-    return normalizado.startsWith('complet');
-  };
-
   // Carga inicial de pacientes
   useEffect(() => {
     const fetchPacientes = async () => {
@@ -61,39 +55,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         }
         if (!response.ok) throw new Error('Error al cargar pacientes');
         const data = await response.json();
-        const pacientesBase = Array.isArray(data) ? data : [];
-
-        const citasResponse = await apiFetch(API_ENDPOINTS.CITAS);
-        let pacientesConConteo = pacientesBase;
-        const conteoPlano: Record<number, number> = {};
-        if (citasResponse.ok) {
-          const citas = await citasResponse.json();
-          const conteoPorPaciente = new Map<number, number>();
-
-          (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
-            const pacienteIdCita = Number(cita?.pacienteid);
-            if (!pacienteIdCita || !esCitaCompletada(cita?.estado)) return;
-            conteoPorPaciente.set(pacienteIdCita, (conteoPorPaciente.get(pacienteIdCita) || 0) + 1);
-          });
-
-          pacientesConConteo = pacientesBase.map((paciente: any) => ({
-            ...paciente,
-            sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
-          }));
-
-          conteoPorPaciente.forEach((valor, key) => {
-            conteoPlano[key] = valor;
-          });
-        } else {
-          pacientesBase.forEach((paciente: any) => {
-            const id = Number(paciente?.pacienteid);
-            if (!id) return;
-            conteoPlano[id] = Number(paciente?.sesionesTotales ?? 0);
-          });
-        }
-
-        setPacientes(pacientesConConteo);
-        setSesionesPorPaciente(conteoPlano);
+        setPacientes(Array.isArray(data) ? data : []);
       } catch (err: any) {
         toast.error(err.message);
       } finally {
@@ -286,7 +248,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         {`${paciente.nombre} ${paciente.apellidopaterno}`}
                       </p>
                       <p className="text-slate-400 text-xs">
-                        {paciente.edad} años · {(sesionesPorPaciente[Number(paciente.pacienteid)] ?? paciente.sesionesTotales ?? 0)} sesiones
+                        {paciente.edad} años · {paciente.sesionesTotales ?? 0} sesiones
                       </p>
                     </div>
                   </div>
@@ -321,7 +283,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                       </h2>
                       <p className="text-slate-400 text-sm">
                         {pacienteSeleccionado.edad} años ·{' '}
-                        {(sesionesPorPaciente[Number(pacienteSeleccionado.pacienteid)] ?? pacienteSeleccionado.sesionesTotales ?? 0)} sesiones completadas
+                        {pacienteSeleccionado.sesionesTotales ?? 0} sesiones completadas
                       </p>
                     </div>
                   </div>
