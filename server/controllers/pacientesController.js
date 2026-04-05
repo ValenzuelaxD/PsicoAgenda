@@ -54,7 +54,7 @@ const getPacientes = async (req, res) => {
             p.contactoemergencia,
             p.telemergencia,
             COUNT(c.citaid) FILTER (
-              WHERE COALESCE(LOWER(TRIM(c.estado)), '') IN ('completada', 'completado')
+              WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
             ) AS sesionestotales
           FROM usuarios u
           JOIN pacientes p ON u.usuarioid = p.usuarioid
@@ -90,7 +90,7 @@ const getPacientes = async (req, res) => {
           p.contactoemergencia,
           p.telemergencia,
           COUNT(c.citaid) FILTER (
-            WHERE COALESCE(LOWER(TRIM(c.estado)), '') IN ('completada', 'completado')
+            WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
           ) AS sesionestotales
         FROM usuarios u
         JOIN pacientes p ON u.usuarioid = p.usuarioid

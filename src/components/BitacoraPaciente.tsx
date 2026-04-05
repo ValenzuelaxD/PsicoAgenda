@@ -45,7 +45,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
   const esCitaCompletada = (estado: unknown) => {
     const normalizado = String(estado || '').trim().toLowerCase();
-    return normalizado === 'completada' || normalizado === 'completado';
+    return normalizado.startsWith('complet');
   };
 
   // Carga inicial de pacientes
@@ -60,21 +60,25 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         }
         if (!response.ok) throw new Error('Error al cargar pacientes');
         const data = await response.json();
+        const pacientesBase = Array.isArray(data) ? data : [];
 
         const citasResponse = await apiFetch(API_ENDPOINTS.CITAS);
-        const citas = citasResponse.ok ? await citasResponse.json() : [];
-        const conteoPorPaciente = new Map<number, number>();
+        let pacientesConConteo = pacientesBase;
+        if (citasResponse.ok) {
+          const citas = await citasResponse.json();
+          const conteoPorPaciente = new Map<number, number>();
 
-        (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
-          const pacienteIdCita = Number(cita?.pacienteid);
-          if (!pacienteIdCita || !esCitaCompletada(cita?.estado)) return;
-          conteoPorPaciente.set(pacienteIdCita, (conteoPorPaciente.get(pacienteIdCita) || 0) + 1);
-        });
+          (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
+            const pacienteIdCita = Number(cita?.pacienteid);
+            if (!pacienteIdCita || !esCitaCompletada(cita?.estado)) return;
+            conteoPorPaciente.set(pacienteIdCita, (conteoPorPaciente.get(pacienteIdCita) || 0) + 1);
+          });
 
-        const pacientesConConteo = (Array.isArray(data) ? data : []).map((paciente: any) => ({
-          ...paciente,
-          sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
-        }));
+          pacientesConConteo = pacientesBase.map((paciente: any) => ({
+            ...paciente,
+            sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
+          }));
+        }
 
         setPacientes(pacientesConConteo);
       } catch (err: any) {

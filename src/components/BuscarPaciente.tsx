@@ -76,7 +76,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
 
   const esCitaCompletada = (estado: unknown) => {
     const normalizado = String(estado || '').trim().toLowerCase();
-    return normalizado === 'completada' || normalizado === 'completado';
+    return normalizado.startsWith('complet');
   };
 
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
@@ -126,6 +126,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
         }
 
         const data = await response.json();
+        const pacientesBase = Array.isArray(data) ? data : [];
 
         const citasResponse = await fetch(API_ENDPOINTS.CITAS, {
           headers: {
@@ -134,19 +135,22 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
           }
         });
 
-        const citas = citasResponse.ok ? await citasResponse.json() : [];
-        const conteoPorPaciente = new Map<number, number>();
+        let pacientesConConteo = pacientesBase;
+        if (citasResponse.ok) {
+          const citas = await citasResponse.json();
+          const conteoPorPaciente = new Map<number, number>();
 
-        (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
-          const pacienteId = Number(cita?.pacienteid);
-          if (!pacienteId || !esCitaCompletada(cita?.estado)) return;
-          conteoPorPaciente.set(pacienteId, (conteoPorPaciente.get(pacienteId) || 0) + 1);
-        });
+          (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
+            const pacienteId = Number(cita?.pacienteid);
+            if (!pacienteId || !esCitaCompletada(cita?.estado)) return;
+            conteoPorPaciente.set(pacienteId, (conteoPorPaciente.get(pacienteId) || 0) + 1);
+          });
 
-        const pacientesConConteo = (Array.isArray(data) ? data : []).map((paciente: any) => ({
-          ...paciente,
-          sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
-        }));
+          pacientesConConteo = pacientesBase.map((paciente: any) => ({
+            ...paciente,
+            sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
+          }));
+        }
 
         setPacientes(pacientesConConteo);
       } catch (err: any) {
