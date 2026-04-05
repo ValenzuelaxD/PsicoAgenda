@@ -507,7 +507,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                             size="sm"
                             onClick={() => handleConfirmarDesdeInicio(cita.citaid)}
                             disabled={confirmandoCitaId === cita.citaid}
-                            className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
+                            className="w-full sm:w-auto bg-teal-500 hover:bg-teal-400 text-slate-950 border border-teal-200/80 shadow-[0_0_0_1px_rgba(153,246,228,0.35)] font-semibold disabled:bg-teal-500/50 disabled:text-slate-800"
                           >
                             <CheckCircle2 className="w-4 h-4 mr-2" />
                             {confirmandoCitaId === cita.citaid ? 'Confirmando...' : 'Confirmar'}
