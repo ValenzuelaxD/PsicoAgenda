@@ -170,7 +170,7 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
               {isMobile && (
                 <button
                   onClick={() => setDrawerOpen(true)}
-                  className="p-2 rounded-md bg-slate-700/30 text-slate-100"
+                  className="inline-flex sm:hidden p-2 rounded-md bg-slate-700/30 text-slate-100"
                   aria-label="Abrir menú"
                 >
                   <Menu className="w-5 h-5" />
