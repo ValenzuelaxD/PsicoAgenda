@@ -74,6 +74,11 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const esCitaCompletada = (estado: unknown) => {
+    const normalizado = String(estado || '').trim().toLowerCase();
+    return normalizado === 'completada' || normalizado === 'completado';
+  };
+
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
   const [mostrarModalActualizar, setMostrarModalActualizar] = useState(false);
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
@@ -121,7 +126,29 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
         }
 
         const data = await response.json();
-        setPacientes(data);
+
+        const citasResponse = await fetch(API_ENDPOINTS.CITAS, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const citas = citasResponse.ok ? await citasResponse.json() : [];
+        const conteoPorPaciente = new Map<number, number>();
+
+        (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
+          const pacienteId = Number(cita?.pacienteid);
+          if (!pacienteId || !esCitaCompletada(cita?.estado)) return;
+          conteoPorPaciente.set(pacienteId, (conteoPorPaciente.get(pacienteId) || 0) + 1);
+        });
+
+        const pacientesConConteo = (Array.isArray(data) ? data : []).map((paciente: any) => ({
+          ...paciente,
+          sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
+        }));
+
+        setPacientes(pacientesConConteo);
       } catch (err: any) {
         setError(err.message);
         toast.error(err.message);

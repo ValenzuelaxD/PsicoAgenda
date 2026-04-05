@@ -43,6 +43,11 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
   const [mostrarExito, setMostrarExito] = useState(false);
 
+  const esCitaCompletada = (estado: unknown) => {
+    const normalizado = String(estado || '').trim().toLowerCase();
+    return normalizado === 'completada' || normalizado === 'completado';
+  };
+
   // Carga inicial de pacientes
   useEffect(() => {
     const fetchPacientes = async () => {
@@ -55,7 +60,23 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         }
         if (!response.ok) throw new Error('Error al cargar pacientes');
         const data = await response.json();
-        setPacientes(data);
+
+        const citasResponse = await apiFetch(API_ENDPOINTS.CITAS);
+        const citas = citasResponse.ok ? await citasResponse.json() : [];
+        const conteoPorPaciente = new Map<number, number>();
+
+        (Array.isArray(citas) ? citas : []).forEach((cita: any) => {
+          const pacienteIdCita = Number(cita?.pacienteid);
+          if (!pacienteIdCita || !esCitaCompletada(cita?.estado)) return;
+          conteoPorPaciente.set(pacienteIdCita, (conteoPorPaciente.get(pacienteIdCita) || 0) + 1);
+        });
+
+        const pacientesConConteo = (Array.isArray(data) ? data : []).map((paciente: any) => ({
+          ...paciente,
+          sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
+        }));
+
+        setPacientes(pacientesConConteo);
       } catch (err: any) {
         toast.error(err.message);
       } finally {
