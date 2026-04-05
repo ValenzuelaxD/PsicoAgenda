@@ -17,6 +17,8 @@ export const CLIENT_CONFIG = {
   NOTIFICATIONS_POLL_INTERVAL_DESKTOP_MS: toNumberOrDefault((import.meta as any).env?.VITE_NOTIF_POLL_DESKTOP_MS, 45000),
   NOTIFICATIONS_POLL_INTERVAL_MOBILE_MS: toNumberOrDefault((import.meta as any).env?.VITE_NOTIF_POLL_MOBILE_MS, 75000),
   NOTIFICATIONS_TOAST_COOLDOWN_MS: toNumberOrDefault((import.meta as any).env?.VITE_NOTIF_TOAST_COOLDOWN_MS, 30000),
+  APPOINTMENT_WINDOW_PATIENT_DAYS: toNumberOrDefault((import.meta as any).env?.VITE_APPOINTMENT_WINDOW_PATIENT_DAYS, 45),
+  APPOINTMENT_WINDOW_PSYCHOLOGIST_DAYS: toNumberOrDefault((import.meta as any).env?.VITE_APPOINTMENT_WINDOW_PSYCHOLOGIST_DAYS, 180),
 } as const;
 
 export const API_ENDPOINTS = {

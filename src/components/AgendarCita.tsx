@@ -9,7 +9,7 @@ import { Check, Calendar as CalendarIcon, CalendarDays, User } from 'lucide-reac
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { motion, AnimatePresence } from 'motion/react';
-import { apiFetch, API_ENDPOINTS } from '../utils/api';
+import { apiFetch, API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 
 interface AgendarCitaProps {
   onNavigate: (view: ViewType) => void;
@@ -18,9 +18,11 @@ interface AgendarCitaProps {
 export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const finMesActual = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-  finMesActual.setHours(23, 59, 59, 999);
+  const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const finRango = new Date(hoy);
+  finRango.setDate(finRango.getDate() + CLIENT_CONFIG.APPOINTMENT_WINDOW_PATIENT_DAYS);
+  finRango.setHours(23, 59, 59, 999);
+  const finMesRango = new Date(finRango.getFullYear(), finRango.getMonth(), 1);
 
   const formatearFechaLocal = (fecha: Date) => {
     const year = fecha.getFullYear();
@@ -44,11 +46,11 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const [loadingProximos, setLoadingProximos] = useState(false);
   const [loadingCalendario, setLoadingCalendario] = useState(false);
   const [mesCalendario, setMesCalendario] = useState<Date>(new Date());
-  const [mostrarCalendarioInformativo, setMostrarCalendarioInformativo] = useState(false);
   const [proximosHorarios, setProximosHorarios] = useState<Array<{ fecha: string; etiqueta: string; horarios: string[] }>>([]);
   const [fechasConDisponibilidad, setFechasConDisponibilidad] = useState<string[]>([]);
 
   const fechasConDisponibilidadSet = useMemo(() => new Set(fechasConDisponibilidad), [fechasConDisponibilidad]);
+  const hoyTexto = formatearFechaLocal(hoy);
 
   const obtenerFechasProximas = (dias = 7) => {
     const base = new Date();
@@ -77,7 +79,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
       return false;
     }
 
-    if (candidate > finMesActual) {
+    if (candidate > finRango) {
       return false;
     }
 
@@ -90,6 +92,21 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
     }
 
     return fechasConDisponibilidadSet.has(formatearFechaLocal(candidate));
+  };
+
+  const manejarCambioMes = (nextMonth: Date) => {
+    const normalizado = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
+    if (normalizado < inicioRango) {
+      setMesCalendario(inicioRango);
+      return;
+    }
+
+    if (normalizado > finMesRango) {
+      setMesCalendario(finMesRango);
+      return;
+    }
+
+    setMesCalendario(normalizado);
   };
 
   const seleccionarProximoDia = (fecha: string) => {
@@ -234,6 +251,13 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
         const fechasMes = Array.from({ length: lastDay }, (_, index) => {
           const fecha = new Date(year, month, index + 1);
           return formatearFechaLocal(fecha);
+        }).filter((fecha) => {
+          const fechaDate = new Date(`${fecha}T00:00:00`);
+          if (fecha < hoyTexto) {
+            return false;
+          }
+
+          return fechaDate <= finRango;
         });
 
         const resultados = await Promise.all(
@@ -258,7 +282,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
     };
 
     fetchDisponibilidadMes();
-  }, [psicologo, mesCalendario]);
+  }, [hoyTexto, psicologo, mesCalendario]);
 
   useEffect(() => {
     if (!date || !psicologo || loadingCalendario) {
@@ -378,7 +402,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                     setPsicologo(value);
                     setDate(undefined);
                     setHora('');
-                    setMesCalendario(new Date());
+                    setMesCalendario(inicioRango);
                   }} required>
                                       <SelectTrigger id="psicologo" className="bg-slate-700/50 border-slate-600 text-slate-200">
                                         <SelectValue 
@@ -518,115 +542,70 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                   
                             {/* Columna Derecha */}
                             <div className="space-y-6 w-full">
-                              <div className="rounded-xl border border-slate-700 bg-slate-800/50 backdrop-blur-sm">
-                                <div className="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
-                                  <div>
-                                    <h3 className="text-slate-100 font-semibold">Calendario de referencia</h3>
-                                    <p className="text-slate-400 text-sm">Vista informativa de disponibilidad del mes actual</p>
-                                    {psicologo && (
-                                      <p className="text-xs text-teal-300 mt-1">
-                                        {loadingCalendario ? 'Actualizando disponibilidad del calendario...' : 'La seleccion se realiza desde "Proximos dias disponibles" y "Horario".'}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                                    onClick={() => setMostrarCalendarioInformativo((prev) => !prev)}
-                                  >
-                                    {mostrarCalendarioInformativo ? 'Ocultar calendario' : 'Ver calendario'}
-                                  </Button>
-                                </div>
-
-                                {mostrarCalendarioInformativo && (
-                                  <div className="p-4 sm:p-6 bg-slate-900/30 relative">
-                                    <div className="pointer-events-none">
-                                      <Calendar
-                                        mode="single"
-                                        selected={
-                                          date && fechasConDisponibilidadSet.has(formatearFechaLocal(date))
-                                            ? date
-                                            : undefined
-                                        }
-                                        month={mesCalendario}
-                                        onMonthChange={setMesCalendario}
-                                        fromMonth={inicioMesActual}
-                                        toMonth={inicioMesActual}
-                                        className="bg-transparent mx-auto w-full max-w-[320px] sm:max-w-[360px]"
-                                        modifiers={{
-                                          disponible: (candidate) =>
-                                            candidate >= hoy &&
-                                            candidate <= finMesActual &&
-                                            fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
-                                          sinDisponibilidad: (candidate) =>
-                                            candidate >= hoy &&
-                                            candidate <= finMesActual &&
-                                            !fechasConDisponibilidadSet.has(formatearFechaLocal(candidate)),
-                                        }}
-                                        modifiersClassNames={{
-                                          disponible: 'ring-1 ring-teal-400/40 bg-teal-500/10 text-teal-200',
-                                          sinDisponibilidad: 'text-slate-200 bg-transparent',
-                                        }}
-                                        disabled={() => true}
-                                      />
-                                    </div>
-                                    {psicologo && loadingCalendario && (
-                                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-xl bg-slate-900/70 backdrop-blur-[1px]">
-                                        <div className="rounded-md border border-teal-500/40 bg-slate-800/90 px-4 py-2 text-sm text-teal-200">
-                                          Cargando disponibilidad...
-                                        </div>
-                                      </div>
-                                    )}
-                                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                                      <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
-                                        <span className="h-2 w-2 rounded-full bg-teal-400" />
-                                        Verde: dias con horarios disponibles
-                                      </div>
-                                      <div className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800/50 px-2 py-1 text-slate-300">
-                                        <span className="h-2 w-2 rounded-full bg-slate-500" />
-                                        Gris: dias sin horarios disponibles
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
+                              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                                <CardHeader>
+                                  <CardTitle className="text-slate-100">Selecciona una fecha</CardTitle>
+                                  <CardDescription className="text-slate-400">
+                                    Elige un día con disponibilidad dentro de los próximos {CLIENT_CONFIG.APPOINTMENT_WINDOW_PATIENT_DAYS} días.
+                                  </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                  <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={(nextDate: Date | undefined) => {
+                                      if (!nextDate || !esFechaSeleccionable(nextDate)) {
+                                        return;
+                                      }
+                                      setDate(nextDate);
+                                      setHora('');
+                                    }}
+                                    month={mesCalendario}
+                                    onMonthChange={manejarCambioMes}
+                                    fromMonth={inicioRango}
+                                    toMonth={finMesRango}
+                                    className="rounded-md border w-full max-w-full"
+                                    disabled={(candidateDate: Date) => !esFechaSeleccionable(candidateDate)}
+                                    modifiers={{
+                                      disponible: (candidateDate) => esFechaSeleccionable(candidateDate),
+                                    }}
+                                    modifiersClassNames={{
+                                      disponible: 'ring-1 ring-teal-400/40 bg-teal-500/10 text-teal-200',
+                                    }}
+                                  />
+                                  {loadingCalendario && <p className="text-xs text-slate-400">Actualizando disponibilidad...</p>}
+                                </CardContent>
+                              </Card>
                   
                               {date && psicologo && hora && tipo && (
-                                <motion.div
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                                  <Card className="bg-gradient-to-br from-teal-900/40 to-violet-900/40 border-teal-500/50 backdrop-blur-sm shadow-lg">
-                                    <CardHeader>
-                                      <CardTitle className="flex items-center gap-2 text-slate-100">
-                                        <CalendarIcon className="w-5 h-5 stroke-2 text-teal-400" />
-                                        Resumen de la Cita
-                                      </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                      <p className="text-slate-200">
-                                        <span className="font-medium text-teal-300">Psicólogo:</span> {psicologos.find(p => String(p.psicologaid) === psicologo)?.nombre} {psicologos.find(p => String(p.psicologaid) === psicologo)?.apellidopaterno}
-                                      </p>
-                                      <p className="text-slate-200">
-                                        <span className="font-medium text-violet-300">Modalidad:</span> {tipo}
-                                      </p>
-                                      <p className="text-slate-200">
-                                        <span className="font-medium text-teal-300">Fecha:</span>{' '}
-                                        {date.toLocaleDateString('es-ES', {
-                                          weekday: 'long',
-                                          year: 'numeric',
-                                          month: 'long',
-                                          day: 'numeric',
-                                        })}
-                                      </p>
-                                      <p className="text-slate-200">
-                                        <span className="font-medium text-violet-300">Hora:</span> {hora}
-                                      </p>
-                                    </CardContent>
-                                  </Card>
-                                </motion.div>
+                                <Card className="bg-gradient-to-br from-teal-900/40 to-violet-900/40 border-teal-500/50 backdrop-blur-sm shadow-lg">
+                                  <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-slate-100">
+                                      <CalendarIcon className="w-5 h-5 stroke-2 text-teal-400" />
+                                      Resumen de la Cita
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="space-y-2">
+                                    <p className="text-slate-200">
+                                      <span className="font-medium text-teal-300">Psicólogo:</span> {psicologos.find(p => String(p.psicologaid) === psicologo)?.nombre} {psicologos.find(p => String(p.psicologaid) === psicologo)?.apellidopaterno}
+                                    </p>
+                                    <p className="text-slate-200">
+                                      <span className="font-medium text-violet-300">Modalidad:</span> {tipo}
+                                    </p>
+                                    <p className="text-slate-200">
+                                      <span className="font-medium text-teal-300">Fecha:</span>{' '}
+                                      {date.toLocaleDateString('es-ES', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                      })}
+                                    </p>
+                                    <p className="text-slate-200">
+                                      <span className="font-medium text-violet-300">Hora:</span> {hora}
+                                    </p>
+                                  </CardContent>
+                                </Card>
                               )}
                             </div>
                           </div>

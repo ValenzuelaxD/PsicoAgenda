@@ -68,12 +68,18 @@ Variables disponibles:
 - VITE_NOTIF_POLL_DESKTOP_MS=45000
 - VITE_NOTIF_POLL_MOBILE_MS=75000
 - VITE_NOTIF_TOAST_COOLDOWN_MS=30000
+- VITE_APPOINTMENT_WINDOW_PATIENT_DAYS=45
+- VITE_APPOINTMENT_WINDOW_PSYCHOLOGIST_DAYS=180
+- MAX_BOOKING_DAYS_PACIENTE=45
+- MAX_BOOKING_DAYS_PSICOLOGA=180
 
 Recomendacion base:
 
 - Desktop: 45000 ms (45s)
 - Mobile: 75000 ms (75s)
 - Cooldown de toast: 30000 ms (30s)
+- Ventana paciente: 45 dias
+- Ventana psicologa: 180 dias
 
 Si necesitas ajustar tiempos en tu entorno local:
 

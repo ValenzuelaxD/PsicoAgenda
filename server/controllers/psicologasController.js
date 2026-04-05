@@ -1,5 +1,43 @@
 const db = require('../db');
 
+const toPositiveInt = (value, defaultValue) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : defaultValue;
+};
+
+const MAX_DIAS_ADELANTO_PACIENTE = toPositiveInt(process.env.MAX_BOOKING_DAYS_PACIENTE, 45);
+const MAX_DIAS_ADELANTO_PSICOLOGA = toPositiveInt(process.env.MAX_BOOKING_DAYS_PSICOLOGA, 180);
+
+const getMaxDiasAdelantoPorRol = (rol) => {
+  if (rol === 'paciente') return MAX_DIAS_ADELANTO_PACIENTE;
+  if (rol === 'psicologa') return MAX_DIAS_ADELANTO_PSICOLOGA;
+  return MAX_DIAS_ADELANTO_PSICOLOGA;
+};
+
+const parsearFechaLocal = (fecha) => {
+  const valor = String(fecha || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return null;
+  }
+
+  const parsed = new Date(`${valor}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const estaDentroDeVentana = ({ fechaSeleccionada, rol }) => {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const maxDias = getMaxDiasAdelantoPorRol(rol);
+  const fechaMaxima = new Date(hoy);
+  fechaMaxima.setDate(fechaMaxima.getDate() + maxDias);
+  fechaMaxima.setHours(23, 59, 59, 999);
+
+  if (fechaSeleccionada < hoy) return false;
+  if (fechaSeleccionada > fechaMaxima) return false;
+  return true;
+};
+
 const construirFotoDesdeBd = (mimeType, dataBuffer) => {
   if (!mimeType || !dataBuffer) return null;
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
@@ -37,16 +75,25 @@ const getPsicologas = async (req, res) => {
 
 const getDisponibilidad = async (req, res) => {
   const { id } = req.params;
-  const { fecha, citaIdExcluir } = req.query;
+  const { fecha, citaIdExcluir, duracionMin } = req.query;
 
   try {
     if (!fecha) {
       return res.status(400).json({ message: 'La fecha es requerida.' });
     }
 
+    const fechaSeleccionada = parsearFechaLocal(fecha);
+    if (!fechaSeleccionada) {
+      return res.status(400).json({ message: 'La fecha no es válida. Usa el formato YYYY-MM-DD.' });
+    }
+
+    if (!estaDentroDeVentana({ fechaSeleccionada, rol: req.user?.rol })) {
+      const diasMax = getMaxDiasAdelantoPorRol(req.user?.rol);
+      return res.status(400).json({ message: `Solo puedes consultar disponibilidad dentro de los próximos ${diasMax} días.` });
+    }
+
     // 1. Obtener la agenda de la psicóloga para el día de la semana de la fecha seleccionada
     const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
-    const fechaSeleccionada = new Date(`${fecha}T00:00:00`);
     const diaSemana = diasSemana[fechaSeleccionada.getDay()];
     const agendaQuery = `
       SELECT horainicio, horafin
@@ -77,7 +124,7 @@ const getDisponibilidad = async (req, res) => {
 
     // 3. Generar los horarios disponibles
     const horariosDisponibles = new Set();
-    const duracionCita = 60; // Asumimos citas de 60 minutos
+    const duracionCita = toPositiveInt(duracionMin, 60);
 
     for (const bloque of agendaResult.rows) {
       let horaActual = new Date(`${fecha}T${String(bloque.horainicio).slice(0, 5)}:00`);

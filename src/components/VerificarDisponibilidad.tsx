@@ -9,7 +9,7 @@ import { Switch } from './ui/switch';
 import { CalendarDays, Clock3, Pencil, Plus, Save, Trash2, Eye, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
-import { apiFetch, API_ENDPOINTS } from '../utils/api';
+import { apiFetch, API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import { Agenda, Cita } from '../utils/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
@@ -22,6 +22,7 @@ const DIAS_SEMANA = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabad
 const DIAS_SEMANA_POR_INDICE = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'] as const;
 
 export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadProps) {
+  const PREVIEW_DIAS = Math.min(CLIENT_CONFIG.APPOINTMENT_WINDOW_PATIENT_DAYS, 21);
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,7 +171,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
 
     const resultados: Array<{ fecha: string; etiqueta: string; dia: string; slots: string[] }> = [];
 
-    for (let offset = 0; offset < 14; offset += 1) {
+    for (let offset = 0; offset < PREVIEW_DIAS; offset += 1) {
       const fecha = new Date(hoy);
       fecha.setDate(hoy.getDate() + offset);
       const fechaFormato = formatearFechaLocal(fecha);
@@ -197,7 +198,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
     }
 
     return resultados;
-  }, [agendas, citas]);
+  }, [PREVIEW_DIAS, agendas, citas]);
 
   const totalBloques = agendas.length;
   const bloquesDisponibles = agendas.filter((agenda) => agenda.disponible).length;
@@ -349,7 +350,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
           Horario de Atención
         </h1>
         <p className="text-slate-300 text-sm sm:text-base">
-          Define cuándo estás disponible para atender pacientes. Los patientes verán estos horarios al solicitar citas.
+          Define tu disponibilidad semanal. Los pacientes verán estos horarios para solicitar citas dentro de la ventana publicada.
         </p>
       </div>
 
@@ -569,7 +570,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                     {totalBloques === 0 ? (
                       <p className="text-slate-400 text-sm">Sin horarios configurados aún</p>
                     ) : previewDisponibilidad.length === 0 ? (
-                      <p className="text-slate-400 text-sm">No hay horarios libres en los próximos 14 días.</p>
+                      <p className="text-slate-400 text-sm">No hay horarios libres en los próximos {PREVIEW_DIAS} días.</p>
                     ) : (
                       <div className="space-y-2">
                         {previewDisponibilidad.map((disponibilidad) => (

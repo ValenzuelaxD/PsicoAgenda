@@ -3,6 +3,35 @@ const db = require('../db');
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 const ESTADOS_EDITABLES = ['Pendiente', 'Confirmada', 'Cancelada', 'Completada', 'Reagendada'];
 
+const toPositiveInt = (value, defaultValue) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : defaultValue;
+};
+
+const MAX_DIAS_ADELANTO_PACIENTE = toPositiveInt(process.env.MAX_BOOKING_DAYS_PACIENTE, 45);
+const MAX_DIAS_ADELANTO_PSICOLOGA = toPositiveInt(process.env.MAX_BOOKING_DAYS_PSICOLOGA, 180);
+
+const getMaxDiasAdelantoPorRol = (rol) => {
+  if (rol === 'paciente') return MAX_DIAS_ADELANTO_PACIENTE;
+  if (rol === 'psicologa') return MAX_DIAS_ADELANTO_PSICOLOGA;
+  return MAX_DIAS_ADELANTO_PSICOLOGA;
+};
+
+const estaDentroDeVentana = (fechaHora, rol) => {
+  if (!(fechaHora instanceof Date) || Number.isNaN(fechaHora.getTime())) {
+    return false;
+  }
+
+  const inicioHoy = new Date();
+  inicioHoy.setHours(0, 0, 0, 0);
+
+  const fechaMaxima = new Date(inicioHoy);
+  fechaMaxima.setDate(fechaMaxima.getDate() + getMaxDiasAdelantoPorRol(rol));
+  fechaMaxima.setHours(23, 59, 59, 999);
+
+  return fechaHora >= inicioHoy && fechaHora <= fechaMaxima;
+};
+
 const construirFotoDesdeBd = (mimeType, dataBuffer) => {
   if (!mimeType || !dataBuffer) return '';
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
@@ -303,6 +332,11 @@ const crearCita = async (req, res) => {
       return res.status(400).json({ message: 'No puedes agendar una cita en una fecha u hora pasada.' });
     }
 
+    if (!estaDentroDeVentana(fechaHora, rol)) {
+      const diasMax = getMaxDiasAdelantoPorRol(rol);
+      return res.status(400).json({ message: `Solo puedes agendar citas dentro de los próximos ${diasMax} días.` });
+    }
+
     const duracionFinal = Number(duracionMin || 60);
     const modalidadFinal = modalidad || 'Presencial';
     const notasPacienteFinal = rol === 'paciente' ? notas || null : null;
@@ -417,6 +451,11 @@ const actualizarCita = async (req, res) => {
 
     if (esFechaHoraPasada(nuevaFechaHora)) {
       return res.status(400).json({ message: 'No puedes reagendar una cita en una fecha u hora pasada.' });
+    }
+
+    if (!estaDentroDeVentana(nuevaFechaHora, req.user.rol)) {
+      const diasMax = getMaxDiasAdelantoPorRol(req.user.rol);
+      return res.status(400).json({ message: `Solo puedes reagendar citas dentro de los próximos ${diasMax} días.` });
     }
 
     const nuevaDuracion = Number(duracionMin || contexto.duracionmin || 60);
@@ -567,7 +606,7 @@ const cancelarCita = async (req, res) => {
 };
 
 const getMiDisponibilidad = async (req, res) => {
-  const { fecha } = req.query;
+  const { fecha, duracionMin } = req.query;
 
   try {
     if (req.user.rol !== 'psicologa') {
@@ -581,6 +620,16 @@ const getMiDisponibilidad = async (req, res) => {
 
     if (!fecha) {
       return res.status(400).json({ message: 'La fecha es requerida.' });
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) {
+      return res.status(400).json({ message: 'La fecha no es válida. Usa el formato YYYY-MM-DD.' });
+    }
+
+    const fechaSolicitada = new Date(`${fecha}T00:00:00`);
+    if (!estaDentroDeVentana(fechaSolicitada, req.user.rol)) {
+      const diasMax = getMaxDiasAdelantoPorRol(req.user.rol);
+      return res.status(400).json({ message: `Solo puedes consultar disponibilidad dentro de los próximos ${diasMax} días.` });
     }
 
     const agendaResult = await db.query(
@@ -608,7 +657,7 @@ const getMiDisponibilidad = async (req, res) => {
     );
 
     const disponibilidad = new Set();
-    const duracionDefault = 60;
+    const duracionDefault = toPositiveInt(duracionMin, 60);
 
     agendaResult.rows.forEach((bloque) => {
       let horaActual = new Date(`${fecha}T${String(bloque.horainicio).slice(0, 5)}:00`);

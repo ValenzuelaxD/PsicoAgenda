@@ -8,7 +8,7 @@ import { Textarea } from './ui/textarea';
 import { Calendar as CalendarIcon, Clock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
-import { apiFetch, API_ENDPOINTS } from '../utils/api';
+import { apiFetch, API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import { MODALIDAD_CITA, Paciente } from '../utils/types';
 
 interface ProgramarCitaProps {
@@ -27,9 +27,11 @@ const formatDate = (date: Date) => {
 export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const finMesActual = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-  finMesActual.setHours(23, 59, 59, 999);
+  const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const finRango = new Date(hoy);
+  finRango.setDate(finRango.getDate() + CLIENT_CONFIG.APPOINTMENT_WINDOW_PSYCHOLOGIST_DAYS);
+  finRango.setHours(23, 59, 59, 999);
+  const finMesRango = new Date(finRango.getFullYear(), finRango.getMonth(), 1);
 
   const [date, setDate] = useState<Date>(new Date());
   const [pacienteId, setPacienteId] = useState('');
@@ -48,8 +50,9 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
 
   const clampMonth = (monthDate: Date) => {
     const normalizado = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-    if (normalizado.getTime() !== inicioMesActual.getTime()) return inicioMesActual;
-    return inicioMesActual;
+    if (normalizado < inicioRango) return inicioRango;
+    if (normalizado > finMesRango) return finMesRango;
+    return normalizado;
   };
 
   const fechaSeleccionada = useMemo(() => formatDate(date), [date]);
@@ -75,7 +78,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
       return false;
     }
 
-    if (candidateDate > finMesActual) {
+    if (candidateDate > finRango) {
       return false;
     }
 
@@ -133,11 +136,18 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
         const fechasMes = Array.from({ length: lastDay }, (_, index) => {
           const fecha = new Date(year, month, index + 1);
           return formatDate(fecha);
-        }).filter((fecha) => fecha >= formatDate(hoy));
+        }).filter((fecha) => {
+          if (fecha < formatDate(hoy)) {
+            return false;
+          }
+
+          const fechaDate = new Date(`${fecha}T00:00:00`);
+          return fechaDate <= finRango;
+        });
 
         const resultados = await Promise.all(
           fechasMes.map(async (fecha) => {
-            const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fecha}`);
+            const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fecha}&duracionMin=${duracion}`);
             if (!response.ok) {
               return null;
             }
@@ -161,13 +171,6 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
 
         setDisponibilidadPorFecha(mapaDisponibilidad);
 
-        const esMesActualVisualizado =
-          mesCalendario.getFullYear() === inicioMesActual.getFullYear() &&
-          mesCalendario.getMonth() === inicioMesActual.getMonth();
-
-        if (!esMesActualVisualizado) {
-          setMesCalendario(inicioMesActual);
-        }
       } catch {
         setDisponibilidadPorFecha({});
       } finally {
@@ -176,7 +179,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
     };
 
     fetchDisponibilidadMes();
-  }, [mesCalendario]);
+  }, [duracion, mesCalendario]);
 
   useEffect(() => {
     if (loadingCalendario) {
@@ -191,7 +194,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
             return false;
           }
           const fechaDate = new Date(`${fecha}T00:00:00`);
-          return fechaDate <= finMesActual;
+          return fechaDate <= finRango;
         });
 
       if (primeraFecha) {
@@ -208,7 +211,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
       setLoadingHorarios(true);
 
       try {
-        const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fechaSeleccionada}`);
+        const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fechaSeleccionada}&duracionMin=${duracion}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -228,7 +231,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
     };
 
     fetchDisponibilidad();
-  }, [fechaSeleccionada]);
+  }, [duracion, fechaSeleccionada]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -382,13 +385,15 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
             <Card>
               <CardHeader>
                 <CardTitle>Seleccionar Fecha</CardTitle>
-                <CardDescription>Solo se habilitan días con horarios realmente disponibles (mes actual y siguiente).</CardDescription>
+                <CardDescription>
+                  Solo se habilitan días con horarios realmente disponibles dentro de los próximos {CLIENT_CONFIG.APPOINTMENT_WINDOW_PSYCHOLOGIST_DAYS} días.
+                </CardDescription>
               </CardHeader>
               <CardContent className="overflow-x-auto space-y-4">
                 <div className="space-y-2">
                   <p className="text-sm text-slate-300">Próximos días disponibles</p>
                   {proximosDiasDisponibles.length === 0 ? (
-                    <p className="text-xs text-slate-400">No hay días disponibles en el mes actual.</p>
+                    <p className="text-xs text-slate-400">No hay días disponibles en la ventana configurada.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {proximosDiasDisponibles.map((item) => {
@@ -425,9 +430,8 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                   }}
                   month={mesCalendario}
                   onMonthChange={manejarCambioMes}
-                  fromMonth={inicioMesActual}
-                  toMonth={inicioMesActual}
-                  disableNavigation
+                  fromMonth={inicioRango}
+                  toMonth={finMesRango}
                   className="rounded-md border w-full max-w-full"
                   disabled={(candidateDate: Date) => !esFechaDisponible(candidateDate)}
                   modifiers={{
