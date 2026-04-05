@@ -80,6 +80,22 @@ const getPacientes = async (req, res) => {
             p.motivoconsulta,
             p.contactoemergencia,
             p.telemergencia,
+            (
+              SELECT MAX(cx.fechahora)
+              FROM citas cx
+              WHERE cx.pacienteid = p.pacienteid
+                AND cx.psicologaid = $1
+                AND COALESCE(LOWER(TRIM(cx.estado)), '') NOT IN ('cancelada', 'cancelado')
+                AND cx.fechahora < NOW()
+            ) AS ultimacita,
+            (
+              SELECT MIN(cx.fechahora)
+              FROM citas cx
+              WHERE cx.pacienteid = p.pacienteid
+                AND cx.psicologaid = $1
+                AND COALESCE(LOWER(TRIM(cx.estado)), '') NOT IN ('cancelada', 'cancelado')
+                AND cx.fechahora >= NOW()
+            ) AS proximacita,
             ${usarContadorPersistente
               ? 'COALESCE(p.sesionescompletadas, 0) AS sesionestotales'
               : `COUNT(c.citaid) FILTER (
@@ -119,6 +135,20 @@ const getPacientes = async (req, res) => {
           p.motivoconsulta,
           p.contactoemergencia,
           p.telemergencia,
+          (
+            SELECT MAX(cx.fechahora)
+            FROM citas cx
+            WHERE cx.pacienteid = p.pacienteid
+              AND COALESCE(LOWER(TRIM(cx.estado)), '') NOT IN ('cancelada', 'cancelado')
+              AND cx.fechahora < NOW()
+          ) AS ultimacita,
+          (
+            SELECT MIN(cx.fechahora)
+            FROM citas cx
+            WHERE cx.pacienteid = p.pacienteid
+              AND COALESCE(LOWER(TRIM(cx.estado)), '') NOT IN ('cancelada', 'cancelado')
+              AND cx.fechahora >= NOW()
+          ) AS proximacita,
           ${usarContadorPersistente
             ? 'COALESCE(p.sesionescompletadas, 0) AS sesionestotales'
             : `COUNT(c.citaid) FILTER (
@@ -142,6 +172,8 @@ const getPacientes = async (req, res) => {
         ? new Date().getFullYear() - new Date(p.fechanacimiento).getFullYear()
         : null,
       sesionesTotales: Number(p.sesionestotales) || 0,
+      ultimaCita: p.ultimacita || null,
+      proximaCita: p.proximacita || null,
       email: p.correo,
       estado: 'activo',
     }));
