@@ -120,6 +120,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
 
         if (psicologosRes.ok) {
           const psicologosData = await psicologosRes.json();
+          console.log('Psicólogos recibidos:', psicologosData);
           setPsicologos(psicologosData);
         }
 
@@ -385,32 +386,27 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                         />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {psicologos.map((psi) => {
-                                          const fotoBg = psi.fotoperfil ? `url(${psi.fotoperfil})` : 'none';
-                                          return (
-                                            <SelectItem 
-                                              key={psi.psicologaid} 
-                                              value={String(psi.psicologaid)}
-                                              className="flex items-center gap-2"
-                                            >
-                                              <span className="flex items-center gap-2">
-                                                {psi.fotoperfil ? (
-                                                  <img
-                                                    src={psi.fotoperfil}
-                                                    alt={`${psi.nombre} ${psi.apellidopaterno}`}
-                                                    className="w-5 h-5 rounded-full object-cover flex-shrink-0"
-                                                    onError={(e) => {
-                                                      (e.target as HTMLImageElement).style.display = 'none';
-                                                    }}
-                                                  />
-                                                ) : (
-                                                  <User className="w-5 h-5 flex-shrink-0" />
-                                                )}
-                                                {`${psi.nombre} ${psi.apellidopaterno}`}
-                                              </span>
-                                            </SelectItem>
-                                          );
-                                        })}
+                                        {psicologos.map((psi) => (
+                                          <SelectItem 
+                                            key={psi.psicologaid} 
+                                            value={String(psi.psicologaid)}
+                                          >
+                                            <div className="flex items-center gap-2 w-full">
+                                              {psi.fotoperfil && (
+                                                <img
+                                                  src={psi.fotoperfil}
+                                                  alt={`${psi.nombre}`}
+                                                  className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                                                  loading="lazy"
+                                                />
+                                              )}
+                                              {!psi.fotoperfil && (
+                                                <User className="w-5 h-5 flex-shrink-0 text-slate-400" />
+                                              )}
+                                              <span>{`${psi.nombre} ${psi.apellidopaterno}`}</span>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
                                       </SelectContent>
                                     </Select>
                                   </div>

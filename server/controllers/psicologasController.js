@@ -1,14 +1,34 @@
 const db = require('../db');
 
+const construirFotoDesdeBd = (mimeType, dataBuffer) => {
+  if (!mimeType || !dataBuffer) return null;
+  return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
+};
+
 const getPsicologas = async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT p.psicologaid, u.nombre, u.apellidopaterno, p.especialidad, u.fotoperfil
+      SELECT 
+        p.psicologaid, 
+        u.nombre, 
+        u.apellidopaterno, 
+        p.especialidad, 
+        u.fotoperfil_mime,
+        u.fotoperfil_data
       FROM usuarios u
       JOIN psicologas p ON u.usuarioid = p.usuarioid
       WHERE u.rol = 'psicologa' AND u.activo = true
     `);
-    res.json(result.rows);
+    
+    const psicologas = result.rows.map(row => ({
+      psicologaid: row.psicologaid,
+      nombre: row.nombre,
+      apellidopaterno: row.apellidopaterno,
+      especialidad: row.especialidad,
+      fotoperfil: construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data)
+    }));
+    
+    res.json(psicologas);
   } catch (error) {
     console.error("Error al obtener psicólogas:", error);
     res.status(500).json({ message: "Error interno del servidor." });
