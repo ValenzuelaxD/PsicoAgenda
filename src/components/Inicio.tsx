@@ -256,9 +256,17 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                     <CardContent className="pt-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
-                            <Calendar className="w-5 h-5 text-white" />
-                          </div>
+                          {cita.fotoperfil ? (
+                            <img
+                              src={cita.fotoperfil}
+                              alt={`${cita.nombre} ${cita.apellidopaterno}`}
+                              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Calendar className="w-5 h-5 text-white" />
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <p className="text-slate-100 font-medium">
                               {cita.nombre} {cita.apellidopaterno}

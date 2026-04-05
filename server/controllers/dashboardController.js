@@ -32,7 +32,7 @@ const getPacienteDashboard = async (req, res) => {
       LIMIT 1`;
 
     const proximasCitasQuery = `
-      SELECT c.citaid, c.fechahora, c.modalidad, c.estado, u.nombre, u.apellidopaterno, ps.consultorio
+      SELECT c.citaid, c.fechahora, c.modalidad, c.estado, u.nombre, u.apellidopaterno, ps.consultorio, u.fotoperfil_mime, u.fotoperfil_data
       FROM citas c
       JOIN psicologas ps ON c.psicologaid = ps.psicologaid
       JOIN usuarios u ON ps.usuarioid = u.usuarioid
@@ -45,11 +45,16 @@ const getPacienteDashboard = async (req, res) => {
     const ultimaSesionResult = await db.query(ultimaSesionQuery, [pacienteId]);
     const proximasCitasResult = await db.query(proximasCitasQuery, [pacienteId]);
 
+    const proximasCitasConFoto = proximasCitasResult.rows.map(row => ({
+      ...row,
+      fotoperfil: construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data)
+    }));
+
     res.json({
       proximaCita: proximaCitaResult.rows[0]?.fechahora,
       sesionesTotales: parseInt(sesionesTotalesResult.rows[0].count, 10),
       ultimaSesion: ultimaSesionResult.rows[0]?.fechahora,
-      proximasCitas: proximasCitasResult.rows,
+      proximasCitas: proximasCitasConFoto,
     });
   } catch (error) {
     console.error("Error al obtener datos del dashboard del paciente:", error);
