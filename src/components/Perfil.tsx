@@ -497,8 +497,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
                     </Button>
                   )}
                 </div>
-                <div>
-                </div>
               </div>
             </div>
           </CardContent>
