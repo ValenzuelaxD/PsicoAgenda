@@ -7,6 +7,7 @@ const toPositiveInt = (value, defaultValue) => {
 
 const MAX_DIAS_ADELANTO_PACIENTE = toPositiveInt(process.env.MAX_BOOKING_DAYS_PACIENTE, 45);
 const MAX_DIAS_ADELANTO_PSICOLOGA = toPositiveInt(process.env.MAX_BOOKING_DAYS_PSICOLOGA, 180);
+const DURACION_CITA_MIN = 60;
 
 const getMaxDiasAdelantoPorRol = (rol) => {
   if (rol === 'paciente') return MAX_DIAS_ADELANTO_PACIENTE;
@@ -75,7 +76,7 @@ const getPsicologas = async (req, res) => {
 
 const getDisponibilidad = async (req, res) => {
   const { id } = req.params;
-  const { fecha, citaIdExcluir, duracionMin } = req.query;
+  const { fecha, citaIdExcluir } = req.query;
 
   try {
     if (!fecha) {
@@ -124,7 +125,7 @@ const getDisponibilidad = async (req, res) => {
 
     // 3. Generar los horarios disponibles
     const horariosDisponibles = new Set();
-    const duracionCita = toPositiveInt(duracionMin, 60);
+    const duracionCita = DURACION_CITA_MIN;
 
     for (const bloque of agendaResult.rows) {
       let horaActual = new Date(`${fecha}T${String(bloque.horainicio).slice(0, 5)}:00`);

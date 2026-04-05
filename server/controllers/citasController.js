@@ -2,6 +2,7 @@ const db = require('../db');
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 const ESTADOS_EDITABLES = ['Pendiente', 'Confirmada', 'Cancelada', 'Completada', 'Reagendada'];
+const DURACION_CITA_MIN = 60;
 
 const toPositiveInt = (value, defaultValue) => {
   const parsed = Number(value);
@@ -72,11 +73,11 @@ const obtenerFechaClienteDesdeRequest = (req) => {
   return valido ? valor : null;
 };
 
-const validarDisponibilidad = async ({ psicologaId, fechaHora, duracionMin, citaIdExcluir = null }) => {
+const validarDisponibilidad = async ({ psicologaId, fechaHora, citaIdExcluir = null }) => {
   const diaSemana = DIAS_SEMANA[fechaHora.getDay()];
   const fecha = fechaHora.toISOString().slice(0, 10);
   const inicioMinutos = fechaHora.getHours() * 60 + fechaHora.getMinutes();
-  const finMinutos = inicioMinutos + duracionMin;
+  const finMinutos = inicioMinutos + DURACION_CITA_MIN;
 
   const agendaResult = await db.query(
     `
@@ -117,7 +118,7 @@ const validarDisponibilidad = async ({ psicologaId, fechaHora, duracionMin, cita
   const haySolapamiento = citasResult.rows.some((cita) => {
     const citaInicio = new Date(cita.fechahora);
     const citaFin = new Date(citaInicio.getTime() + Number(cita.duracionmin || 60) * 60000);
-    return fechaHora < citaFin && new Date(fechaHora.getTime() + duracionMin * 60000) > citaInicio;
+    return fechaHora < citaFin && new Date(fechaHora.getTime() + DURACION_CITA_MIN * 60000) > citaInicio;
   });
 
   if (haySolapamiento) {
@@ -295,7 +296,7 @@ const getMisCitas = async (req, res) => {
 };
 
 const crearCita = async (req, res) => {
-  const { psicologaId, pacienteId, fecha, hora, notas, modalidad, duracionMin } = req.body;
+  const { psicologaId, pacienteId, fecha, hora, notas, modalidad } = req.body;
   const usuarioId = req.user.id;
   const rol = req.user.rol;
 
@@ -337,11 +338,11 @@ const crearCita = async (req, res) => {
       return res.status(400).json({ message: `Solo puedes agendar citas dentro de los próximos ${diasMax} días.` });
     }
 
-    const duracionFinal = Number(duracionMin || 60);
+    const duracionFinal = DURACION_CITA_MIN;
     const modalidadFinal = modalidad || 'Presencial';
     const notasPacienteFinal = rol === 'paciente' ? notas || null : null;
     const notasPsicologaFinal = rol === 'psicologa' ? notas || null : null;
-    const disponibilidad = await validarDisponibilidad({ psicologaId: citaPsicologaId, fechaHora, duracionMin: duracionFinal });
+    const disponibilidad = await validarDisponibilidad({ psicologaId: citaPsicologaId, fechaHora });
     if (!disponibilidad.disponible) {
       return res.status(409).json({ message: disponibilidad.message });
     }
@@ -433,7 +434,7 @@ const crearCita = async (req, res) => {
 
 const actualizarCita = async (req, res) => {
   const { id } = req.params;
-  const { fecha, hora, modalidad, duracionMin, estado, notas, notasPaciente, notasPsicologa } = req.body;
+  const { fecha, hora, modalidad, estado, notas, notasPaciente, notasPsicologa } = req.body;
 
   try {
     const validacion = await validarAccesoCita(req, id);
@@ -458,7 +459,7 @@ const actualizarCita = async (req, res) => {
       return res.status(400).json({ message: `Solo puedes reagendar citas dentro de los próximos ${diasMax} días.` });
     }
 
-    const nuevaDuracion = Number(duracionMin || contexto.duracionmin || 60);
+    const nuevaDuracion = DURACION_CITA_MIN;
     const nuevaModalidad = modalidad || contexto.modalidad;
     const nuevoEstado = req.user.rol === 'psicologa'
       ? (ESTADOS_EDITABLES.includes(estado) ? estado : contexto.estado)
@@ -467,7 +468,6 @@ const actualizarCita = async (req, res) => {
     const disponibilidad = await validarDisponibilidad({
       psicologaId: contexto.psicologaid,
       fechaHora: nuevaFechaHora,
-      duracionMin: nuevaDuracion,
       citaIdExcluir: Number(id),
     });
     if (!disponibilidad.disponible) {
@@ -606,7 +606,7 @@ const cancelarCita = async (req, res) => {
 };
 
 const getMiDisponibilidad = async (req, res) => {
-  const { fecha, duracionMin } = req.query;
+  const { fecha } = req.query;
 
   try {
     if (req.user.rol !== 'psicologa') {
@@ -657,7 +657,7 @@ const getMiDisponibilidad = async (req, res) => {
     );
 
     const disponibilidad = new Set();
-    const duracionDefault = toPositiveInt(duracionMin, 60);
+    const duracionDefault = DURACION_CITA_MIN;
 
     agendaResult.rows.forEach((bloque) => {
       let horaActual = new Date(`${fecha}T${String(bloque.horainicio).slice(0, 5)}:00`);

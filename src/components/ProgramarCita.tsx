@@ -14,8 +14,7 @@ import { MODALIDAD_CITA, Paciente } from '../utils/types';
 interface ProgramarCitaProps {
   onNavigate: (view: ViewType) => void;
 }
-
-const DURACIONES = ['30', '45', '60', '90'] as const;
+const DURACION_CITA_MIN = 60;
 
 const formatDate = (date: Date) => {
   const year = date.getFullYear();
@@ -36,7 +35,6 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   const [date, setDate] = useState<Date>(new Date());
   const [pacienteId, setPacienteId] = useState('');
   const [hora, setHora] = useState('');
-  const [duracion, setDuracion] = useState<string>('60');
   const [modalidad, setModalidad] = useState<string>(MODALIDAD_CITA.PRESENCIAL);
   const [notas, setNotas] = useState('');
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
@@ -57,7 +55,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
 
   const fechaSeleccionada = useMemo(() => formatDate(date), [date]);
   const pacienteSeleccionado = pacientes.find((paciente: Paciente) => String(paciente.pacienteid) === pacienteId);
-  const mostrarResumen = Boolean(date && pacienteId && hora && modalidad && duracion);
+  const mostrarResumen = Boolean(date && pacienteId && hora && modalidad);
   const fechasConDisponibilidadSet = useMemo(() => new Set(Object.keys(disponibilidadPorFecha)), [disponibilidadPorFecha]);
   const proximosDiasDisponibles = useMemo(() => {
     return Object.entries(disponibilidadPorFecha)
@@ -148,7 +146,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
 
         const resultados = await Promise.all(
           fechasMes.map(async (fecha) => {
-            const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fecha}&duracionMin=${duracion}`);
+            const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fecha}`);
             if (!response.ok) {
               return null;
             }
@@ -180,7 +178,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
     };
 
     fetchDisponibilidadMes();
-  }, [duracion, mesCalendario]);
+  }, [mesCalendario]);
 
   useEffect(() => {
     if (loadingCalendario) {
@@ -212,7 +210,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
       setLoadingHorarios(true);
 
       try {
-        const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fechaSeleccionada}&duracionMin=${duracion}`);
+        const response = await apiFetch(`${API_ENDPOINTS.CITAS_DISPONIBILIDAD}?fecha=${fechaSeleccionada}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -232,7 +230,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
     };
 
     fetchDisponibilidad();
-  }, [duracion, fechaSeleccionada]);
+  }, [fechaSeleccionada]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -252,7 +250,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
           fecha: fechaSeleccionada,
           hora,
           modalidad,
-          duracionMin: Number(duracion),
+          duracionMin: DURACION_CITA_MIN,
           notas: notas.trim() || undefined,
         }),
       });
@@ -268,7 +266,6 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
 
       setPacienteId('');
       setHora('');
-      setDuracion('60');
       setModalidad(MODALIDAD_CITA.PRESENCIAL);
       setNotas('');
       onNavigate('citas');
@@ -342,17 +339,10 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="duracion">Duración</Label>
-                  <Select value={duracion} onValueChange={setDuracion}>
-                    <SelectTrigger id="duracion">
-                      <SelectValue placeholder="Selecciona la duración" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DURACIONES.map((item) => (
-                        <SelectItem key={item} value={item}>{item} minutos</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Duración</Label>
+                  <div className="rounded-md border px-3 py-2 text-sm text-slate-600 bg-slate-50">
+                    60 minutos (fija)
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -475,7 +465,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                   <p><span className="font-medium text-teal-300">Paciente:</span> {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
                   <p><span className="font-medium text-violet-300">Fecha:</span> {date.toLocaleDateString('es-ES')}</p>
                   <p><span className="font-medium text-teal-300">Hora:</span> {hora || 'Pendiente'}</p>
-                  <p><span className="font-medium text-violet-300">Duración:</span> {duracion} min</p>
+                  <p><span className="font-medium text-violet-300">Duración:</span> {DURACION_CITA_MIN} min</p>
                   <p><span className="font-medium text-teal-300">Modalidad:</span> {modalidad}</p>
                   <p><span className="font-medium text-violet-300">Horarios libres:</span> {loadingHorarios ? 'Consultando...' : horariosDisponibles.length}</p>
                 </CardContent>
