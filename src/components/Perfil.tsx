@@ -297,12 +297,12 @@ export function Perfil({ userName, userType }: PerfilProps) {
       return;
     }
 
-    const limiteBytes = 2 * 1024 * 1024;
+    const limiteBytes = 10 * 1024 * 1024;
     if (archivo.size > limiteBytes) {
       setNombreArchivoFoto('');
       if (archivoFotoInputRef.current) archivoFotoInputRef.current.value = '';
       toast.error('Imagen demasiado grande', {
-        description: 'La imagen no debe superar los 2MB.'
+        description: 'La imagen no debe superar los 10MB.'
       });
       return;
     }
@@ -456,7 +456,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
                     )}
                   </div>
                   <p className="text-xs text-slate-400">
-                    Sube una imagen (JPG, PNG, WEBP). Tamaño máximo: 2MB.
+                    Sube una imagen (JPG, PNG, WEBP). Tamaño máximo: 10MB.
                   </p>
                 </div>
                 <input
@@ -498,9 +498,6 @@ export function Perfil({ userName, userType }: PerfilProps) {
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Formatos permitidos: imagen. Se recomienda una foto cuadrada para mejor visualización.
-                  </p>
                 </div>
               </div>
             </div>

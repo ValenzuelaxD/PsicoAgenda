@@ -2,6 +2,7 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 
 const GENEROS_PERMITIDOS = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir'];
+const MAX_FOTO_PERFIL_BYTES = 10 * 1024 * 1024;
 
 function construirNombreCompleto(usuario) {
   return [usuario.nombre, usuario.apellidopaterno, usuario.apellidomaterno]
@@ -183,6 +184,13 @@ const actualizarMiPerfil = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: 'Formato de imagen no válido. Usa PNG, JPG o WEBP.'
+        });
+      }
+
+      if (fotoExtraida.buffer.length > MAX_FOTO_PERFIL_BYTES) {
+        return res.status(400).json({
+          success: false,
+          message: 'La imagen no debe superar los 10MB.'
         });
       }
 
