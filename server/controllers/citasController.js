@@ -531,30 +531,42 @@ const confirmarCita = async (req, res) => {
   const { id } = req.params;
 
   try {
+    if (req.user.rol !== 'psicologa') {
+      return res.status(403).json({ message: 'Solo las psicólogas pueden confirmar citas.' });
+    }
+
     const validacion = await validarAccesoCita(req, id);
     if (validacion.error) {
       return res.status(validacion.error.status).json({ message: validacion.error.message });
+    }
+
+    const contexto = validacion.contexto;
+    if (!esEstado(contexto.estado, ESTADO_CITA.PENDIENTE)) {
+      return res.status(409).json({ message: 'Solo se pueden confirmar citas en estado Pendiente.' });
     }
 
     const result = await db.query(
       `
         UPDATE citas
         SET estado = 'Confirmada', fechamodificacion = NOW()
-        WHERE citaid = $1
+        WHERE citaid = $1 AND estado = 'Pendiente'
         RETURNING *
       `,
       [id]
     );
 
-    const contexto = await getContextoCita(id);
-    if (contexto) {
+    if (result.rows.length === 0) {
+      return res.status(409).json({ message: 'La cita ya no está pendiente de confirmación.' });
+    }
+
+    const contextoActualizado = await getContextoCita(id);
+    if (contextoActualizado) {
       const fechaCliente = obtenerFechaClienteDesdeRequest(req);
-      const destinatario = req.user.rol === 'paciente' ? contexto.psicologa_usuarioid : contexto.paciente_usuarioid;
       await crearNotificacion({
-        usuarioId: destinatario,
+        usuarioId: contextoActualizado.paciente_usuarioid,
         citaId: Number(id),
         tipo: 'Confirmacion',
-        mensaje: `La cita del ${new Date(contexto.fechahora).toLocaleString('es-MX')} fue confirmada.`,
+        mensaje: `Tu cita del ${new Date(contextoActualizado.fechahora).toLocaleString('es-MX')} fue confirmada por tu psicóloga.`,
         fechaEnvio: fechaCliente,
       });
     }

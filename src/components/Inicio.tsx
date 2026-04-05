@@ -1,4 +1,4 @@
-import { Calendar, Clock, FileText, TrendingUp, User } from 'lucide-react';
+import { Calendar, Clock, FileText, TrendingUp, User, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -6,7 +6,7 @@ import { ViewType } from './Dashboard';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PacienteDashboardData, PsicologaDashboardData } from '../utils/types';
-import { API_ENDPOINTS } from '../utils/api';
+import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
 interface InicioProps {
   userName: string;
@@ -19,6 +19,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
   const [psicologoData, setPsicologoData] = useState<PsicologoDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmandoCitaId, setConfirmandoCitaId] = useState<number | null>(null);
 
   const extraerFechaHoraLocal = (fechaHora?: string) => {
     const valor = String(fechaHora || '').trim();
@@ -348,6 +349,43 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
 
   // Contenido para Psicólogo
   if (userType === 'psicologo' && psicologoData) {
+    const pendientesPorConfirmar = psicologoData.pendientesPorConfirmar || [];
+
+    const handleConfirmarDesdeInicio = async (citaId: number) => {
+      try {
+        setConfirmandoCitaId(citaId);
+        const response = await apiFetch(`${API_ENDPOINTS.CITAS}/${citaId}/confirm`, {
+          method: 'PUT',
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'No fue posible confirmar la cita.');
+        }
+
+        setPsicologoData((prev) => {
+          if (!prev) return prev;
+
+          return {
+            ...prev,
+            citasPendientes: Math.max(0, prev.citasPendientes - 1),
+            citasHoy: prev.citasHoy.map((cita: any) =>
+              cita.citaid === citaId ? { ...cita, estado: data.estado || 'Confirmada' } : cita
+            ),
+            pendientesPorConfirmar: (prev.pendientesPorConfirmar || []).filter((cita) => cita.citaid !== citaId),
+          };
+        });
+
+        toast.success('Cita confirmada', {
+          description: 'La cita se confirmó correctamente desde Inicio.',
+        });
+      } catch (err: any) {
+        toast.error(err.message || 'Error al confirmar la cita.');
+      } finally {
+        setConfirmandoCitaId(null);
+      }
+    };
+
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
         {/* Header */}
@@ -416,6 +454,73 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Pendientes por Confirmar */}
+        <Card className="border-amber-500/30 shadow-lg bg-slate-800/50 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-amber-900/40 to-slate-900/40">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-slate-100">Por Confirmar</CardTitle>
+              <Button onClick={() => onNavigate('citas')} size="sm" variant="outline" className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20 w-full sm:w-auto">
+                Ver todas
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              {pendientesPorConfirmar.length === 0 ? (
+                <div className="rounded-xl border border-slate-700 bg-slate-900/30 px-4 py-8 text-center">
+                  <p className="text-slate-300">No tienes citas pendientes por confirmar</p>
+                </div>
+              ) : (
+                pendientesPorConfirmar.map((cita) => {
+                  const { fecha, hora } = extraerFechaHoraLocal(cita.fechahora);
+                  const fechaDate = new Date(`${fecha}T${hora}:00`);
+                  const diaSemana = fechaDate.toLocaleDateString('es-ES', { weekday: 'short' });
+
+                  return (
+                    <Card key={cita.citaid} className="bg-slate-700/30 border-slate-600">
+                      <CardContent className="pt-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {cita.paciente_fotoperfil ? (
+                              <img
+                                src={cita.paciente_fotoperfil}
+                                alt={`${cita.paciente_nombre}`}
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <User className="w-5 h-5 text-white" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-slate-100 font-medium">{cita.paciente_nombre} {cita.paciente_apellido}</p>
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+                                <Clock className="w-3 h-3" />
+                                <span>{diaSemana}, {formatearHora12(hora)}</span>
+                                <span>•</span>
+                                <span>{cita.modalidad}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleConfirmarDesdeInicio(cita.citaid)}
+                            disabled={confirmandoCitaId === cita.citaid}
+                            className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            {confirmandoCitaId === cita.citaid ? 'Confirmando...' : 'Confirmar'}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Agenda del Día */}
         <Card className="border-teal-500/30 shadow-lg bg-slate-800/50 backdrop-blur-sm">

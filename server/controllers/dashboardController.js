@@ -92,12 +92,39 @@ const getPsicologoDashboard = async (req, res) => {
     `;
     const pacientesActivosQuery = `SELECT COUNT(DISTINCT pacienteid) FROM citas WHERE psicologaid = $1`;
     const citasSemanaQuery = `SELECT COUNT(*) FROM citas WHERE psicologaid = $1 AND fechahora >= date_trunc('week', CURRENT_DATE) AND fechahora < date_trunc('week', CURRENT_DATE) + interval '1 week'`;
-    const citasPendientesQuery = `SELECT COUNT(*) FROM citas WHERE psicologaid = $1 AND estado = 'Pendiente'`;
+    const citasPendientesQuery = `
+      SELECT COUNT(*)
+      FROM citas
+      WHERE psicologaid = $1
+        AND estado = 'Pendiente'
+        AND fechahora >= NOW()
+    `;
+    const pendientesPorConfirmarQuery = `
+      SELECT
+        c.citaid,
+        c.fechahora,
+        c.modalidad,
+        c.estado,
+        c.duracionmin,
+        u.nombre AS paciente_nombre,
+        u.apellidopaterno AS paciente_apellido,
+        u.fotoperfil_mime AS paciente_fotoperfil_mime,
+        u.fotoperfil_data AS paciente_fotoperfil_data
+      FROM citas c
+      JOIN pacientes p ON c.pacienteid = p.pacienteid
+      JOIN usuarios u ON p.usuarioid = u.usuarioid
+      WHERE c.psicologaid = $1
+        AND c.estado = 'Pendiente'
+        AND c.fechahora >= NOW()
+      ORDER BY c.fechahora ASC
+      LIMIT 5
+    `;
 
     const citasHoyResult = await db.query(citasHoyQuery, [psicologaId, fechaObjetivo]);
     const pacientesActivosResult = await db.query(pacientesActivosQuery, [psicologaId]);
     const citasSemanaResult = await db.query(citasSemanaQuery, [psicologaId]);
     const citasPendientesResult = await db.query(citasPendientesQuery, [psicologaId]);
+    const pendientesPorConfirmarResult = await db.query(pendientesPorConfirmarQuery, [psicologaId]);
 
     res.json({
       citasHoy: citasHoyResult.rows.map((row) => ({
@@ -107,6 +134,10 @@ const getPsicologoDashboard = async (req, res) => {
       pacientesActivos: parseInt(pacientesActivosResult.rows[0].count, 10),
       citasSemana: parseInt(citasSemanaResult.rows[0].count, 10),
       citasPendientes: parseInt(citasPendientesResult.rows[0].count, 10),
+      pendientesPorConfirmar: pendientesPorConfirmarResult.rows.map((row) => ({
+        ...row,
+        paciente_fotoperfil: construirFotoDesdeBd(row.paciente_fotoperfil_mime, row.paciente_fotoperfil_data),
+      })),
     });
 
   } catch (error) {

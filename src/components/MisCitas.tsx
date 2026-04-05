@@ -759,7 +759,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     {esModalidadEnLinea(cita.modalidad) && (
                       <Button size="sm" onClick={handleUnirseVideollamada} className="bg-teal-600 hover:bg-teal-700 w-full lg:w-auto">Unirse a Videollamada</Button>
                     )}
-                    {esEstado(cita.estado, ESTADO_CITA.PENDIENTE) && userType === 'paciente' && (
+                    {esEstado(cita.estado, ESTADO_CITA.PENDIENTE) && userType === 'psicologo' && (
                       <Button size="sm" variant="outline" onClick={() => handleConfirmarCita(cita.citaid)} className="border-green-600 text-green-400 hover:bg-green-600/20 w-full lg:w-auto">
                         Confirmar Cita
                       </Button>

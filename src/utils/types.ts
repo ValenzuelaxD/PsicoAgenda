@@ -238,7 +238,17 @@ export interface PsicologaDashboardData {
   pacientesActivos: number;
   citasSemana: number;
   citasPendientes: number;
-  nuevasSolicitudes: number;
+  nuevasSolicitudes?: number;
+  pendientesPorConfirmar?: Array<{
+    citaid: number;
+    fechahora: string;
+    modalidad: string;
+    estado: string;
+    duracionmin: number;
+    paciente_nombre: string;
+    paciente_apellido: string;
+    paciente_fotoperfil?: string;
+  }>;
 }
 
 // ============================================
