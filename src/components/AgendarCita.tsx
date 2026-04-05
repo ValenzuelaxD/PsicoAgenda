@@ -50,6 +50,10 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const [fechasConDisponibilidad, setFechasConDisponibilidad] = useState<string[]>([]);
 
   const fechasConDisponibilidadSet = useMemo(() => new Set(fechasConDisponibilidad), [fechasConDisponibilidad]);
+  const psicologoSeleccionado = useMemo(
+    () => psicologos.find((item) => String(item.psicologaid) === psicologo),
+    [psicologos, psicologo]
+  );
   const hoyTexto = formatearFechaLocal(hoy);
 
   const obtenerFechasProximas = (dias = 7) => {
@@ -586,8 +590,25 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-2">
+                                    <div className="flex items-center gap-3 rounded-lg border border-slate-600/60 bg-slate-900/30 p-2">
+                                      {psicologoSeleccionado?.fotoperfil ? (
+                                        <img
+                                          src={psicologoSeleccionado.fotoperfil}
+                                          alt={`${psicologoSeleccionado.nombre} ${psicologoSeleccionado.apellidopaterno}`}
+                                          className="w-10 h-10 rounded-full object-cover border border-teal-400/40"
+                                        />
+                                      ) : (
+                                        <div className="w-10 h-10 rounded-full border border-slate-500 bg-slate-700/60 flex items-center justify-center">
+                                          <User className="w-5 h-5 text-slate-300" />
+                                        </div>
+                                      )}
+                                      <div className="min-w-0">
+                                        <p className="text-xs text-slate-400">Profesional seleccionado</p>
+                                        <p className="text-slate-100 truncate">{psicologoSeleccionado ? `${psicologoSeleccionado.nombre} ${psicologoSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
+                                      </div>
+                                    </div>
                                     <p className="text-slate-200">
-                                      <span className="font-medium text-teal-300">Psicólogo:</span> {psicologos.find(p => String(p.psicologaid) === psicologo)?.nombre} {psicologos.find(p => String(p.psicologaid) === psicologo)?.apellidopaterno}
+                                      <span className="font-medium text-teal-300">Psicólogo:</span> {psicologoSeleccionado?.nombre} {psicologoSeleccionado?.apellidopaterno}
                                     </p>
                                     <p className="text-slate-200">
                                       <span className="font-medium text-violet-300">Modalidad:</span> {tipo}
