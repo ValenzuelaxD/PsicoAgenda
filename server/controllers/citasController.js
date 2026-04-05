@@ -204,6 +204,8 @@ const getMisCitas = async (req, res) => {
           COALESCE(h.observaciones, h.tratamiento, h.diagnostico, c.notaspaciente) AS notasresumen,
           u.nombre AS psicologa_nombre,
           u.apellidopaterno AS psicologa_apellido,
+          u.fotoperfil_mime AS psicologa_fotoperfil_mime,
+          u.fotoperfil_data AS psicologa_fotoperfil_data,
           ps.consultorio AS ubicacion
         FROM citas c
         JOIN psicologas ps ON c.psicologaid = ps.psicologaid
@@ -250,6 +252,9 @@ const getMisCitas = async (req, res) => {
         paciente_fotoperfil: rol === 'psicologa'
           ? construirFotoDesdeBd(row.paciente_fotoperfil_mime, row.paciente_fotoperfil_data)
           : row.paciente_fotoperfil,
+        psicologa_fotoperfil: rol === 'paciente'
+          ? construirFotoDesdeBd(row.psicologa_fotoperfil_mime, row.psicologa_fotoperfil_data)
+          : row.psicologa_fotoperfil,
         notas: rol === 'psicologa' ? (row.notaspsicologa || '') : (row.notaspaciente || ''),
         notasresumen: row.notasresumen || row.notaspsicologa || row.notaspaciente || '',
       }))

@@ -1,5 +1,10 @@
 const db = require('../db');
 
+const construirFotoDesdeBd = (mimeType, dataBuffer) => {
+  if (!mimeType || !dataBuffer) return '';
+  return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
+};
+
 const getMiHistorial = async (req, res) => {
   const usuarioId = req.user.id;
 
@@ -25,6 +30,8 @@ const getMiHistorial = async (req, res) => {
         c.modalidad,
         u.nombre as psicologa_nombre,
         u.apellidopaterno as psicologa_apellido,
+        u.fotoperfil_mime as psicologa_fotoperfil_mime,
+        u.fotoperfil_data as psicologa_fotoperfil_data,
         ps.especialidad
       FROM historialclinico h
       LEFT JOIN citas c ON h.citaid = c.citaid
@@ -47,7 +54,10 @@ const getMiHistorial = async (req, res) => {
     const statsResult = await db.query(statsQuery, [pacienteId]);
 
     res.json({
-      historial: result.rows,
+      historial: result.rows.map(row => ({
+        ...row,
+        psicologa_fotoperfil: construirFotoDesdeBd(row.psicologa_fotoperfil_mime, row.psicologa_fotoperfil_data)
+      })),
       estadisticas: statsResult.rows[0]
     });
   } catch (error) {

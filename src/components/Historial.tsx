@@ -150,8 +150,16 @@ export function Historial() {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                      <FileText className="w-6 h-6 text-white stroke-2" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+                      {entrada.psicologa_fotoperfil ? (
+                        <img
+                          src={entrada.psicologa_fotoperfil}
+                          alt={`Foto de ${entrada.psicologa_nombre || 'psicóloga'}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <FileText className="w-6 h-6 text-white stroke-2" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <CardTitle className="text-slate-100">

@@ -713,6 +713,12 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                           alt={`Foto de ${cita.paciente_nombre || 'paciente'}`}
                           className="w-full h-full object-cover"
                         />
+                      ) : userType === 'paciente' && cita.psicologa_fotoperfil ? (
+                        <img
+                          src={cita.psicologa_fotoperfil}
+                          alt={`Foto de ${cita.psicologa_nombre || 'psicóloga'}`}
+                          className="w-full h-full object-cover"
+                        />
                       ) : esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-white stroke-2" />
                       ) : (
