@@ -60,14 +60,52 @@ const getHistorial = async (req, res) => {
   const { pacienteId } = req.params;
 
   try {
-    const query = `
+    if (!req.user || !req.user.rol) {
+      return res.status(401).json({ message: 'No autorizado.' });
+    }
+
+    const pacienteIdNumero = Number(pacienteId);
+    if (!Number.isInteger(pacienteIdNumero) || pacienteIdNumero <= 0) {
+      return res.status(400).json({ message: 'ID de paciente inválido.' });
+    }
+
+    let query = `
       SELECT h.*, c.fechahora as fechacita
       FROM historialclinico h
       LEFT JOIN citas c ON h.citaid = c.citaid
       WHERE h.pacienteid = $1
-      ORDER BY h.fechaentrada DESC
     `;
-    const result = await db.query(query, [pacienteId]);
+    let params = [pacienteIdNumero];
+
+    if (req.user.rol === 'psicologa') {
+      const psicologaResult = await db.query(
+        'SELECT psicologaid FROM psicologas WHERE usuarioid = $1',
+        [req.user.id]
+      );
+      if (psicologaResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Perfil de psicóloga no encontrado.' });
+      }
+
+      query += ' AND h.psicologaid = $2';
+      params.push(psicologaResult.rows[0].psicologaid);
+    } else if (req.user.rol === 'paciente') {
+      const pacienteResult = await db.query(
+        'SELECT pacienteid FROM pacientes WHERE usuarioid = $1',
+        [req.user.id]
+      );
+      if (pacienteResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Perfil de paciente no encontrado.' });
+      }
+
+      if (pacienteResult.rows[0].pacienteid !== pacienteIdNumero) {
+        return res.status(403).json({ message: 'No tienes permiso para consultar este historial.' });
+      }
+    } else if (req.user.rol !== 'admin') {
+      return res.status(403).json({ message: 'No tienes permiso para consultar este historial.' });
+    }
+
+    query += ' ORDER BY h.fechaentrada DESC';
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Error al obtener el historial clínico:", error);
