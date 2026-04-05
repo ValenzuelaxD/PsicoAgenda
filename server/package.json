@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "migrate:profile-photos": "node migrate-profile-photos-to-db.js"
+    "migrate:profile-photos": "node migrate-profile-photos-to-db.js",
+    "migrate:duration-60": "node migrate-fixed-duration-60.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

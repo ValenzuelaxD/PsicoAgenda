@@ -88,3 +88,19 @@ Si necesitas ajustar tiempos en tu entorno local:
 3. Reinicia el frontend para aplicar cambios.
 
 Nota: usar tiempos muy cortos aumenta llamadas al backend y puede generar mas consumo en celular.
+
+## 8) Migracion de duracion fija (60 min)
+
+Si hay citas historicas con duraciones distintas a 60 min, usa estos comandos desde /server:
+
+```bash
+npm run migrate:duration-60
+```
+
+Comentario: ejecuta una vista previa (dry-run) y reporta posibles solapes futuros.
+
+```bash
+npm run migrate:duration-60 -- --apply
+```
+
+Comentario: aplica la normalizacion de duracion a 60 min en la base de datos.
