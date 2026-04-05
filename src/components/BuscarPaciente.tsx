@@ -69,6 +69,7 @@ const formatearUltimaSesionCompacta = (fechaISO: string | null | undefined) => {
 export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
   const [busqueda, setBusqueda] = useState('');
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [sesionesPorPaciente, setSesionesPorPaciente] = useState<Record<number, number>>({});
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<Paciente | null>(null);
   const [historialActual, setHistorialActual] = useState<HistorialPaciente | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,6 +137,7 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
         });
 
         let pacientesConConteo = pacientesBase;
+        const conteoPlano: Record<number, number> = {};
         if (citasResponse.ok) {
           const citas = await citasResponse.json();
           const conteoPorPaciente = new Map<number, number>();
@@ -150,9 +152,20 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
             ...paciente,
             sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
           }));
+
+          conteoPorPaciente.forEach((valor, key) => {
+            conteoPlano[key] = valor;
+          });
+        } else {
+          pacientesBase.forEach((paciente: any) => {
+            const id = Number(paciente?.pacienteid);
+            if (!id) return;
+            conteoPlano[id] = Number(paciente?.sesionesTotales ?? 0);
+          });
         }
 
         setPacientes(pacientesConConteo);
+        setSesionesPorPaciente(conteoPlano);
       } catch (err: any) {
         setError(err.message);
         toast.error(err.message);
@@ -301,7 +314,12 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
   };
 
   const sesionesTotalesClinicas =
-    historialActual?.estadisticas?.totalSesiones ?? pacienteSeleccionado?.sesionesTotales ?? 0;
+    (pacienteSeleccionado?.pacienteid
+      ? sesionesPorPaciente[Number(pacienteSeleccionado.pacienteid)]
+      : undefined)
+    ?? historialActual?.estadisticas?.totalSesiones
+    ?? pacienteSeleccionado?.sesionesTotales
+    ?? 0;
 
   const ultimaSesionClinica =
     historialActual?.estadisticas?.ultimaSesion && historialActual.estadisticas.ultimaSesion !== 'N/A'

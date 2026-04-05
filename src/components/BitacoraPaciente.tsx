@@ -25,6 +25,7 @@ interface BitacoraPacienteProps {
 
 export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [sesionesPorPaciente, setSesionesPorPaciente] = useState<Record<number, number>>({});
   const [busqueda, setBusqueda] = useState('');
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<Paciente | null>(null);
   const [entradas, setEntradas] = useState<HistorialClinico[]>([]);
@@ -64,6 +65,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
         const citasResponse = await apiFetch(API_ENDPOINTS.CITAS);
         let pacientesConConteo = pacientesBase;
+        const conteoPlano: Record<number, number> = {};
         if (citasResponse.ok) {
           const citas = await citasResponse.json();
           const conteoPorPaciente = new Map<number, number>();
@@ -78,9 +80,20 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
             ...paciente,
             sesionesTotales: conteoPorPaciente.get(Number(paciente?.pacienteid)) || 0,
           }));
+
+          conteoPorPaciente.forEach((valor, key) => {
+            conteoPlano[key] = valor;
+          });
+        } else {
+          pacientesBase.forEach((paciente: any) => {
+            const id = Number(paciente?.pacienteid);
+            if (!id) return;
+            conteoPlano[id] = Number(paciente?.sesionesTotales ?? 0);
+          });
         }
 
         setPacientes(pacientesConConteo);
+        setSesionesPorPaciente(conteoPlano);
       } catch (err: any) {
         toast.error(err.message);
       } finally {
@@ -273,7 +286,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         {`${paciente.nombre} ${paciente.apellidopaterno}`}
                       </p>
                       <p className="text-slate-400 text-xs">
-                        {paciente.edad} años · {paciente.sesionesTotales ?? 0} sesiones
+                        {paciente.edad} años · {(sesionesPorPaciente[Number(paciente.pacienteid)] ?? paciente.sesionesTotales ?? 0)} sesiones
                       </p>
                     </div>
                   </div>
@@ -308,7 +321,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                       </h2>
                       <p className="text-slate-400 text-sm">
                         {pacienteSeleccionado.edad} años ·{' '}
-                        {pacienteSeleccionado.sesionesTotales ?? 0} sesiones completadas
+                        {(sesionesPorPaciente[Number(pacienteSeleccionado.pacienteid)] ?? pacienteSeleccionado.sesionesTotales ?? 0)} sesiones completadas
                       </p>
                     </div>
                   </div>
