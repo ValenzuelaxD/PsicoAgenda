@@ -1,4 +1,4 @@
-import { Calendar, Clock, FileText, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, FileText, TrendingUp, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -433,11 +433,22 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gradient-to-r from-slate-700/50 to-teal-900/20 rounded-xl hover:shadow-md transition-all border border-teal-500/20"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <p className="text-white text-sm">{formatearHora12(extraerFechaHoraLocal(cita.fechahora).hora)}</p>
+                      <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden">
+                        {cita.paciente_fotoperfil ? (
+                          <img
+                            src={cita.paciente_fotoperfil}
+                            alt={`Foto de ${cita.paciente_nombre || 'paciente'}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-8 h-8 text-white stroke-2" />
+                        )}
                       </div>
-                      <div>
-                        <p className="text-slate-100 text-sm sm:text-base">{`${cita.paciente_nombre} ${cita.paciente_apellido}`}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-slate-100 text-sm sm:text-base truncate">{`${cita.paciente_nombre} ${cita.paciente_apellido}`}</p>
+                          <p className="text-slate-200 text-sm whitespace-nowrap">{formatearHora12(extraerFechaHoraLocal(cita.fechahora).hora)}</p>
+                        </div>
                         <p className="text-slate-300 text-sm">{cita.modalidad}</p>
                         <p className="text-slate-400 text-sm">{cita.duracionmin} min</p>
                       </div>
