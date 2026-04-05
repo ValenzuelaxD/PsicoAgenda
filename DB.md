@@ -188,3 +188,9 @@ CREATE INDEX IF NOT EXISTS ix_solicitudes_psico_estado_fecha
 -- ALTER DEFAULT PRIVILEGES IN SCHEMA public
 -- GRANT USAGE, SELECT ON SEQUENCES TO "PsicoAgenda";
 
+-- 9) Migracion para foto de perfil en base de datos (binario)
+--    Se conserva FotoPerfil (VARCHAR) para compatibilidad con rutas previas.
+ALTER TABLE Usuarios
+ADD COLUMN IF NOT EXISTS FotoPerfil_Mime VARCHAR(50),
+ADD COLUMN IF NOT EXISTS FotoPerfil_Data BYTEA;
+
