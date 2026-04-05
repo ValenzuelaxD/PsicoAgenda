@@ -57,6 +57,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
 
   const fechaSeleccionada = useMemo(() => formatDate(date), [date]);
   const pacienteSeleccionado = pacientes.find((paciente: Paciente) => String(paciente.pacienteid) === pacienteId);
+  const mostrarResumen = Boolean(date && pacienteId && hora && modalidad && duracion);
   const fechasConDisponibilidadSet = useMemo(() => new Set(Object.keys(disponibilidadPorFecha)), [disponibilidadPorFecha]);
   const proximosDiasDisponibles = useMemo(() => {
     return Object.entries(disponibilidadPorFecha)
@@ -445,39 +446,41 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-teal-900/35 to-violet-900/35 border-teal-500/40 backdrop-blur-sm shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-100">
-                  <CalendarIcon className="w-5 h-5 stroke-2 text-teal-400" />
-                  Resumen
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-slate-200">
-                <div className="flex items-center gap-3 rounded-lg border border-slate-600/60 bg-slate-900/30 p-2 mb-1">
-                  {pacienteSeleccionado?.fotoperfil ? (
-                    <img
-                      src={pacienteSeleccionado.fotoperfil}
-                      alt={`${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}`}
-                      className="w-10 h-10 rounded-full object-cover border border-teal-400/40"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full border border-slate-500 bg-slate-700/60 flex items-center justify-center">
-                      <User className="w-5 h-5 text-slate-300" />
+            {mostrarResumen && (
+              <Card className="bg-gradient-to-br from-teal-900/40 to-violet-900/40 border-teal-500/50 backdrop-blur-sm shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-slate-100">
+                    <CalendarIcon className="w-5 h-5 stroke-2 text-teal-400" />
+                    Resumen de la Cita
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-slate-200">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-600/60 bg-slate-900/30 p-2">
+                    {pacienteSeleccionado?.fotoperfil ? (
+                      <img
+                        src={pacienteSeleccionado.fotoperfil}
+                        alt={`${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}`}
+                        className="w-10 h-10 rounded-full object-cover border border-teal-400/40"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full border border-slate-500 bg-slate-700/60 flex items-center justify-center">
+                        <User className="w-5 h-5 text-slate-300" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs text-slate-400">Paciente seleccionado</p>
+                      <p className="text-slate-100 truncate">{pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs text-slate-400">Paciente seleccionado</p>
-                    <p className="text-slate-100 truncate">{pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
                   </div>
-                </div>
-                <p><span className="font-medium text-teal-300">Paciente:</span> {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
-                <p><span className="font-medium text-violet-300">Fecha:</span> {date.toLocaleDateString('es-ES')}</p>
-                <p><span className="font-medium text-teal-300">Hora:</span> {hora || 'Pendiente'}</p>
-                <p><span className="font-medium text-violet-300">Duración:</span> {duracion} min</p>
-                <p><span className="font-medium text-teal-300">Modalidad:</span> {modalidad}</p>
-                <p><span className="font-medium text-violet-300">Horarios libres:</span> {loadingHorarios ? 'Consultando...' : horariosDisponibles.length}</p>
-              </CardContent>
-            </Card>
+                  <p><span className="font-medium text-teal-300">Paciente:</span> {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
+                  <p><span className="font-medium text-violet-300">Fecha:</span> {date.toLocaleDateString('es-ES')}</p>
+                  <p><span className="font-medium text-teal-300">Hora:</span> {hora || 'Pendiente'}</p>
+                  <p><span className="font-medium text-violet-300">Duración:</span> {duracion} min</p>
+                  <p><span className="font-medium text-teal-300">Modalidad:</span> {modalidad}</p>
+                  <p><span className="font-medium text-violet-300">Horarios libres:</span> {loadingHorarios ? 'Consultando...' : horariosDisponibles.length}</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
