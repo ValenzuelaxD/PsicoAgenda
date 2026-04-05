@@ -8,6 +8,17 @@
 // En producción se puede definir VITE_API_URL; si no, se usan rutas relativas.
 const API_BASE_URL: string = (import.meta as any).env?.VITE_API_URL ?? '';
 
+const toNumberOrDefault = (value: unknown, defaultValue: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
+};
+
+export const CLIENT_CONFIG = {
+  NOTIFICATIONS_POLL_INTERVAL_DESKTOP_MS: toNumberOrDefault((import.meta as any).env?.VITE_NOTIF_POLL_DESKTOP_MS, 45000),
+  NOTIFICATIONS_POLL_INTERVAL_MOBILE_MS: toNumberOrDefault((import.meta as any).env?.VITE_NOTIF_POLL_MOBILE_MS, 75000),
+  NOTIFICATIONS_TOAST_COOLDOWN_MS: toNumberOrDefault((import.meta as any).env?.VITE_NOTIF_TOAST_COOLDOWN_MS, 30000),
+} as const;
+
 export const API_ENDPOINTS = {
   // Auth
   LOGIN: `${API_BASE_URL}/api/auth/login`,

@@ -58,3 +58,27 @@ Comentario: backend debe responder success=true.
 - Siempre hacer pull antes de empezar.
 - Hacer commits pequenos y claros.
 - Esperar Actions en verde antes del siguiente cambio grande.
+
+## 7) Configuracion de notificaciones (frontend)
+
+Archivo de referencia: .env.example
+
+Variables disponibles:
+
+- VITE_NOTIF_POLL_DESKTOP_MS=45000
+- VITE_NOTIF_POLL_MOBILE_MS=75000
+- VITE_NOTIF_TOAST_COOLDOWN_MS=30000
+
+Recomendacion base:
+
+- Desktop: 45000 ms (45s)
+- Mobile: 75000 ms (75s)
+- Cooldown de toast: 30000 ms (30s)
+
+Si necesitas ajustar tiempos en tu entorno local:
+
+1. Copia .env.example como .env.local.
+2. Cambia solo estas variables.
+3. Reinicia el frontend para aplicar cambios.
+
+Nota: usar tiempos muy cortos aumenta llamadas al backend y puede generar mas consumo en celular.

@@ -15,8 +15,6 @@ import { VerificarDisponibilidad } from './VerificarDisponibilidad';
 import { ProgramarCita } from './ProgramarCita';
 import { NotificationCenter } from './NotificationCenter';
 import { AdminSolicitudes } from './AdminSolicitudes';
-import { toast } from 'sonner';
-import { API_ENDPOINTS } from '../utils/api';
 
 interface DashboardProps {
   userName: string;
@@ -33,8 +31,6 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<number | undefined>(undefined);
-  const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
-  const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -42,47 +38,6 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
       setDrawerOpen(false);
     }
   }, [isMobile]);
-
-  useEffect(() => {
-    const fetchUnreadNotifications = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await fetch(API_ENDPOINTS.NOTIFICACIONES, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const notifications = await response.json();
-          const unread = notifications.filter((n: any) => !n.leida).length;
-          setNotificacionesNoLeidas(unread);
-
-          if (unread > 0) {
-            const mensaje = unread > 1
-              ? `Tienes ${unread} notificaciones nuevas`
-              : `Tienes ${unread} notificacion nueva`;
-
-            toast.info(mensaje, {
-              description: 'Por favor revisa tus notificaciones en la esquina superior derecha',
-              duration: 7000,
-              className: 'bg-gradient-to-r from-teal-600 to-violet-600',
-            });
-          }
-        } else {
-          // No hay notificaciones o hubo un error - no importa, continuar cargando
-          console.warn('No se pudieron cargar notificaciones:', response.status);
-        }
-      } catch (error) {
-        // Error cargando notificaciones - no bloquear la carga del dashboard
-        console.warn("Error fetching unread notifications:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUnreadNotifications();
-  }, []);
 
   const handleNavigate = (view: ViewType, pacienteId?: number) => {
     setCurrentView(view);

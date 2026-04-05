@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Bell, X, Check, Calendar, Clock, AlertCircle, Info } from 'lucide-react';
@@ -7,7 +7,7 @@ import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { toast } from 'sonner';
-import { API_ENDPOINTS } from '../utils/api';
+import { API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import useIsMobile from '../hooks/useIsMobile';
 
 interface Notification {
@@ -30,39 +30,136 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
   const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lastUnreadCountRef = useRef(0);
+  const lastToastAtRef = useRef(0);
 
-  useEffect(() => {
-    const fetchNotificaciones = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No estás autenticado.');
-        }
+  const POLL_INTERVAL_MS = isMobile
+    ? CLIENT_CONFIG.NOTIFICATIONS_POLL_INTERVAL_MOBILE_MS
+    : CLIENT_CONFIG.NOTIFICATIONS_POLL_INTERVAL_DESKTOP_MS;
+  const TOAST_COOLDOWN_MS = CLIENT_CONFIG.NOTIFICATIONS_TOAST_COOLDOWN_MS;
 
-        const response = await fetch(API_ENDPOINTS.NOTIFICACIONES, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+  const updateUnreadState = useCallback((unreadCount: number, allowToast: boolean) => {
+    const previousUnreadCount = lastUnreadCountRef.current;
+
+    if (allowToast && unreadCount > previousUnreadCount) {
+      const now = Date.now();
+      const isCooldownExpired = now - lastToastAtRef.current >= TOAST_COOLDOWN_MS;
+
+      if (isCooldownExpired) {
+        const newNotifications = unreadCount - previousUnreadCount;
+        const mensaje = newNotifications === 1
+          ? 'Tienes 1 notificacion nueva'
+          : `Tienes ${newNotifications} notificaciones nuevas`;
+
+        toast.info(mensaje, {
+          description: 'Por favor revisa tus notificaciones en la esquina superior derecha',
+          duration: 7000,
+          className: 'bg-gradient-to-r from-teal-600 to-violet-600',
         });
 
-        if (!response.ok) {
-          throw new Error('Error al obtener las notificaciones.');
-        }
+        lastToastAtRef.current = now;
+      }
+    }
 
-        const data = await response.json();
-        setNotificaciones(data);
-      } catch (err: any) {
-        setError(err.message);
+    lastUnreadCountRef.current = unreadCount;
+  }, []);
+
+  const fetchNotificaciones = useCallback(async (options: { allowToast?: boolean; silentOnError?: boolean } = {}) => {
+    const { allowToast = false, silentOnError = false } = options;
+    try {
+      if (notificaciones.length === 0) {
+        setLoading(true);
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No estás autenticado.');
+      }
+
+      const response = await fetch(API_ENDPOINTS.NOTIFICACIONES, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener las notificaciones.');
+      }
+
+      const data = await response.json();
+      setNotificaciones(data);
+      updateUnreadState(data.filter((n: Notification) => !n.leida).length, allowToast);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+      if (!silentOnError) {
         toast.error(err.message);
-      } finally {
-        setLoading(false);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [notificaciones.length, updateUnreadState]);
+
+  useEffect(() => {
+    fetchNotificaciones({ allowToast: true });
+  }, [fetchNotificaciones]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return;
+    }
+
+    let intervalId: number | null = null;
+
+    const startPolling = () => {
+      if (intervalId !== null || document.hidden) {
+        return;
+      }
+
+      intervalId = window.setInterval(() => {
+        fetchNotificaciones({ allowToast: true, silentOnError: true });
+      }, POLL_INTERVAL_MS);
+    };
+
+    const stopPolling = () => {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+        return;
+      }
+
+      fetchNotificaciones({ allowToast: true, silentOnError: true });
+      startPolling();
+    };
+
+    const handleWindowFocus = () => {
+      if (!document.hidden) {
+        fetchNotificaciones({ allowToast: true, silentOnError: true });
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [fetchNotificaciones]);
+
+  useEffect(() => {
     if (mostrarPanel) {
       fetchNotificaciones();
     }
-  }, [mostrarPanel]);
+  }, [mostrarPanel, fetchNotificaciones]);
 
   useEffect(() => {
     if (!mostrarPanel) {
