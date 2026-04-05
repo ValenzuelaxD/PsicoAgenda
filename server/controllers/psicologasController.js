@@ -3,7 +3,7 @@ const db = require('../db');
 const getPsicologas = async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT p.psicologaid, u.nombre, u.apellidopaterno, p.especialidad
+      SELECT p.psicologaid, u.nombre, u.apellidopaterno, p.especialidad, u.fotoperfil
       FROM usuarios u
       JOIN psicologas p ON u.usuarioid = p.usuarioid
       WHERE u.rol = 'psicologa' AND u.activo = true
