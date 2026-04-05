@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Calendar } from './ui/calendar';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
-import { Check, Calendar as CalendarIcon, CalendarDays } from 'lucide-react';
+import { Check, Calendar as CalendarIcon, CalendarDays, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { motion, AnimatePresence } from 'motion/react';
@@ -393,7 +393,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                                   className="w-4 h-4 rounded-full object-cover"
                                                 />
                                               ) : (
-                                                <div className="w-4 h-4 rounded-full bg-slate-400" />
+                                                <User className="w-4 h-4" />
                                               )}
                                               {`${psi.nombre} ${psi.apellidopaterno}`}
                                             </div>
