@@ -178,7 +178,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   return (
     <div className="flex flex-col min-h-[100dvh] overflow-hidden bg-slate-950 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-8 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8 sm:mb-10 lg:mb-12 flex-shrink-0">
         <div className="min-w-0">
           <h1 className="text-white mb-1 text-xl sm:text-2xl font-bold">Bitacora de Paciente</h1>
           <p className="text-slate-300 text-sm">
@@ -262,6 +262,17 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         <div className="min-w-0 flex-1 overflow-y-auto space-y-6 lg:pr-1">
           {pacienteSeleccionado ? (
             <>
+              <Card className="bg-gradient-to-r from-teal-900/20 to-violet-900/20 border-teal-500/40">
+                <CardContent className="py-3 sm:py-4">
+                  <p className="text-xs uppercase tracking-wide text-teal-300 mb-1">
+                    Paciente seleccionado
+                  </p>
+                  <p className="text-slate-100 font-medium">
+                    {`${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}`}
+                  </p>
+                </CardContent>
+              </Card>
+
               {/* Resumen del paciente */}
               <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                 <CardContent className="pt-4 pb-4">
