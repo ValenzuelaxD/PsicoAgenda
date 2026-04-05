@@ -434,42 +434,62 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                   <p className="text-slate-300">Hoy no tienes citas agendadas</p>
                 </div>
               ) : (
-                psicologoData.citasHoy.map((cita: any) => (
-                  <div
-                    key={cita.citaid}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gradient-to-r from-slate-700/50 to-teal-900/20 rounded-xl hover:shadow-md transition-all border border-teal-500/20"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden">
-                        {cita.paciente_fotoperfil ? (
-                          <img
-                            src={cita.paciente_fotoperfil}
-                            alt={`Foto de ${cita.paciente_nombre || 'paciente'}`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-8 h-8 text-white stroke-2" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-slate-100 text-sm sm:text-base truncate">{`${cita.paciente_nombre} ${cita.paciente_apellido}`}</p>
-                          <p className="text-slate-200 text-sm whitespace-nowrap">{formatearHora12(extraerFechaHoraLocal(cita.fechahora).hora)}</p>
+                psicologoData.citasHoy.map((cita: any) => {
+                  const { fecha, hora } = extraerFechaHoraLocal(cita.fechahora);
+                  const fechaDate = new Date(`${fecha}T${hora}:00`);
+                  const diaSemana = fechaDate.toLocaleDateString('es-ES', { weekday: 'short' });
+                  return (
+                    <Card key={cita.citaid} className="bg-slate-700/30 border-slate-600">
+                      <CardContent className="pt-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {cita.paciente_fotoperfil ? (
+                              <img
+                                src={cita.paciente_fotoperfil}
+                                alt={`${cita.paciente_nombre}`}
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <User className="w-5 h-5 text-white" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-slate-100 font-medium">
+                                {cita.paciente_nombre} {cita.paciente_apellido}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+                                <Clock className="w-3 h-3" />
+                                <span>{diaSemana}, {formatearHora12(hora)}</span>
+                                <span>•</span>
+                                <span>{cita.modalidad}</span>
+                                <span>•</span>
+                                <span>{cita.duracionmin} min</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => onNavigate('bitacora')} 
+                              className="border-violet-500/50 text-violet-300 hover:bg-violet-500/20 flex-1 sm:flex-none"
+                            >
+                              Ver Bitácora
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              onClick={() => onNavigate('citas')} 
+                              className="bg-teal-600 hover:bg-teal-700 flex-1 sm:flex-none"
+                            >
+                              Gestionar
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-slate-300 text-sm">{cita.modalidad}</p>
-                        <p className="text-slate-400 text-sm">{cita.duracionmin} min</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      <Button variant="outline" size="sm" onClick={() => onNavigate('bitacora')} className="border-violet-500/50 text-violet-300 hover:bg-violet-500/20">
-                        Ver Bitácora
-                      </Button>
-                      <Button size="sm" onClick={() => onNavigate('citas')} className="bg-teal-600 hover:bg-teal-700">
-                        Gestionar
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </CardContent>
