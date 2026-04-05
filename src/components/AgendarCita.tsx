@@ -385,7 +385,18 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                       <SelectContent>
                                         {psicologos.map((psi) => (
                                           <SelectItem key={psi.psicologaid} value={String(psi.psicologaid)}>
-                                            {`${psi.nombre} ${psi.apellidopaterno}`}
+                                            <div className="flex items-center gap-2">
+                                              {psi.fotoperfil ? (
+                                                <img
+                                                  src={psi.fotoperfil}
+                                                  alt={`${psi.nombre} ${psi.apellidopaterno}`}
+                                                  className="w-4 h-4 rounded-full object-cover"
+                                                />
+                                              ) : (
+                                                <div className="w-4 h-4 rounded-full bg-slate-400" />
+                                              )}
+                                              {`${psi.nombre} ${psi.apellidopaterno}`}
+                                            </div>
                                           </SelectItem>
                                         ))}
                                       </SelectContent>
