@@ -1,12 +1,7 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
-let columnaSesionesCompletadasDisponible = null;
 
 async function verificarColumnaSesionesCompletadas() {
-  if (columnaSesionesCompletadasDisponible !== null) {
-    return columnaSesionesCompletadasDisponible;
-  }
-
   try {
     const result = await db.query(
       `
@@ -18,12 +13,10 @@ async function verificarColumnaSesionesCompletadas() {
       `
     );
 
-    columnaSesionesCompletadasDisponible = result.rows[0]?.total === 1;
+    return result.rows[0]?.total === 1;
   } catch (error) {
-    columnaSesionesCompletadasDisponible = false;
+    return false;
   }
-
-  return columnaSesionesCompletadasDisponible;
 }
 
 function dividirNombreCompleto(nombreCompleto = '') {
