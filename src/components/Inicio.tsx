@@ -460,7 +460,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
           <CardHeader className="bg-gradient-to-r from-amber-900/40 to-slate-900/40">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="text-slate-100">Por Confirmar</CardTitle>
-              <Button onClick={() => onNavigate('citas')} size="sm" variant="outline" className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20 w-full sm:w-auto">
+              <Button onClick={() => onNavigate('citas')} size="sm" variant="outline" className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20 hover:text-amber-100 w-full sm:w-auto">
                 Ver todas
               </Button>
             </div>
@@ -507,7 +507,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                             size="sm"
                             onClick={() => handleConfirmarDesdeInicio(cita.citaid)}
                             disabled={confirmandoCitaId === cita.citaid}
-                            className="w-full sm:w-auto bg-teal-500 hover:bg-teal-400 text-slate-950 border border-teal-200/80 shadow-[0_0_0_1px_rgba(153,246,228,0.35)] font-semibold disabled:bg-teal-500/50 disabled:text-slate-800"
+                            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 hover:text-slate-950 border border-amber-200/80 shadow-[0_0_0_1px_rgba(253,224,71,0.35)] font-semibold disabled:bg-amber-500/50 disabled:text-slate-800"
                           >
                             <CheckCircle2 className="w-4 h-4 mr-2" />
                             {confirmandoCitaId === cita.citaid ? 'Confirmando...' : 'Confirmar'}
