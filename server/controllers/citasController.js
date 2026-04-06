@@ -541,7 +541,7 @@ const confirmarCita = async (req, res) => {
     }
 
     const contexto = validacion.contexto;
-    if (!esEstado(contexto.estado, ESTADO_CITA.PENDIENTE)) {
+    if (String(contexto.estado || '').trim().toLowerCase() !== 'pendiente') {
       return res.status(409).json({ message: 'Solo se pueden confirmar citas en estado Pendiente.' });
     }
 
