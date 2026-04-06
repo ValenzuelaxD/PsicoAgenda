@@ -99,7 +99,7 @@ const getPacientes = async (req, res) => {
             ${usarContadorPersistente
               ? 'COALESCE(p.sesionescompletadas, 0) AS sesionestotales'
               : `COUNT(c.citaid) FILTER (
-                   WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
+                   WHERE COALESCE(LOWER(TRIM(c.estado)), '') = 'completada'
                  ) AS sesionestotales`
             }
           FROM usuarios u
@@ -152,7 +152,7 @@ const getPacientes = async (req, res) => {
           ${usarContadorPersistente
             ? 'COALESCE(p.sesionescompletadas, 0) AS sesionestotales'
             : `COUNT(c.citaid) FILTER (
-                 WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
+                 WHERE COALESCE(LOWER(TRIM(c.estado)), '') = 'completada'
                ) AS sesionestotales`
           }
         FROM usuarios u

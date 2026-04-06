@@ -278,5 +278,7 @@ WHERE p.pacienteid = src.pacienteid;
 
 UPDATE Pacientes
 SET SesionesCompletadas = 0
-WHERE SesionesCompletadas IS NULL;
+WHERE SesionesCompletadas IS NULL;UPDATE pacientes
+SET sesionescompletadas = 11
+WHERE pacienteid = 22;
 

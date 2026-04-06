@@ -22,12 +22,12 @@ const getPacienteDashboard = async (req, res) => {
       ORDER BY fechahora ASC
       LIMIT 1`;
     
-    const sesionesTotalesQuery = `SELECT COUNT(*) FROM citas WHERE pacienteid = $1 AND estado = 'Completada'`;
+    const sesionesTotalesQuery = `SELECT COUNT(*) as count FROM citas WHERE pacienteid = $1 AND COALESCE(LOWER(TRIM(estado)), '') = 'completada'`;
     
     const ultimaSesionQuery = `
       SELECT fechahora
       FROM citas
-      WHERE pacienteid = $1 AND estado = 'Completada'
+      WHERE pacienteid = $1 AND COALESCE(LOWER(TRIM(estado)), '') = 'completada'
       ORDER BY fechahora DESC
       LIMIT 1`;
 
