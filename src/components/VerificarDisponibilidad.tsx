@@ -47,6 +47,15 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
 
   const normalizarHora = (hora: string) => String(hora || '').slice(0, 5);
 
+  const esHoraCerrada = (hora: string) => {
+    const [hour, minute] = normalizarHora(hora).split(':').map(Number);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) {
+      return false;
+    }
+
+    return minute === 0;
+  };
+
   const formatearFechaLocal = (fecha: Date) => {
     const year = fecha.getFullYear();
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -217,6 +226,12 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!esHoraCerrada(formulario.horainicio) || !esHoraCerrada(formulario.horafin)) {
+      toast.error('Solo se permiten horas cerradas (por ejemplo 09:00, 10:00, 11:00).');
+      return;
+    }
+
     setGuardando(true);
 
     try {
@@ -257,6 +272,11 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
   const handleGuardarEdicion = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!agendaEnEdicion) {
+      return;
+    }
+
+    if (!esHoraCerrada(formularioEdicion.horainicio) || !esHoraCerrada(formularioEdicion.horafin)) {
+      toast.error('Solo se permiten horas cerradas (por ejemplo 09:00, 10:00, 11:00).');
       return;
     }
 
@@ -492,6 +512,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                   <Input
                     id="horainicio"
                     type="time"
+                    step={3600}
                     value={formulario.horainicio}
                     onChange={(event) => setFormulario((prev) => ({ ...prev, horainicio: event.target.value }))}
                     className="bg-slate-700/50 border-slate-600 text-slate-100"
@@ -503,6 +524,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                   <Input
                     id="horafin"
                     type="time"
+                    step={3600}
                     value={formulario.horafin}
                     onChange={(event) => setFormulario((prev) => ({ ...prev, horafin: event.target.value }))}
                     className="bg-slate-700/50 border-slate-600 text-slate-100"
@@ -773,6 +795,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                 <Input
                   id="edit-horainicio"
                   type="time"
+                  step={3600}
                   value={formularioEdicion.horainicio}
                   onChange={(event) => setFormularioEdicion((prev) => ({ ...prev, horainicio: event.target.value }))}
                   className="bg-slate-700/50 border-slate-600 text-slate-100"
@@ -784,6 +807,7 @@ export function VerificarDisponibilidad({ onNavigate }: VerificarDisponibilidadP
                 <Input
                   id="edit-horafin"
                   type="time"
+                  step={3600}
                   value={formularioEdicion.horafin}
                   onChange={(event) => setFormularioEdicion((prev) => ({ ...prev, horafin: event.target.value }))}
                   className="bg-slate-700/50 border-slate-600 text-slate-100"

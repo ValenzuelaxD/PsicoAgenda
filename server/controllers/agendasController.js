@@ -10,7 +10,18 @@ const getPsicologaIdByUsuario = async (usuarioId) => {
 
 const normalizarHora = (hora) => String(hora || '').slice(0, 5);
 
-const validarPayloadAgenda = ({ diasemana, horainicio, horafin }) => {
+const esHoraCerrada = (hora) => {
+  const [hour, minute] = normalizarHora(hora).split(':').map(Number);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return false;
+  }
+
+  return minute === 0;
+};
+
+const validarPayloadAgenda = ({ diasemana, horainicio, horafin }, options = {}) => {
+  const { permitirHorasNoCerradas = false } = options;
+
   if (!diasemana || !horainicio || !horafin) {
     return 'Debes indicar día, hora de inicio y hora de fin.';
   }
@@ -21,6 +32,10 @@ const validarPayloadAgenda = ({ diasemana, horainicio, horafin }) => {
 
   if (!HORA_REGEX.test(horainicio) || !HORA_REGEX.test(horafin)) {
     return 'El formato de hora debe ser HH:MM.';
+  }
+
+  if (!permitirHorasNoCerradas && (!esHoraCerrada(horainicio) || !esHoraCerrada(horafin))) {
+    return 'Solo se permiten horas cerradas (por ejemplo 09:00, 10:00, 11:00).';
   }
 
   if (normalizarHora(horainicio) >= normalizarHora(horafin)) {
@@ -140,7 +155,7 @@ const actualizarAgenda = async (req, res) => {
     }
 
     const existente = await db.query(
-      'SELECT agendaid FROM agendas WHERE agendaid = $1 AND psicologaid = $2',
+      'SELECT agendaid, horainicio, horafin FROM agendas WHERE agendaid = $1 AND psicologaid = $2',
       [agendaId, psicologaId]
     );
 
@@ -149,7 +164,15 @@ const actualizarAgenda = async (req, res) => {
     }
 
     const { diasemana, horainicio, horafin, disponible = true } = req.body;
-    const errorValidacion = validarPayloadAgenda({ diasemana, horainicio, horafin });
+    const horaInicioActual = normalizarHora(existente.rows[0].horainicio);
+    const horaFinActual = normalizarHora(existente.rows[0].horafin);
+    const mantieneHorasActuales = normalizarHora(horainicio) === horaInicioActual && normalizarHora(horafin) === horaFinActual;
+    const bloqueActualNoEsCerrado = !esHoraCerrada(horaInicioActual) || !esHoraCerrada(horaFinActual);
+
+    const errorValidacion = validarPayloadAgenda(
+      { diasemana, horainicio, horafin },
+      { permitirHorasNoCerradas: mantieneHorasActuales && bloqueActualNoEsCerrado }
+    );
     if (errorValidacion) {
       return res.status(400).json({ message: errorValidacion });
     }
