@@ -57,6 +57,7 @@ const getReporteCitas = async (req, res) => {
       SELECT
         COUNT(*)::int AS total_citas,
         COUNT(*) FILTER (WHERE estado = 'Completada')::int AS citas_completadas,
+        COUNT(*) FILTER (WHERE estado = 'Confirmada')::int AS citas_confirmadas,
         COUNT(*) FILTER (WHERE estado = 'Cancelada')::int AS citas_canceladas,
         COUNT(*) FILTER (WHERE estado = 'Pendiente')::int AS citas_pendientes,
         COUNT(*) FILTER (WHERE estado = 'Reagendada')::int AS citas_reagendadas,
@@ -101,6 +102,7 @@ const getReporteCitas = async (req, res) => {
       SELECT
         TO_CHAR(DATE(c.fechahora), 'DD/MM') AS fecha,
         COUNT(*) FILTER (WHERE c.estado = 'Completada')::int AS completadas,
+        COUNT(*) FILTER (WHERE c.estado = 'Confirmada')::int AS confirmadas,
         COUNT(*) FILTER (WHERE c.estado = 'Cancelada')::int AS canceladas,
         COUNT(*) FILTER (WHERE c.estado = 'Pendiente')::int AS pendientes,
         COUNT(*) FILTER (WHERE c.estado = 'Reagendada')::int AS reagendadas

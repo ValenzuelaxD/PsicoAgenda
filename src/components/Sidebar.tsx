@@ -49,6 +49,7 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
     { id: 'buscar-paciente' as ViewType, label: 'Buscar Paciente', icon: Search },
     { id: 'citas' as ViewType, label: 'Gestionar Citas', icon: CalendarCheck },
     { id: 'bitacora' as ViewType, label: 'Bitácora de Pacientes', icon: BookOpen },
+    { id: 'reportes' as ViewType, label: 'Reportes de Citas', icon: FileText },
     { id: 'perfil' as ViewType, label: 'Mi Perfil', icon: User },
   ];
 

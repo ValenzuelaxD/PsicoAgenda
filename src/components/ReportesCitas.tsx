@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Calendar, Clock, FileText, Filter, TrendingUp, Users } from 'lucide-react';
+import { Calendar, Clock, FileDown, FileText, Filter, TrendingUp, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -13,7 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 import { ReporteCitasResponse } from '../utils/types';
 
-type EstadoFiltro = 'Completada' | 'Pendiente' | 'Cancelada' | 'Reagendada';
+type EstadoFiltro = 'Completada' | 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Reagendada';
 
 const getMonthBounds = () => {
   const now = new Date();
@@ -25,7 +25,97 @@ const getMonthBounds = () => {
   };
 };
 
-const ESTADOS_DISPONIBLES: EstadoFiltro[] = ['Completada', 'Pendiente', 'Cancelada', 'Reagendada'];
+const ESTADOS_DISPONIBLES: EstadoFiltro[] = ['Completada', 'Confirmada', 'Pendiente', 'Cancelada', 'Reagendada'];
+
+const formatearFecha = (fechaISO: string) => {
+  const fecha = new Date(fechaISO);
+  if (Number.isNaN(fecha.getTime())) return fechaISO;
+  return fecha.toLocaleDateString('es-ES');
+};
+
+const nombreArchivoReporte = (prefijo: string) => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  return `${prefijo}_${yyyy}${mm}${dd}_${hh}${mi}`;
+};
+
+const validarReporteParaExportacion = (reporte: ReporteCitasResponse | null): string[] => {
+  const errores: string[] = [];
+
+  if (!reporte) {
+    errores.push('No hay datos para exportar.');
+    return errores;
+  }
+
+  const resumen = reporte.resumen;
+  if (!resumen) {
+    errores.push('El resumen del reporte no está disponible.');
+    return errores;
+  }
+
+  const metricasRequeridas = [
+    'total_citas',
+    'citas_completadas',
+    'citas_confirmadas',
+    'citas_pendientes',
+    'citas_canceladas',
+    'citas_reagendadas',
+    'pacientes_activos',
+    'horas_terapia',
+  ] as const;
+
+  metricasRequeridas.forEach((campo) => {
+    const valor = Number(resumen[campo]);
+    if (!Number.isFinite(valor)) {
+      errores.push(`Métrica inválida en resumen: ${campo}.`);
+    }
+  });
+
+  if (!Array.isArray(reporte.citas)) {
+    errores.push('El detalle de citas no es válido.');
+    return errores;
+  }
+
+  const totalDetalle = reporte.citas.length;
+  const totalResumen = Number(resumen.total_citas || 0);
+  if (totalDetalle !== totalResumen) {
+    errores.push(`Inconsistencia de totales: resumen (${totalResumen}) vs detalle (${totalDetalle}).`);
+  }
+
+  const totalEstadosResumen =
+    Number(resumen.citas_completadas || 0) +
+    Number(resumen.citas_confirmadas || 0) +
+    Number(resumen.citas_pendientes || 0) +
+    Number(resumen.citas_canceladas || 0) +
+    Number(resumen.citas_reagendadas || 0);
+  if (totalEstadosResumen !== totalResumen) {
+    errores.push(`Suma de estados (${totalEstadosResumen}) no coincide con total de citas (${totalResumen}).`);
+  }
+
+  reporte.citas.forEach((cita, index) => {
+    if (!cita.citaid || !cita.fecha || !cita.hora || !cita.paciente || !cita.modalidad || !cita.estado) {
+      errores.push(`Cita #${index + 1} incompleta: faltan campos obligatorios.`);
+      return;
+    }
+
+    if (!ESTADOS_DISPONIBLES.includes(cita.estado as EstadoFiltro)) {
+      errores.push(`Cita #${index + 1} con estado no reconocido: ${cita.estado}.`);
+    }
+  });
+
+  if (Array.isArray(reporte.modalidades) && reporte.modalidades.length > 0 && totalResumen > 0) {
+    const totalPorcentaje = reporte.modalidades.reduce((acc, item) => acc + Number(item.porcentaje || 0), 0);
+    if (Math.abs(totalPorcentaje - 100) > 1.5) {
+      errores.push(`La suma de porcentajes por modalidad (${totalPorcentaje.toFixed(1)}%) no es consistente.`);
+    }
+  }
+
+  return errores;
+};
 
 export function ReportesCitas() {
   const rangoInicial = useMemo(() => getMonthBounds(), []);
@@ -35,12 +125,14 @@ export function ReportesCitas() {
   const [pacienteId, setPacienteId] = useState('todos');
   const [estadosSeleccionados, setEstadosSeleccionados] = useState<Record<EstadoFiltro, boolean>>({
     Completada: true,
+    Confirmada: true,
     Pendiente: true,
     Cancelada: true,
     Reagendada: true,
   });
   const [data, setData] = useState<ReporteCitasResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const estadosActivos = ESTADOS_DISPONIBLES.filter((estado) => estadosSeleccionados[estado]);
 
@@ -96,10 +188,156 @@ export function ReportesCitas() {
     setPacienteId('todos');
     setEstadosSeleccionados({
       Completada: true,
+      Confirmada: true,
       Pendiente: true,
       Cancelada: true,
       Reagendada: true,
     });
+  };
+
+  const obtenerResumenExportable = () => {
+    const resumenActual = data?.resumen;
+    if (!resumenActual) return [];
+
+    return [
+      { indicador: 'Total de citas', valor: resumenActual.total_citas },
+      { indicador: 'Completadas', valor: resumenActual.citas_completadas },
+      { indicador: 'Confirmadas', valor: resumenActual.citas_confirmadas },
+      { indicador: 'Pendientes', valor: resumenActual.citas_pendientes },
+      { indicador: 'Canceladas', valor: resumenActual.citas_canceladas },
+      { indicador: 'Reagendadas', valor: resumenActual.citas_reagendadas },
+      { indicador: 'Pacientes activos', valor: resumenActual.pacientes_activos },
+      { indicador: 'Horas de terapia', valor: resumenActual.horas_terapia },
+    ];
+  };
+
+  const validarAntesDeExportar = (): boolean => {
+    const errores = validarReporteParaExportacion(data);
+    if (errores.length === 0) {
+      return true;
+    }
+
+    toast.error('No se pudo exportar el reporte por inconsistencias de datos.', {
+      description: errores.slice(0, 2).join(' '),
+    });
+    return false;
+  };
+
+  const exportarExcel = async () => {
+    if (!validarAntesDeExportar() || !data) return;
+
+    try {
+      setExporting(true);
+      const xlsxModule = await import('xlsx');
+      const XLSX = (xlsxModule as any).default ?? xlsxModule;
+
+      const wb = XLSX.utils.book_new();
+
+      const metadatos = [
+        { campo: 'Fecha generación', valor: new Date().toLocaleString('es-ES') },
+        { campo: 'Rango inicio', valor: fechaInicio },
+        { campo: 'Rango fin', valor: fechaFin },
+        { campo: 'Modalidad', valor: modalidad },
+        { campo: 'Paciente', valor: pacienteId },
+        { campo: 'Estados', valor: estadosActivos.join(', ') || 'Todos' },
+      ];
+
+      const detalle = data.citas.map((cita) => ({
+        citaId: cita.citaid,
+        fecha: formatearFecha(cita.fecha),
+        hora: cita.hora,
+        paciente: cita.paciente,
+        modalidad: cita.modalidad,
+        estado: cita.estado,
+        duracionMin: cita.duracionmin,
+        consultorio: cita.consultorio || '',
+        notas: cita.notas || '',
+      }));
+
+      const timeline = (data.timeline || []).map((item) => ({
+        fecha: item.fecha,
+        completadas: item.completadas,
+        confirmadas: item.confirmadas,
+        pendientes: item.pendientes,
+        canceladas: item.canceladas,
+        reagendadas: item.reagendadas,
+      }));
+
+      const wsMetadatos = XLSX.utils.json_to_sheet(metadatos);
+      const wsResumen = XLSX.utils.json_to_sheet(obtenerResumenExportable());
+      const wsDetalle = XLSX.utils.json_to_sheet(detalle);
+      const wsModalidades = XLSX.utils.json_to_sheet(data.modalidades || []);
+      const wsPacientes = XLSX.utils.json_to_sheet(data.pacientes || []);
+      const wsTimeline = XLSX.utils.json_to_sheet(timeline);
+
+      XLSX.utils.book_append_sheet(wb, wsMetadatos, 'Metadatos');
+      XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+      XLSX.utils.book_append_sheet(wb, wsDetalle, 'Detalle');
+      XLSX.utils.book_append_sheet(wb, wsModalidades, 'Modalidades');
+      XLSX.utils.book_append_sheet(wb, wsPacientes, 'Pacientes');
+      XLSX.utils.book_append_sheet(wb, wsTimeline, 'Timeline');
+
+      XLSX.writeFile(wb, `${nombreArchivoReporte('ReporteCitas')}.xlsx`);
+      toast.success('Reporte exportado en Excel.');
+    } catch (error: any) {
+      toast.error(error?.message || 'No fue posible exportar el archivo Excel.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportarPDF = async () => {
+    if (!validarAntesDeExportar() || !data) return;
+
+    try {
+      setExporting(true);
+
+      const jspdfModule = await import('jspdf');
+      const autoTableModule = await import('jspdf-autotable');
+      const jsPDFCtor = (jspdfModule as any).jsPDF || (jspdfModule as any).default;
+      const autoTable = (autoTableModule as any).default;
+
+      const doc = new jsPDFCtor({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      doc.setFontSize(14);
+      doc.text('Reporte de Citas', 40, 36);
+
+      doc.setFontSize(10);
+      doc.text(`Generado: ${new Date().toLocaleString('es-ES')}`, 40, 56);
+      doc.text(`Rango: ${fechaInicio} a ${fechaFin}`, 40, 72);
+
+      const resumenRows = obtenerResumenExportable().map((item) => [item.indicador, String(item.valor)]);
+
+      autoTable(doc, {
+        startY: 86,
+        head: [['Indicador', 'Valor']],
+        body: resumenRows,
+        theme: 'grid',
+        styles: { fontSize: 9 },
+      });
+
+      const detalleRows = data.citas.slice(0, 200).map((cita) => [
+        formatearFecha(cita.fecha),
+        cita.hora,
+        cita.paciente,
+        cita.modalidad,
+        cita.estado,
+      ]);
+
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 18,
+        head: [['Fecha', 'Hora', 'Paciente', 'Modalidad', 'Estado']],
+        body: detalleRows,
+        theme: 'striped',
+        styles: { fontSize: 8 },
+      });
+
+      doc.save(`${nombreArchivoReporte('ReporteCitas')}.pdf`);
+      toast.success('Reporte exportado en PDF.');
+    } catch (error: any) {
+      toast.error(error?.message || 'No fue posible exportar el archivo PDF.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const resumen = data?.resumen;
@@ -167,9 +405,29 @@ export function ReportesCitas() {
           </div>
 
           <div className="flex justify-end">
-            <Button variant="outline" onClick={limpiarFiltros} className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto">
-              Limpiar Filtros
-            </Button>
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={exportarExcel}
+                disabled={loading || exporting || !data}
+                className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportarPDF}
+                disabled={loading || exporting || !data}
+                className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar PDF
+              </Button>
+              <Button variant="outline" onClick={limpiarFiltros} className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto">
+                Limpiar Filtros
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -233,10 +491,14 @@ export function ReportesCitas() {
           <CardDescription className="text-slate-400">Distribución del período seleccionado</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <div className="text-center p-4 bg-teal-900/20 border border-teal-500/30 rounded-lg">
               <p className="text-teal-100">{loading ? '...' : resumen?.citas_completadas ?? 0}</p>
               <p className="text-teal-300">Completadas</p>
+            </div>
+            <div className="text-center p-4 bg-sky-900/20 border border-sky-500/30 rounded-lg">
+              <p className="text-sky-100">{loading ? '...' : resumen?.citas_confirmadas ?? 0}</p>
+              <p className="text-sky-300">Confirmadas</p>
             </div>
             <div className="text-center p-4 bg-violet-900/20 border border-violet-500/30 rounded-lg">
               <p className="text-violet-100">{loading ? '...' : resumen?.citas_pendientes ?? 0}</p>
@@ -276,6 +538,7 @@ export function ReportesCitas() {
                 />
                 <Legend />
                 <Bar dataKey="completadas" fill="#14b8a6" name="Completadas" />
+                <Bar dataKey="confirmadas" fill="#0ea5e9" name="Confirmadas" />
                 <Bar dataKey="pendientes" fill="#8b5cf6" name="Pendientes" />
                 <Bar dataKey="canceladas" fill="#ef4444" name="Canceladas" />
                 <Bar dataKey="reagendadas" fill="#f59e0b" name="Reagendadas" />
@@ -367,6 +630,8 @@ export function ReportesCitas() {
                             <Badge className={
                               cita.estado === 'Completada'
                                 ? 'bg-teal-600'
+                                : cita.estado === 'Confirmada'
+                                  ? 'bg-sky-600'
                                 : cita.estado === 'Pendiente'
                                   ? 'bg-violet-600'
                                   : cita.estado === 'Cancelada'

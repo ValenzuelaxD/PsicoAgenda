@@ -100,6 +100,7 @@ export interface Cita {
 export interface ReporteCitasResumen {
   total_citas: number;
   citas_completadas: number;
+  citas_confirmadas: number;
   citas_canceladas: number;
   citas_pendientes: number;
   citas_reagendadas: number;
@@ -123,6 +124,7 @@ export interface ReporteCitasPaciente {
 export interface ReporteCitasTimeline {
   fecha: string;
   completadas: number;
+  confirmadas: number;
   canceladas: number;
   pendientes: number;
   reagendadas: number;

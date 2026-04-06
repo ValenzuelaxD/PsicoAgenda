@@ -15,6 +15,7 @@ import { VerificarDisponibilidad } from './VerificarDisponibilidad';
 import { ProgramarCita } from './ProgramarCita';
 import { NotificationCenter } from './NotificationCenter';
 import { AdminSolicitudes } from './AdminSolicitudes';
+import { ReportesCitas } from './ReportesCitas';
 
 interface DashboardProps {
   userName: string;
@@ -23,7 +24,7 @@ interface DashboardProps {
 }
 
 export type ViewType = 'inicio' | 'agendar' | 'citas' | 'historial' | 'perfil' | 
-  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda' | 'programar-cita' | 'admin-solicitudes';
+  'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda' | 'programar-cita' | 'reportes' | 'admin-solicitudes';
 
 export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
   const [currentView, setCurrentView] = useState<ViewType>(
@@ -66,6 +67,8 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
         return <VerificarDisponibilidad onNavigate={handleNavigate} />;
       case 'programar-cita':
         return <ProgramarCita onNavigate={handleNavigate} />;
+      case 'reportes':
+        return <ReportesCitas />;
       case 'admin-solicitudes':
         return <AdminSolicitudes />;
       default:
