@@ -481,6 +481,27 @@ const actualizarCita = async (req, res) => {
       ? (notasPsicologa ?? notas ?? contexto.notaspsicologa)
       : contexto.notaspsicologa;
 
+    // Detectar cambios de estado para actualizar el contador de sesiones completadas
+    const estadoAnterior = String(contexto.estado || '').trim();
+    const estadoNormalizado = String(nuevoEstado || '').trim();
+    const estabaCompletada = estadoAnterior.toLowerCase() === 'completada';
+    const estaraCompletada = estadoNormalizado.toLowerCase() === 'completada';
+
+    // Actualizar contador de sesiones completadas si cambia el estado
+    if (estaraCompletada && !estabaCompletada) {
+      // Cambio a Completada: incrementar contador
+      await db.query(
+        `UPDATE pacientes SET sesionescompletadas = COALESCE(sesionescompletadas, 0) + 1 WHERE pacienteid = $1`,
+        [contexto.pacienteid]
+      );
+    } else if (!estaraCompletada && estabaCompletada) {
+      // Cambio desde Completada: decrementar contador
+      await db.query(
+        `UPDATE pacientes SET sesionescompletadas = GREATEST(COALESCE(sesionescompletadas, 0) - 1, 0) WHERE pacienteid = $1`,
+        [contexto.pacienteid]
+      );
+    }
+
     const result = await db.query(
       `
         UPDATE citas
@@ -587,6 +608,16 @@ const cancelarCita = async (req, res) => {
       return res.status(validacion.error.status).json({ message: validacion.error.message });
     }
 
+    const contexto = validacion.contexto;
+    
+    // Si la cita estaba completada, decrementar el contador
+    if (String(contexto.estado || '').trim().toLowerCase() === 'completada') {
+      await db.query(
+        `UPDATE pacientes SET sesionescompletadas = GREATEST(COALESCE(sesionescompletadas, 0) - 1, 0) WHERE pacienteid = $1`,
+        [contexto.pacienteid]
+      );
+    }
+
     const result = await db.query(
       `
         UPDATE citas
@@ -597,15 +628,15 @@ const cancelarCita = async (req, res) => {
       [id]
     );
 
-    const contexto = await getContextoCita(id);
-    if (contexto) {
+    const contextoActualizado = await getContextoCita(id);
+    if (contextoActualizado) {
       const fechaCliente = obtenerFechaClienteDesdeRequest(req);
-      const destinatario = req.user.rol === 'paciente' ? contexto.psicologa_usuarioid : contexto.paciente_usuarioid;
+      const destinatario = req.user.rol === 'paciente' ? contextoActualizado.psicologa_usuarioid : contextoActualizado.paciente_usuarioid;
       await crearNotificacion({
         usuarioId: destinatario,
         citaId: Number(id),
         tipo: 'Cancelacion',
-        mensaje: `La cita del ${new Date(contexto.fechahora).toLocaleString('es-MX')} fue cancelada.`,
+        mensaje: `La cita del ${new Date(contextoActualizado.fechahora).toLocaleString('es-MX')} fue cancelada.`,
         fechaEnvio: fechaCliente,
       });
     }

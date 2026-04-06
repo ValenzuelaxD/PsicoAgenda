@@ -94,42 +94,55 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
     return { nombre, apellidoPaterno, apellidoMaterno };
   };
 
-  useEffect(() => {
-    const fetchPacientes = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No autenticado. Por favor inicia sesión.');
-        }
-
-        const response = await fetch(API_ENDPOINTS.PACIENTES, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
-        }
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Error al cargar pacientes');
-        }
-
-        const data = await response.json();
-        setPacientes(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        setError(err.message);
-        toast.error(err.message);
-      } finally {
-        setLoading(false);
+  const fetchPacientes = async (mostrarToast = false) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No autenticado. Por favor inicia sesión.');
       }
-    };
+
+      const response = await fetch(API_ENDPOINTS.PACIENTES, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al cargar pacientes');
+      }
+
+      const data = await response.json();
+      setPacientes(Array.isArray(data) ? data : []);
+      
+      if (mostrarToast) {
+        toast.success('Datos actualizados');
+      }
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPacientes();
+  }, []);
+
+  // Refrescar datos cada 30 segundos para capturar cambios en sesiones completadas
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPacientes();
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -303,9 +316,14 @@ export function BuscarPaciente({ onNavigate }: BuscarPacienteProps) {
                 className="pl-10 w-full"
               />
             </div>
-            <Button onClick={() => onNavigate('registro-paciente')} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
-              Nuevo Paciente
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button onClick={() => fetchPacientes(true)} variant="outline" className="flex-1 sm:flex-none" title="Refrescar datos">
+                <Search className="w-4 h-4" />
+              </Button>
+              <Button onClick={() => onNavigate('registro-paciente')} className="bg-teal-600 hover:bg-teal-700 flex-1 sm:flex-none">
+                Nuevo Paciente
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

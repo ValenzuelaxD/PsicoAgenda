@@ -43,26 +43,35 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
   const [mostrarExito, setMostrarExito] = useState(false);
 
+  const fetchPacientesList = async () => {
+    try {
+      const response = await apiFetch(API_ENDPOINTS.PACIENTES);
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+      }
+      if (!response.ok) throw new Error('Error al cargar pacientes');
+      const data = await response.json();
+      setPacientes(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoadingPacientes(false);
+    }
+  };
+
   // Carga inicial de pacientes
   useEffect(() => {
-    const fetchPacientes = async () => {
-      try {
-        const response = await apiFetch(API_ENDPOINTS.PACIENTES);
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
-        }
-        if (!response.ok) throw new Error('Error al cargar pacientes');
-        const data = await response.json();
-        setPacientes(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        toast.error(err.message);
-      } finally {
-        setLoadingPacientes(false);
-      }
-    };
-    fetchPacientes();
+    fetchPacientesList();
+  }, []);
+
+  // Refrescar datos cada 30 segundos para capturar cambios en sesiones completadas
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPacientesList();
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Auto-seleccionar paciente cuando llega el prop pacienteId
@@ -201,15 +210,26 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         {/* Panel izquierdo: lista de pacientes */}
         <div className="min-w-0 flex flex-col gap-3 overflow-y-auto lg:pr-1 max-h-[36dvh] lg:max-h-none">
           {/* Buscador fijo al tope del panel */}
-          <div className="relative sticky top-0 z-10 bg-slate-900 pb-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            <Input
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar paciente..."
-              className="h-11 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
-              style={{ paddingLeft: '2.75rem' }}
-            />
+          <div className="relative sticky top-0 z-10 bg-slate-900 pb-1 flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Input
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar paciente..."
+                className="h-11 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500 leading-normal w-full"
+                style={{ paddingLeft: '2.75rem' }}
+              />
+            </div>
+            <Button
+              onClick={() => fetchPacientesList()}
+              variant="outline"
+              size="icon"
+              className="flex-shrink-0 h-11"
+              title="Refrescar datos"
+            >
+              <Search className="w-4 h-4" />
+            </Button>
           </div>
 
           {loadingPacientes ? (
