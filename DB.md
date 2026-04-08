@@ -195,90 +195,30 @@ ADD COLUMN IF NOT EXISTS FotoPerfil_Mime VARCHAR(50),
 ADD COLUMN IF NOT EXISTS FotoPerfil_Data BYTEA;
 
 -- 10) Contador persistente de sesiones completadas por paciente
+-- NOTA: El contador se gestiona completamente desde el backend (citasController.js)
+-- NO usar triggers automáticos para evitar conflictos. El backend es responsable de:
+-- - Incrementar (+1) cuando una cita cambia a 'Completada'
+-- - Decrementar (-1) cuando se cancela una cita que estaba 'Completada'
 ALTER TABLE Pacientes
 ADD COLUMN IF NOT EXISTS SesionesCompletadas INTEGER NOT NULL DEFAULT 0;
 
-CREATE OR REPLACE FUNCTION fn_recalcular_sesiones_completadas(_paciente_id INTEGER)
-RETURNS VOID
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  IF _paciente_id IS NULL THEN
-    RETURN;
-  END IF;
-
-  UPDATE Pacientes p
-  SET SesionesCompletadas = COALESCE(src.total, 0)
-  FROM (
-    SELECT c.pacienteid, COUNT(*)::int AS total
-    FROM Citas c
-    WHERE c.pacienteid = _paciente_id
-      AND COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
-    GROUP BY c.pacienteid
-  ) src
-  WHERE p.pacienteid = _paciente_id;
-
-  UPDATE Pacientes p
-  SET SesionesCompletadas = 0
-  WHERE p.pacienteid = _paciente_id
-    AND NOT EXISTS (
-      SELECT 1
-      FROM Citas c
-      WHERE c.pacienteid = _paciente_id
-        AND COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
-    );
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION tg_sync_sesiones_completadas()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    PERFORM fn_recalcular_sesiones_completadas(NEW.pacienteid);
-    RETURN NEW;
-  END IF;
-
-  IF TG_OP = 'UPDATE' THEN
-    IF NEW.pacienteid IS DISTINCT FROM OLD.pacienteid THEN
-      PERFORM fn_recalcular_sesiones_completadas(OLD.pacienteid);
-      PERFORM fn_recalcular_sesiones_completadas(NEW.pacienteid);
-    ELSE
-      PERFORM fn_recalcular_sesiones_completadas(NEW.pacienteid);
-    END IF;
-    RETURN NEW;
-  END IF;
-
-  IF TG_OP = 'DELETE' THEN
-    PERFORM fn_recalcular_sesiones_completadas(OLD.pacienteid);
-    RETURN OLD;
-  END IF;
-
-  RETURN NULL;
-END;
-$$;
-
+-- Limpiar triggers antiguos si existen
 DROP TRIGGER IF EXISTS tr_sync_sesiones_completadas ON Citas;
-CREATE TRIGGER tr_sync_sesiones_completadas
-AFTER INSERT OR UPDATE OF pacienteid, estado OR DELETE ON Citas
-FOR EACH ROW
-EXECUTE FUNCTION tg_sync_sesiones_completadas();
+DROP FUNCTION IF EXISTS tg_sync_sesiones_completadas() CASCADE;
+DROP FUNCTION IF EXISTS fn_recalcular_sesiones_completadas(_paciente_id INTEGER) CASCADE;
 
--- Backfill inicial para datos existentes
+-- Backfill inicial para datos existentes (recalcular una sola vez al migrar)
 UPDATE Pacientes p
 SET SesionesCompletadas = COALESCE(src.total, 0)
 FROM (
   SELECT c.pacienteid, COUNT(*)::int AS total
   FROM Citas c
-  WHERE COALESCE(LOWER(TRIM(c.estado)), '') LIKE 'complet%'
+  WHERE COALESCE(LOWER(TRIM(c.estado)), '') = 'completada'
   GROUP BY c.pacienteid
 ) src
 WHERE p.pacienteid = src.pacienteid;
 
 UPDATE Pacientes
 SET SesionesCompletadas = 0
-WHERE SesionesCompletadas IS NULL;UPDATE pacientes
-SET sesionescompletadas = 11
-WHERE pacienteid = 22;
+WHERE SesionesCompletadas IS NULL;
 
