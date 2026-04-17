@@ -622,141 +622,77 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
           </Card>
         )}
 
-        {/* Personalización de Tema */}
+        {/* Personalización de Tema - Simplificado */}
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-100">
-              <Shield className="w-5 h-5" />
-              Personalización de Tema
-            </CardTitle>
+            <CardTitle className="text-slate-100">Personalización de Tema</CardTitle>
             <CardDescription className="text-slate-400">
-              Ajusta la apariencia del panel después del inicio de sesión. La pantalla de acceso permanece fija.
+              Elige el estilo que prefieras. Los cambios se aplican al instante.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-slate-100 mb-1">1. Temas predefinidos</h3>
-                  <p className="text-sm text-slate-400">Paletas fijas seleccionables</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {THEME_PRESET_OPTIONS.map((option) => {
-                    const isSelected = themeDraft.preset === option.preset;
-                    const previewBackground = option.preset === 'forest'
-                      ? 'linear-gradient(135deg, #052e2b, #11332e)'
-                      : option.preset === 'ocean'
-                        ? 'linear-gradient(135deg, #082f49, #123352)'
-                        : option.preset === 'sunset'
-                          ? 'linear-gradient(135deg, #3f1d16, #4c2217)'
-                          : 'linear-gradient(135deg, #0f172a, #111827)';
+            {/* Elige un Tema */}
+            <div className="space-y-3">
+              <p className="text-slate-100 font-medium">Elige un tema:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {THEME_PRESET_OPTIONS.map((option) => {
+                  const isSelected = themeDraft.preset === option.preset;
+                  const previewBackground = option.preset === 'forest'
+                    ? 'linear-gradient(135deg, #052e2b, #11332e)'
+                    : option.preset === 'ocean'
+                      ? 'linear-gradient(135deg, #082f49, #123352)'
+                      : option.preset === 'sunset'
+                        ? 'linear-gradient(135deg, #3f1d16, #4c2217)'
+                        : 'linear-gradient(135deg, #0f172a, #111827)';
 
-                    return (
-                      <button
-                        key={option.preset}
-                        type="button"
-                        onClick={() => updateThemePreferences({ preset: option.preset })}
-                        className={`text-left rounded-2xl border p-4 transition-all duration-200 ${isSelected ? 'ring-2 ring-teal-400 scale-[1.01]' : 'hover:scale-[1.01]'}`}
-                        style={{
-                          borderColor: isSelected ? themeDraft.primaryColor : 'var(--theme-border)',
-                          backgroundImage: previewBackground,
-                        }}
-                      >
-                        <p className="text-white mb-1">{option.label}</p>
-                        <p className="text-sm text-white/70 mb-4">{option.description}</p>
-                        <div className="flex gap-2">
-                          <span className="w-7 h-7 rounded-lg border border-white/30" style={{ backgroundColor: themeDraft.primaryColor }} />
-                          <span className="w-7 h-7 rounded-lg border border-white/30" style={{ backgroundColor: themeDraft.accentColor }} />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                  return (
+                    <button
+                      key={option.preset}
+                      type="button"
+                      onClick={() => updateThemePreferences({ preset: option.preset })}
+                      className={`rounded-2xl border-2 p-4 transition-all duration-200 flex flex-col items-center text-center cursor-pointer ${
+                        isSelected 
+                          ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-teal-400 scale-105 border-teal-400' 
+                          : 'border-slate-600 hover:border-slate-500'
+                      }`}
+                      style={{
+                        backgroundImage: previewBackground,
+                      }}
+                    >
+                      <p className="text-white font-semibold text-sm">{option.label}</p>
+                      <p className="text-white/60 text-xs mt-1">{option.description}</p>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-slate-100 mb-1">2. Color primario libre</h3>
-                  <p className="text-sm text-slate-400">Elige 1-2 colores base</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-2 rounded-2xl border border-slate-700 p-4 bg-slate-900/40">
-                    <span className="text-sm text-slate-300">Color principal</span>
-                    <input
-                      type="color"
-                      value={themeDraft.primaryColor}
-                      onChange={(event) => updateThemePreferences({ primaryColor: event.target.value })}
-                      className="h-12 w-full rounded-lg bg-transparent"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-2 rounded-2xl border border-slate-700 p-4 bg-slate-900/40">
-                    <span className="text-sm text-slate-300">Color secundario</span>
-                    <input
-                      type="color"
-                      value={themeDraft.accentColor}
-                      onChange={(event) => updateThemePreferences({ accentColor: event.target.value })}
-                      className="h-12 w-full rounded-lg bg-transparent"
-                    />
-                  </label>
-                </div>
-
-                <div>
-                  <h3 className="text-slate-100 mb-1">3. Claro / Oscuro</h3>
-                  <p className="text-sm text-slate-400">Simple, accesible y estable</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    type="button"
-                    variant={themeDraft.mode === 'dark' ? 'default' : 'outline'}
-                    className={themeDraft.mode === 'dark' ? 'bg-teal-600 hover:bg-teal-700' : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
-                    onClick={() => updateThemePreferences({ mode: 'dark' })}
-                  >
-                    Oscuro
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={themeDraft.mode === 'light' ? 'default' : 'outline'}
-                    className={themeDraft.mode === 'light' ? 'bg-teal-600 hover:bg-teal-700' : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
-                    onClick={() => updateThemePreferences({ mode: 'light' })}
-                  >
-                    Claro
-                  </Button>
-                </div>
-
-                <div>
-                  <h3 className="text-slate-100 mb-1">4. Imagen / marca propia</h3>
-                  <p className="text-sm text-slate-400">Usa una URL para fondo o identidad visual</p>
-                </div>
-                <div className="space-y-3 rounded-2xl border border-slate-700 p-4 bg-slate-900/40">
-                  <Input
-                    value={themeDraft.backgroundImage}
-                    onChange={(event) => updateThemePreferences({ backgroundImage: event.target.value })}
-                    placeholder="Pega una URL de imagen para el fondo"
-                    className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
-                  />
-                  <div
-                    className="h-24 rounded-xl border overflow-hidden flex items-center justify-center text-sm text-center px-4"
-                    style={{
-                      borderColor: themePalette.border,
-                      backgroundImage: themeDraft.backgroundImage
-                        ? `linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.40)), url(${themeDraft.backgroundImage})`
-                        : `linear-gradient(135deg, ${themePalette.background}, ${themePalette.backgroundSecondary})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      color: themePalette.text,
-                    }}
-                  >
-                    {themeDraft.backgroundImage ? 'Vista previa activa' : 'Vista previa de tu marca'}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                    onClick={() => updateThemePreferences({ backgroundImage: '' })}
-                  >
-                    Quitar imagen
-                  </Button>
-                </div>
+            {/* Toggle Luz/Oscuridad */}
+            <div className="space-y-3 pt-4 border-t border-slate-700">
+              <p className="text-slate-100 font-medium">Modo de luz:</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  onClick={() => updateThemePreferences({ mode: 'dark' })}
+                  className={`transition-all ${
+                    themeDraft.mode === 'dark'
+                      ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                      : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                  }`}
+                >
+                  🌙 Oscuro
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => updateThemePreferences({ mode: 'light' })}
+                  className={`transition-all ${
+                    themeDraft.mode === 'light'
+                      ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                      : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                  }`}
+                >
+                  ☀️ Claro
+                </Button>
               </div>
             </div>
           </CardContent>
