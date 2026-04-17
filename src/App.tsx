@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Autenticar } from './components/Autenticar';
 import { Dashboard } from './components/Dashboard';
 import { SplashScreen } from './components/SplashScreen';
 import { LoadingSplash } from './components/LoadingSplash';
 import { Toaster } from 'sonner';
+import { API_ENDPOINTS } from './utils/api';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
   const [userType, setUserType] = useState<'psicologo' | 'paciente' | 'admin'>('paciente');
+  const [userPhoto, setUserPhoto] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -23,6 +25,7 @@ export default function App() {
         try {
           const userData = JSON.parse(user);
           setUserName(userData.nombre || 'Usuario');
+          setUserPhoto(userData.fotoperfil || '');
           setUserType(
             userData.rol === 'admin'
               ? 'admin'
@@ -59,6 +62,63 @@ export default function App() {
     setUserType(type);
   };
 
+  const refreshSessionProfile = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await fetch(API_ENDPOINTS.PERFIL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUserName('');
+        setUserPhoto('');
+        setUserType('paciente');
+        setIsAuthenticated(false);
+        return;
+      }
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      const profile = data.profile || {};
+      const nombreCompleto = profile.nombreCompleto || profile.nombre || 'Usuario';
+
+      setUserName(nombreCompleto);
+      setUserPhoto(profile.fotoPerfil || '');
+
+      const userRaw = localStorage.getItem('user');
+      if (userRaw) {
+        const userData = JSON.parse(userRaw);
+        localStorage.setItem(
+          'user',
+          JSON.stringify({
+            ...userData,
+            nombre: nombreCompleto,
+            correo: profile.email || userData.correo,
+          })
+        );
+      }
+    } catch (error) {
+      console.error('No se pudo sincronizar el perfil:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshSessionProfile();
+    }
+  }, [isAuthenticated, refreshSessionProfile]);
+
   const handleLogout = () => {
     setIsLoggingOut(true);
     // Mostrar splash de logout por 1.5 segundos
@@ -88,7 +148,9 @@ export default function App() {
         <Dashboard 
           userName={userName} 
           userType={userType} 
+          userPhoto={userPhoto}
           onLogout={handleLogout} 
+          onProfileUpdated={refreshSessionProfile}
         />
       )}
       <Toaster position="top-right" richColors />

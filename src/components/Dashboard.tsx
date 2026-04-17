@@ -20,13 +20,15 @@ import { ReportesCitas } from './ReportesCitas';
 interface DashboardProps {
   userName: string;
   userType: 'psicologo' | 'paciente' | 'admin';
+  userPhoto: string;
   onLogout: () => void;
+  onProfileUpdated: () => void;
 }
 
 export type ViewType = 'inicio' | 'agendar' | 'citas' | 'historial' | 'perfil' | 
   'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda' | 'programar-cita' | 'reportes' | 'admin-solicitudes';
 
-export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
+export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUpdated }: DashboardProps) {
   const [currentView, setCurrentView] = useState<ViewType>(
     userType === 'admin' ? 'admin-solicitudes' : 'inicio'
   );
@@ -56,7 +58,7 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
       case 'historial':
         return <Historial />;
       case 'perfil':
-        return <Perfil userName={userName} userType={userType} />;
+        return <Perfil userName={userName} userType={userType} onProfileUpdated={onProfileUpdated} />;
       case 'registro-paciente':
         return <RegistroPaciente onNavigate={handleNavigate} />;
       case 'buscar-paciente':
@@ -139,7 +141,7 @@ export function Dashboard({ userName, userType, onLogout }: DashboardProps) {
                 <p className="text-slate-400 text-xs sm:text-sm truncate">Sistema de gestion psicologica profesional</p>
               </div>
             </div>
-            <NotificationCenter userType={userType} />
+            <NotificationCenter userType={userType} userName={userName} userPhoto={userPhoto} />
           </div>
         </div>
 

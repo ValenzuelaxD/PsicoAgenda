@@ -21,9 +21,10 @@ import { API_ENDPOINTS } from '../utils/api';
 interface PerfilProps {
   userName: string;
   userType: 'psicologo' | 'paciente' | 'admin';
+  onProfileUpdated: () => void;
 }
 
-export function Perfil({ userName, userType }: PerfilProps) {
+export function Perfil({ userName, userType, onProfileUpdated }: PerfilProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -203,6 +204,7 @@ export function Perfil({ userName, userType }: PerfilProps) {
         localStorage.setItem('user', JSON.stringify({ ...userData, nombre: primerNombre, correo: email }));
       }
 
+      onProfileUpdated();
       setMostrarExitoGuardado(true);
     } catch (error: any) {
       toast.error('Error al guardar cambios', { description: error.message });

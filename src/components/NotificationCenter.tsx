@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import useIsMobile from '../hooks/useIsMobile';
@@ -22,9 +23,11 @@ interface Notification {
 
 interface NotificationCenterProps {
   userType: 'psicologo' | 'paciente' | 'admin';
+  userName: string;
+  userPhoto: string;
 }
 
-export function NotificationCenter({ userType }: NotificationCenterProps) {
+export function NotificationCenter({ userType, userName, userPhoto }: NotificationCenterProps) {
   const isMobile = useIsMobile();
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
@@ -63,6 +66,12 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
 
     lastUnreadCountRef.current = unreadCount;
   }, []);
+
+  const getInitialesUsuario = (nombre: string) => {
+    const partes = nombre.trim().split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return 'U';
+    return partes.slice(0, 2).map((parte) => parte[0]?.toUpperCase() || '').join('') || 'U';
+  };
 
   const fetchNotificaciones = useCallback(async (options: { allowToast?: boolean; silentOnError?: boolean } = {}) => {
     const { allowToast = false, silentOnError = false } = options;
@@ -275,23 +284,33 @@ export function NotificationCenter({ userType }: NotificationCenterProps) {
   return (
     <>
       {/* Botón de notificaciones */}
-      <motion.button
-        onClick={() => setMostrarPanel(!mostrarPanel)}
-        className="relative p-2 rounded-lg hover:bg-slate-700 transition-colors"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <Bell className="w-6 h-6 stroke-2 text-slate-300" />
-        {notificacionesNoLeidas > 0 && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-          >
-            {notificacionesNoLeidas}
-          </motion.div>
-        )}
-      </motion.button>
+      <div className="flex items-center gap-2 shrink-0">
+        <Avatar className="size-9 border border-slate-600 bg-slate-700">
+          <AvatarImage src={userPhoto || undefined} alt={userName} />
+          <AvatarFallback className="bg-slate-700 text-slate-200 text-[11px] font-semibold">
+            {getInitialesUsuario(userName)}
+          </AvatarFallback>
+        </Avatar>
+
+        <motion.button
+          onClick={() => setMostrarPanel(!mostrarPanel)}
+          className="relative p-2 rounded-lg hover:bg-slate-700 transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Abrir notificaciones"
+        >
+          <Bell className="w-6 h-6 stroke-2 text-slate-300" />
+          {notificacionesNoLeidas > 0 && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+            >
+              {notificacionesNoLeidas}
+            </motion.div>
+          )}
+        </motion.button>
+      </div>
 
       {/* Panel de notificaciones */}
       {typeof document !== 'undefined' && createPortal(
