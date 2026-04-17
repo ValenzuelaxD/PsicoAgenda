@@ -660,7 +660,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                       key={option.preset}
                       type="button"
                       onClick={() => updateThemePreferences({ preset: option.preset })}
-                      className={`rounded-2xl border-2 p-4 transition-all duration-200 flex flex-col items-center text-center cursor-pointer ${
+                      className={`rounded-2xl border-2 p-4 transition-all duration-200 flex flex-col items-center justify-center cursor-pointer h-24 ${
                         isSelected 
                           ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-teal-400 scale-105 border-teal-400' 
                           : 'border-slate-600 hover:border-slate-500'
@@ -669,51 +669,39 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                         backgroundImage: previewBackground,
                       }}
                     >
-                      <p className="text-white font-semibold text-sm">{option.label}</p>
-                      <p className="text-white/60 text-xs mt-1">{option.description}</p>
-                      {/* Bolitas de Colores */}
-                      <div className="flex gap-2 mt-3">
-                        <div
-                          className="w-5 h-5 rounded-full border-2 border-white/40 shadow-lg"
-                          style={{ backgroundColor: colors.primary }}
-                        />
-                        <div
-                          className="w-5 h-5 rounded-full border-2 border-white/40 shadow-lg"
-                          style={{ backgroundColor: colors.accent }}
-                        />
-                      </div>
+                      {/* Bolita dividida por colores */}
+                      <div
+                        className="w-12 h-12 rounded-full border-2 border-white/40 shadow-lg"
+                        style={{
+                          background: `linear-gradient(90deg, ${colors.primary} 50%, ${colors.accent} 50%)`
+                        }}
+                      />
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Toggle Luz/Oscuridad - Slider con Bolita */}
+            {/* Toggle Luz/Oscuridad - Slider Arrastreable */}
             <div className="space-y-3 pt-4 border-t border-slate-700">
               <p className="text-slate-100 font-medium">Modo de luz:</p>
               <button
                 type="button"
                 onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                className="relative w-full h-14 bg-slate-700 rounded-full border-2 border-slate-600 transition-all duration-300 hover:border-slate-500 focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                draggable
+                onDragStart={(e) => e.preventDefault()}
+                onDragEnd={(e) => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
+                className="relative w-full h-16 bg-slate-700 rounded-full border-2 border-slate-600 transition-all duration-300 hover:border-slate-500 focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-900 cursor-pointer"
               >
                 {/* Bolita deslizante */}
                 <div
-                  className={`absolute top-1 bottom-1 w-1/2 rounded-full transition-all duration-300 flex items-center justify-center font-semibold text-lg ${
+                  className={`absolute top-1 bottom-1 w-1/2 rounded-full transition-all duration-300 flex items-center justify-center font-bold text-2xl shadow-lg ${
                     themeDraft.mode === 'dark'
                       ? 'left-1 bg-gradient-to-br from-slate-800 to-slate-900'
                       : 'left-1/2 bg-gradient-to-br from-yellow-300 to-yellow-400'
                   }`}
                 >
                   {themeDraft.mode === 'dark' ? '🌙' : '☀️'}
-                </div>
-                {/* Etiqueta de fondo */}
-                <div className="flex items-center justify-between px-6 h-full relative z-0">
-                  <span className={`text-sm font-medium transition-colors ${themeDraft.mode === 'dark' ? 'text-white' : 'text-slate-400'}`}>
-                    Oscuro
-                  </span>
-                  <span className={`text-sm font-medium transition-colors ${themeDraft.mode === 'light' ? 'text-white' : 'text-slate-400'}`}>
-                    Claro
-                  </span>
                 </div>
               </button>
             </div>
