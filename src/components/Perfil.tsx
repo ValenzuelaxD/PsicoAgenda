@@ -649,7 +649,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               </button>
             </div>
 
-            {/* Paleta de colores - Círculos simples */}
+            {/* Paleta de colores - Círculos con mejor indicación */}
             <div className="space-y-3">
               <div className="flex gap-3 flex-wrap">
                 {THEME_PRESET_OPTIONS.map((option) => {
@@ -675,100 +675,56 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                       key={option.preset}
                       type="button"
                       onClick={() => updateThemePreferences({ preset: option.preset })}
-                      className={`w-12 h-12 rounded-full transition-all duration-300 flex-shrink-0 ${
+                      className={`rounded-full transition-all duration-300 flex-shrink-0 flex items-center justify-center relative ${
                         isSelected 
-                          ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' 
-                          : 'hover:ring-1 hover:ring-slate-400 hover:ring-offset-1 hover:ring-offset-slate-800'
+                          ? 'w-16 h-16 ring-4 ring-white ring-offset-4 ring-offset-slate-800 shadow-lg' 
+                          : 'w-12 h-12 hover:scale-110'
                       }`}
                       style={{
                         background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.accent} 100%)`
                       }}
                       title={option.label}
-                    />
+                    >
+                      {isSelected && (
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Vista previa del tema */}
+            {/* Selector de modo de apariencia */}
             <div className="space-y-3 border-t border-slate-700 pt-4">
-              <p className="text-slate-100 font-medium text-sm">Modo de apariencia:</p>
               <div className="flex gap-4">
                 <button
                   type="button"
                   onClick={() => updateThemePreferences({ mode: 'light' })}
-                  className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all text-sm font-medium ${
+                  className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all text-sm font-medium flex items-center justify-center gap-2 ${
                     themeDraft.mode === 'light'
-                      ? 'border-amber-300 bg-amber-300/10 text-amber-100'
+                      ? 'border-amber-300 bg-amber-300/20 text-amber-100 ring-2 ring-amber-300 ring-offset-1 ring-offset-slate-800'
                       : 'border-slate-600 bg-slate-700/40 text-slate-300 hover:border-slate-500'
                   }`}
                 >
-                  ☀️ Claro
+                  <span className="text-lg">☀️</span>
+                  <span>Claro</span>
+                  {themeDraft.mode === 'light' && <span className="ml-auto">✓</span>}
                 </button>
                 <button
                   type="button"
                   onClick={() => updateThemePreferences({ mode: 'dark' })}
-                  className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all text-sm font-medium ${
+                  className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all text-sm font-medium flex items-center justify-center gap-2 ${
                     themeDraft.mode === 'dark'
-                      ? 'border-cyan-300 bg-cyan-300/10 text-cyan-100'
+                      ? 'border-cyan-300 bg-cyan-300/20 text-cyan-100 ring-2 ring-cyan-300 ring-offset-1 ring-offset-slate-800'
                       : 'border-slate-600 bg-slate-700/40 text-slate-300 hover:border-slate-500'
                   }`}
                 >
-                  🌙 Oscuro
+                  <span className="text-lg">🌙</span>
+                  <span>Oscuro</span>
+                  {themeDraft.mode === 'dark' && <span className="ml-auto">✓</span>}
                 </button>
-              </div>
-            </div>
-
-            {/* Vista previa visual del tema */}
-            <div className="space-y-3 border-t border-slate-700 pt-4">
-              <p className="text-slate-100 font-medium text-sm">Vista previa:</p>
-              <div
-                className="w-full h-32 rounded-lg border border-slate-600 overflow-hidden"
-                style={{
-                  background: themeDraft.mode === 'dark' 
-                    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-                    : 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)'
-                }}
-              >
-                <div className="flex h-full items-center justify-between px-6">
-                  <div className="flex gap-2">
-                    <div
-                      className="w-6 h-6 rounded-full"
-                      style={{
-                        background: themeDraft.preset === 'midnight' ? '#20c997' : 
-                                   themeDraft.preset === 'forest' ? '#059669' :
-                                   themeDraft.preset === 'ocean' ? '#0891b2' :
-                                   themeDraft.preset === 'sunset' ? '#ea580c' :
-                                   themeDraft.preset === 'lavender' ? '#d946ef' :
-                                   themeDraft.preset === 'coral' ? '#ff6b35' :
-                                   themeDraft.preset === 'mint' ? '#14b8a6' :
-                                   themeDraft.preset === 'bronze' ? '#d97706' :
-                                   themeDraft.preset === 'rose' ? '#db2777' :
-                                   themeDraft.preset === 'indigo' ? '#6366f1' :
-                                   themeDraft.preset === 'lime' ? '#84cc16' :
-                                   '#06b6d4'
-                      }}
-                    />
-                    <div
-                      className="w-6 h-6 rounded-full"
-                      style={{
-                        background: themeDraft.preset === 'midnight' ? '#8b5cf6' : 
-                                   themeDraft.preset === 'forest' ? '#10b981' :
-                                   themeDraft.preset === 'ocean' ? '#06b6d4' :
-                                   themeDraft.preset === 'sunset' ? '#f97316' :
-                                   themeDraft.preset === 'lavender' ? '#ec4899' :
-                                   themeDraft.preset === 'coral' ? '#ffa07a' :
-                                   themeDraft.preset === 'mint' ? '#67e8f9' :
-                                   themeDraft.preset === 'bronze' ? '#fbbf24' :
-                                   themeDraft.preset === 'rose' ? '#f472b6' :
-                                   themeDraft.preset === 'indigo' ? '#818cf8' :
-                                   themeDraft.preset === 'lime' ? '#cddc39' :
-                                   '#22d3ee'
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs opacity-60">{themeDraft.preset}</span>
-                </div>
               </div>
             </div>
           </CardContent>
