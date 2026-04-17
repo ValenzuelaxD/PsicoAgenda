@@ -648,6 +648,10 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                     coral: { primary: '#ff6b35', accent: '#ffa07a' },
                     mint: { primary: '#14b8a6', accent: '#67e8f9' },
                     bronze: { primary: '#d97706', accent: '#fbbf24' },
+                    rose: { primary: '#db2777', accent: '#f472b6' },
+                    indigo: { primary: '#6366f1', accent: '#818cf8' },
+                    lime: { primary: '#84cc16', accent: '#cddc39' },
+                    cyan: { primary: '#06b6d4', accent: '#22d3ee' },
                   };
 
                   const colors = themeColors[option.preset] || { primary: '#20c997', accent: '#8b5cf6' };
@@ -659,13 +663,13 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                       onClick={() => updateThemePreferences({ preset: option.preset })}
                       className={`rounded-full transition-all duration-200 flex items-center justify-center cursor-pointer ${
                         isSelected 
-                          ? 'ring-4 ring-offset-2 ring-offset-slate-800 ring-teal-400 scale-125' 
-                          : 'hover:scale-110'
+                          ? 'ring-4 ring-offset-2 ring-offset-slate-800 ring-black' 
+                          : 'hover:opacity-80'
                       }`}
                     >
-                      {/* Bolita dividida por colores - SIN TARJETA RECTANGULAR */}
+                      {/* Bolita dividida por colores - MÁS PEQUEÑA */}
                       <div
-                        className="w-16 h-16 rounded-full border-3 border-white/30 shadow-xl"
+                        className="w-12 h-12 rounded-full border-2 border-white/40 shadow-md"
                         style={{
                           background: `linear-gradient(90deg, ${colors.primary} 50%, ${colors.accent} 50%)`
                         }}
@@ -676,30 +680,30 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               </div>
             </div>
 
-            {/* Toggle Luz/Oscuridad - Switch Style */}
+            {/* Toggle Luz/Oscuridad - Switch Moderno */}
             <div className="space-y-3 pt-4 border-t border-slate-700">
               <p className="text-slate-100 font-medium">Modo de luz:</p>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center">
                 <button
                   type="button"
                   onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                  className={`relative w-16 h-8 rounded-full transition-all duration-500 ease-in-out shadow-md focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer ${
+                  className={`relative w-24 h-12 rounded-full transition-all duration-500 ease-in-out shadow-md focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer flex items-center px-2 ${
                     themeDraft.mode === 'light'
                       ? 'bg-purple-500 hover:bg-purple-600'
                       : 'bg-slate-600 hover:bg-slate-700'
                   }`}
                 >
-                  {/* Thumb circular */}
+                  {/* Iconos fijos en los extremos */}
+                  <div className="absolute left-2 text-xl z-0">🌙</div>
+                  <div className="absolute right-2 text-xl z-0">☀️</div>
+                  
+                  {/* Thumb circular deslizante */}
                   <div
-                    className={`absolute top-1 bottom-1 w-6 h-6 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out ${
-                      themeDraft.mode === 'light' ? 'translate-x-8' : 'translate-x-1'
+                    className={`absolute top-1 bottom-1 w-10 h-10 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out z-10 ${
+                      themeDraft.mode === 'light' ? 'translate-x-12' : 'translate-x-0'
                     }`}
                   />
                 </button>
-                <div className="flex text-sm gap-2 text-slate-400">
-                  <span className={themeDraft.mode === 'dark' ? 'text-slate-100' : 'text-slate-400'}>🌙</span>
-                  <span className={themeDraft.mode === 'light' ? 'text-slate-100' : 'text-slate-400'}>☀️</span>
-                </div>
               </div>
             </div>
           </CardContent>

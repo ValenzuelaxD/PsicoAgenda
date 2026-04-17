@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export type ThemeMode = 'dark' | 'light';
-export type ThemePreset = 'midnight' | 'forest' | 'ocean' | 'sunset' | 'lavender' | 'coral' | 'mint' | 'bronze';
+export type ThemePreset = 'midnight' | 'forest' | 'ocean' | 'sunset' | 'lavender' | 'coral' | 'mint' | 'bronze' | 'rose' | 'indigo' | 'lime' | 'cyan';
 
 export interface ThemePreferences {
   preset: ThemePreset;
@@ -84,6 +84,30 @@ export const THEME_PRESET_OPTIONS: Array<{
     label: 'Bronce clásico',
     description: 'Tonos marrón y oro',
     preview: 'from-amber-950 via-yellow-950 to-orange-900',
+  },
+  {
+    preset: 'rose',
+    label: 'Rosa romántico',
+    description: 'Rosa suave y rojo',
+    preview: 'from-rose-950 via-pink-900 to-red-900',
+  },
+  {
+    preset: 'indigo',
+    label: 'Índigo profundo',
+    description: 'Azul oscuro y púrpura',
+    preview: 'from-indigo-950 via-blue-950 to-purple-900',
+  },
+  {
+    preset: 'lime',
+    label: 'Lima vibrante',
+    description: 'Verde lima y amarillo',
+    preview: 'from-lime-950 via-green-950 to-yellow-900',
+  },
+  {
+    preset: 'cyan',
+    label: 'Cyan futurista',
+    description: 'Cyan brillante y azul',
+    preview: 'from-cyan-950 via-blue-950 to-teal-900',
   },
 ];
 
@@ -246,6 +270,86 @@ const THEME_PALETTES: Record<ThemePreset, Record<ThemeMode, ThemePalette>> = {
       border: '#fcd34d',
       text: '#0f172a',
       muted: '#78350f',
+    },
+  },
+  rose: {
+    dark: {
+      background: '#500724',
+      backgroundSecondary: '#111827',
+      surface: '#6b1b35',
+      surfaceStrong: '#3f0620',
+      border: '#be185d',
+      text: '#fce7f3',
+      muted: '#fbcfe8',
+    },
+    light: {
+      background: '#fff0f6',
+      backgroundSecondary: '#fecdd3',
+      surface: '#ffffff',
+      surfaceStrong: '#fff8fa',
+      border: '#fbcfe8',
+      text: '#0f172a',
+      muted: '#831843',
+    },
+  },
+  indigo: {
+    dark: {
+      background: '#1e1b4b',
+      backgroundSecondary: '#111827',
+      surface: '#312e81',
+      surfaceStrong: '#0f0d2a',
+      border: '#4f46e5',
+      text: '#e0e7ff',
+      muted: '#c7d2fe',
+    },
+    light: {
+      background: '#f0f4ff',
+      backgroundSecondary: '#e0e7ff',
+      surface: '#ffffff',
+      surfaceStrong: '#f8faff',
+      border: '#c7d2fe',
+      text: '#0f172a',
+      muted: '#3730a3',
+    },
+  },
+  lime: {
+    dark: {
+      background: '#3d5a1d',
+      backgroundSecondary: '#111827',
+      surface: '#4d7324',
+      surfaceStrong: '#263a0b',
+      border: '#84cc16',
+      text: '#f2fe16',
+      muted: '#d4fc79',
+    },
+    light: {
+      background: '#f7fee7',
+      backgroundSecondary: '#dcfce7',
+      surface: '#ffffff',
+      surfaceStrong: '#fefef0',
+      border: '#d4fc79',
+      text: '#0f172a',
+      muted: '#3f6212',
+    },
+  },
+  cyan: {
+    dark: {
+      background: '#0d3c42',
+      backgroundSecondary: '#111827',
+      surface: '#164450',
+      surfaceStrong: '#082838',
+      border: '#06b6d4',
+      text: '#cffafe',
+      muted: '#a5f3fc',
+    },
+    light: {
+      background: '#ecfdf5',
+      backgroundSecondary: '#cffafe',
+      surface: '#ffffff',
+      surfaceStrong: '#f0fdfa',
+      border: '#a5f3fc',
+      text: '#0f172a',
+      muted: '#0d7a78',
     },
   },
 };
