@@ -622,7 +622,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
           </Card>
         )}
 
-        {/* Personalización de Tema - Simplificado */}
+        {/* Personalización de Tema - Simplificado con Bolitas y Slider */}
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
           <CardHeader>
             <CardTitle className="text-slate-100">Personalización de Tema</CardTitle>
@@ -645,6 +645,16 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                         ? 'linear-gradient(135deg, #3f1d16, #4c2217)'
                         : 'linear-gradient(135deg, #0f172a, #111827)';
 
+                  // Colores específicos para cada tema
+                  const themeColors: Record<string, { primary: string; accent: string }> = {
+                    midnight: { primary: '#20c997', accent: '#8b5cf6' },
+                    forest: { primary: '#059669', accent: '#10b981' },
+                    ocean: { primary: '#0891b2', accent: '#06b6d4' },
+                    sunset: { primary: '#ea580c', accent: '#f97316' },
+                  };
+
+                  const colors = themeColors[option.preset] || { primary: '#20c997', accent: '#8b5cf6' };
+
                   return (
                     <button
                       key={option.preset}
@@ -661,39 +671,51 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                     >
                       <p className="text-white font-semibold text-sm">{option.label}</p>
                       <p className="text-white/60 text-xs mt-1">{option.description}</p>
+                      {/* Bolitas de Colores */}
+                      <div className="flex gap-2 mt-3">
+                        <div
+                          className="w-5 h-5 rounded-full border-2 border-white/40 shadow-lg"
+                          style={{ backgroundColor: colors.primary }}
+                        />
+                        <div
+                          className="w-5 h-5 rounded-full border-2 border-white/40 shadow-lg"
+                          style={{ backgroundColor: colors.accent }}
+                        />
+                      </div>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Toggle Luz/Oscuridad */}
+            {/* Toggle Luz/Oscuridad - Slider con Bolita */}
             <div className="space-y-3 pt-4 border-t border-slate-700">
               <p className="text-slate-100 font-medium">Modo de luz:</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  onClick={() => updateThemePreferences({ mode: 'dark' })}
-                  className={`transition-all ${
+              <button
+                type="button"
+                onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
+                className="relative w-full h-14 bg-slate-700 rounded-full border-2 border-slate-600 transition-all duration-300 hover:border-slate-500 focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+              >
+                {/* Bolita deslizante */}
+                <div
+                  className={`absolute top-1 bottom-1 w-1/2 rounded-full transition-all duration-300 flex items-center justify-center font-semibold text-lg ${
                     themeDraft.mode === 'dark'
-                      ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                      : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                      ? 'left-1 bg-gradient-to-br from-slate-800 to-slate-900'
+                      : 'left-1/2 bg-gradient-to-br from-yellow-300 to-yellow-400'
                   }`}
                 >
-                  🌙 Oscuro
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => updateThemePreferences({ mode: 'light' })}
-                  className={`transition-all ${
-                    themeDraft.mode === 'light'
-                      ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                      : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
-                  }`}
-                >
-                  ☀️ Claro
-                </Button>
-              </div>
+                  {themeDraft.mode === 'dark' ? '🌙' : '☀️'}
+                </div>
+                {/* Etiqueta de fondo */}
+                <div className="flex items-center justify-between px-6 h-full relative z-0">
+                  <span className={`text-sm font-medium transition-colors ${themeDraft.mode === 'dark' ? 'text-white' : 'text-slate-400'}`}>
+                    Oscuro
+                  </span>
+                  <span className={`text-sm font-medium transition-colors ${themeDraft.mode === 'light' ? 'text-white' : 'text-slate-400'}`}>
+                    Claro
+                  </span>
+                </div>
+              </button>
             </div>
           </CardContent>
         </Card>
