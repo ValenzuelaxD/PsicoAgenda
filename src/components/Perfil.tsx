@@ -634,23 +634,20 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
             {/* Elige un Tema */}
             <div className="space-y-3">
               <p className="text-slate-100 font-medium">Elige un tema:</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="flex flex-wrap gap-6 justify-center">
                 {THEME_PRESET_OPTIONS.map((option) => {
                   const isSelected = themeDraft.preset === option.preset;
-                  const previewBackground = option.preset === 'forest'
-                    ? 'linear-gradient(135deg, #052e2b, #11332e)'
-                    : option.preset === 'ocean'
-                      ? 'linear-gradient(135deg, #082f49, #123352)'
-                      : option.preset === 'sunset'
-                        ? 'linear-gradient(135deg, #3f1d16, #4c2217)'
-                        : 'linear-gradient(135deg, #0f172a, #111827)';
 
-                  // Colores específicos para cada tema
+                  // Colores específicos para cada tema - MÁS OPCIONES
                   const themeColors: Record<string, { primary: string; accent: string }> = {
                     midnight: { primary: '#20c997', accent: '#8b5cf6' },
                     forest: { primary: '#059669', accent: '#10b981' },
                     ocean: { primary: '#0891b2', accent: '#06b6d4' },
                     sunset: { primary: '#ea580c', accent: '#f97316' },
+                    lavender: { primary: '#d946ef', accent: '#ec4899' },
+                    coral: { primary: '#ff6b35', accent: '#ffa07a' },
+                    mint: { primary: '#14b8a6', accent: '#67e8f9' },
+                    bronze: { primary: '#d97706', accent: '#fbbf24' },
                   };
 
                   const colors = themeColors[option.preset] || { primary: '#20c997', accent: '#8b5cf6' };
@@ -660,18 +657,15 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                       key={option.preset}
                       type="button"
                       onClick={() => updateThemePreferences({ preset: option.preset })}
-                      className={`rounded-2xl border-2 p-4 transition-all duration-200 flex flex-col items-center justify-center cursor-pointer h-24 ${
+                      className={`rounded-full transition-all duration-200 flex items-center justify-center cursor-pointer ${
                         isSelected 
-                          ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-teal-400 scale-105 border-teal-400' 
-                          : 'border-slate-600 hover:border-slate-500'
+                          ? 'ring-4 ring-offset-2 ring-offset-slate-800 ring-teal-400 scale-125' 
+                          : 'hover:scale-110'
                       }`}
-                      style={{
-                        backgroundImage: previewBackground,
-                      }}
                     >
-                      {/* Bolita dividida por colores */}
+                      {/* Bolita dividida por colores - SIN TARJETA RECTANGULAR */}
                       <div
-                        className="w-12 h-12 rounded-full border-2 border-white/40 shadow-lg"
+                        className="w-16 h-16 rounded-full border-3 border-white/30 shadow-xl"
                         style={{
                           background: `linear-gradient(90deg, ${colors.primary} 50%, ${colors.accent} 50%)`
                         }}
@@ -682,28 +676,31 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               </div>
             </div>
 
-            {/* Toggle Luz/Oscuridad - Slider Arrastreable */}
+            {/* Toggle Luz/Oscuridad - Switch Style */}
             <div className="space-y-3 pt-4 border-t border-slate-700">
               <p className="text-slate-100 font-medium">Modo de luz:</p>
-              <button
-                type="button"
-                onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                draggable
-                onDragStart={(e) => e.preventDefault()}
-                onDragEnd={(e) => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                className="relative w-full h-16 bg-slate-700 rounded-full border-2 border-slate-600 transition-all duration-300 hover:border-slate-500 focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-900 cursor-pointer"
-              >
-                {/* Bolita deslizante */}
-                <div
-                  className={`absolute top-1 bottom-1 w-1/2 rounded-full transition-all duration-300 flex items-center justify-center font-bold text-2xl shadow-lg ${
-                    themeDraft.mode === 'dark'
-                      ? 'left-1 bg-gradient-to-br from-slate-800 to-slate-900'
-                      : 'left-1/2 bg-gradient-to-br from-yellow-300 to-yellow-400'
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
+                  className={`relative w-16 h-8 rounded-full transition-all duration-500 ease-in-out shadow-md focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer ${
+                    themeDraft.mode === 'light'
+                      ? 'bg-purple-500 hover:bg-purple-600'
+                      : 'bg-slate-600 hover:bg-slate-700'
                   }`}
                 >
-                  {themeDraft.mode === 'dark' ? '🌙' : '☀️'}
+                  {/* Thumb circular */}
+                  <div
+                    className={`absolute top-1 bottom-1 w-6 h-6 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out ${
+                      themeDraft.mode === 'light' ? 'translate-x-8' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <div className="flex text-sm gap-2 text-slate-400">
+                  <span className={themeDraft.mode === 'dark' ? 'text-slate-100' : 'text-slate-400'}>🌙</span>
+                  <span className={themeDraft.mode === 'light' ? 'text-slate-100' : 'text-slate-400'}>☀️</span>
                 </div>
-              </button>
+              </div>
             </div>
           </CardContent>
         </Card>

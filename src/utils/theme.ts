@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export type ThemeMode = 'dark' | 'light';
-export type ThemePreset = 'midnight' | 'forest' | 'ocean' | 'sunset';
+export type ThemePreset = 'midnight' | 'forest' | 'ocean' | 'sunset' | 'lavender' | 'coral' | 'mint' | 'bronze';
 
 export interface ThemePreferences {
   preset: ThemePreset;
@@ -60,6 +60,30 @@ export const THEME_PRESET_OPTIONS: Array<{
     label: 'Atardecer cálido',
     description: 'Tonos tierra con energía suave',
     preview: 'from-rose-950 via-orange-950 to-amber-900',
+  },
+  {
+    preset: 'lavender',
+    label: 'Lavanda elegante',
+    description: 'Púrpura suave y rosa',
+    preview: 'from-purple-950 via-slate-900 to-pink-900',
+  },
+  {
+    preset: 'coral',
+    label: 'Coral vibrante',
+    description: 'Coral energético y naranja',
+    preview: 'from-red-950 via-orange-900 to-amber-800',
+  },
+  {
+    preset: 'mint',
+    label: 'Menta fresca',
+    description: 'Verde menta y aguamarina',
+    preview: 'from-teal-950 via-green-950 to-cyan-900',
+  },
+  {
+    preset: 'bronze',
+    label: 'Bronce clásico',
+    description: 'Tonos marrón y oro',
+    preview: 'from-amber-950 via-yellow-950 to-orange-900',
   },
 ];
 
@@ -142,6 +166,86 @@ const THEME_PALETTES: Record<ThemePreset, Record<ThemeMode, ThemePalette>> = {
       border: '#fed7aa',
       text: '#0f172a',
       muted: '#57534e',
+    },
+  },
+  lavender: {
+    dark: {
+      background: '#3b0764',
+      backgroundSecondary: '#111827',
+      surface: '#5b21b6',
+      surfaceStrong: '#2d0a4e',
+      border: '#9333ea',
+      text: '#f3e8ff',
+      muted: '#d8b4fe',
+    },
+    light: {
+      background: '#faf5ff',
+      backgroundSecondary: '#f3e8ff',
+      surface: '#ffffff',
+      surfaceStrong: '#fdf8ff',
+      border: '#e9d5ff',
+      text: '#0f172a',
+      muted: '#6b21a8',
+    },
+  },
+  coral: {
+    dark: {
+      background: '#5f1f13',
+      backgroundSecondary: '#111827',
+      surface: '#7c2d12',
+      surfaceStrong: '#431407',
+      border: '#ea580c',
+      text: '#ffedd5',
+      muted: '#fbcfe8',
+    },
+    light: {
+      background: '#fff7ed',
+      backgroundSecondary: '#fed7aa',
+      surface: '#ffffff',
+      surfaceStrong: '#fffaf4',
+      border: '#fed7aa',
+      text: '#0f172a',
+      muted: '#92400e',
+    },
+  },
+  mint: {
+    dark: {
+      background: '#0d3838',
+      backgroundSecondary: '#0f172a',
+      surface: '#134e4a',
+      surfaceStrong: '#082f2f',
+      border: '#14b8a6',
+      text: '#ccfbf1',
+      muted: '#99f6e4',
+    },
+    light: {
+      background: '#f0fdfa',
+      backgroundSecondary: '#ccfbf1',
+      surface: '#ffffff',
+      surfaceStrong: '#f8fefc',
+      border: '#99f6e4',
+      text: '#0f172a',
+      muted: '#0d5d5d',
+    },
+  },
+  bronze: {
+    dark: {
+      background: '#44280d',
+      backgroundSecondary: '#111827',
+      surface: '#5a370d',
+      surfaceStrong: '#2d1800',
+      border: '#d97706',
+      text: '#fef3c7',
+      muted: '#fcd34d',
+    },
+    light: {
+      background: '#fefce8',
+      backgroundSecondary: '#fef08a',
+      surface: '#ffffff',
+      surfaceStrong: '#fffbf0',
+      border: '#fcd34d',
+      text: '#0f172a',
+      muted: '#78350f',
     },
   },
 };
