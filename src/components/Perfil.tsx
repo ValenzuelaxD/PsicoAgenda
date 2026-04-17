@@ -708,27 +708,32 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
             {/* Toggle Luz/Oscuridad - Switch Moderno */}
             <div className="space-y-3 pt-4 border-t border-slate-700">
               <p className="text-slate-100 font-medium">Modo de luz:</p>
-              <div className="flex items-center">
+              <div className="flex items-center gap-4">
+                {/* Contenedor del switch */}
                 <button
                   type="button"
                   onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                  className={`relative w-32 h-14 rounded-full transition-all duration-500 ease-in-out shadow-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer flex items-center justify-between px-3 overflow-hidden ${
+                  className={`relative w-28 h-14 rounded-full transition-all duration-500 ease-in-out shadow-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer ${
                     themeDraft.mode === 'light'
-                      ? 'bg-gradient-to-r from-purple-400 to-purple-500 hover:from-purple-500 hover:to-purple-600'
-                      : 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800'
+                      ? 'bg-purple-500 hover:bg-purple-600'
+                      : 'bg-slate-600 hover:bg-slate-700'
                   }`}
                 >
-                  {/* Iconos en los extremos */}
-                  <div className="text-white text-xl z-0 relative">🌙</div>
-                  <div className="text-white text-xl z-0 relative">☀️</div>
-                  
                   {/* Thumb circular deslizante */}
                   <div
-                    className={`absolute top-1 bottom-1 w-12 h-12 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out z-10 ${
-                      themeDraft.mode === 'light' ? 'translate-x-16' : 'translate-x-1'
+                    className={`absolute top-1 bottom-1 w-12 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out flex items-center justify-center text-lg ${
+                      themeDraft.mode === 'light' ? 'translate-x-14' : 'translate-x-1'
                     }`}
-                  />
+                  >
+                    {themeDraft.mode === 'light' ? '☀️' : '🌙'}
+                  </div>
                 </button>
+
+                {/* Iconos indicadores a los lados */}
+                <div className="flex items-center gap-3">
+                  <span className={`text-2xl transition-all ${themeDraft.mode === 'dark' ? 'text-slate-100 opacity-100' : 'text-slate-400 opacity-60'}`}>🌙</span>
+                  <span className={`text-2xl transition-all ${themeDraft.mode === 'light' ? 'text-slate-100 opacity-100' : 'text-slate-400 opacity-60'}`}>☀️</span>
+                </div>
               </div>
             </div>
           </CardContent>
