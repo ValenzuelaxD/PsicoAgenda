@@ -73,6 +73,21 @@ export function NotificationCenter({ userType, userName, userPhoto }: Notificati
     return partes.slice(0, 2).map((parte) => parte[0]?.toUpperCase() || '').join('') || 'U';
   };
 
+  const getEtiquetaRol = () => {
+    switch (userType) {
+      case 'paciente':
+        return 'paciente';
+      case 'psicologo':
+        return 'psicólogo/a';
+      default:
+        return 'administrador/a';
+    }
+  };
+
+  const handleAvatarClick = () => {
+    toast.info(`Usted es ${getEtiquetaRol()} ${userName}`);
+  };
+
   const fetchNotificaciones = useCallback(async (options: { allowToast?: boolean; silentOnError?: boolean } = {}) => {
     const { allowToast = false, silentOnError = false } = options;
     try {
@@ -285,12 +300,19 @@ export function NotificationCenter({ userType, userName, userPhoto }: Notificati
     <>
       {/* Botón de notificaciones */}
       <div className="flex items-center gap-2 shrink-0">
-        <Avatar className="size-9 border border-slate-600 bg-slate-700">
+        <button
+          type="button"
+          onClick={handleAvatarClick}
+          className="rounded-full focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-800"
+          aria-label={`Ver perfil de ${userName}`}
+        >
+          <Avatar className="size-9 border border-slate-600 bg-slate-700 transition-transform duration-200 hover:scale-105">
           <AvatarImage src={userPhoto || undefined} alt={userName} />
           <AvatarFallback className="bg-slate-700 text-slate-200 text-[11px] font-semibold">
             {getInitialesUsuario(userName)}
           </AvatarFallback>
-        </Avatar>
+          </Avatar>
+        </button>
 
         <motion.button
           onClick={() => setMostrarPanel(!mostrarPanel)}
