@@ -638,7 +638,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                 {THEME_PRESET_OPTIONS.map((option) => {
                   const isSelected = themeDraft.preset === option.preset;
 
-                  // Colores específicos para cada tema - MÁS OPCIONES
+                  // Colores específicos para cada tema
                   const themeColors: Record<string, { primary: string; accent: string }> = {
                     midnight: { primary: '#20c997', accent: '#8b5cf6' },
                     forest: { primary: '#059669', accent: '#10b981' },
@@ -661,19 +661,44 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                       key={option.preset}
                       type="button"
                       onClick={() => updateThemePreferences({ preset: option.preset })}
-                      className={`rounded-full transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                      className={`relative rounded-full transition-all duration-300 cursor-pointer group ${
                         isSelected 
-                          ? 'ring-4 ring-offset-2 ring-offset-slate-800 ring-black' 
-                          : 'hover:opacity-80'
+                          ? 'scale-110' 
+                          : 'hover:scale-105'
                       }`}
                     >
-                      {/* Bolita dividida por colores - MÁS PEQUEÑA */}
+                      {/* Glow de fondo cuando está seleccionado */}
+                      {isSelected && (
+                        <div
+                          className="absolute inset-0 rounded-full blur-lg opacity-60 animate-pulse"
+                          style={{
+                            background: `linear-gradient(90deg, ${colors.primary} 50%, ${colors.accent} 50%)`,
+                            width: '64px',
+                            height: '64px',
+                            left: '-2px',
+                            top: '-2px',
+                          }}
+                        />
+                      )}
+                      
+                      {/* Círculo principal */}
                       <div
-                        className="w-12 h-12 rounded-full border-2 border-white/40 shadow-md"
+                        className={`relative w-12 h-12 rounded-full border-3 shadow-lg transition-all duration-300 ${
+                          isSelected 
+                            ? 'border-white' 
+                            : 'border-white/30 hover:border-white/50'
+                        }`}
                         style={{
                           background: `linear-gradient(90deg, ${colors.primary} 50%, ${colors.accent} 50%)`
                         }}
-                      />
+                      >
+                        {/* Check mark cuando está seleccionado */}
+                        {isSelected && (
+                          <div className="absolute inset-0 flex items-center justify-center text-white font-bold">
+                            ✓
+                          </div>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -687,20 +712,20 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                 <button
                   type="button"
                   onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                  className={`relative w-24 h-12 rounded-full transition-all duration-500 ease-in-out shadow-md focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer flex items-center px-2 ${
+                  className={`relative w-32 h-14 rounded-full transition-all duration-500 ease-in-out shadow-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer flex items-center justify-between px-3 overflow-hidden ${
                     themeDraft.mode === 'light'
-                      ? 'bg-purple-500 hover:bg-purple-600'
-                      : 'bg-slate-600 hover:bg-slate-700'
+                      ? 'bg-gradient-to-r from-purple-400 to-purple-500 hover:from-purple-500 hover:to-purple-600'
+                      : 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800'
                   }`}
                 >
-                  {/* Iconos fijos en los extremos */}
-                  <div className="absolute left-2 text-xl z-0">🌙</div>
-                  <div className="absolute right-2 text-xl z-0">☀️</div>
+                  {/* Iconos en los extremos */}
+                  <div className="text-white text-xl z-0 relative">🌙</div>
+                  <div className="text-white text-xl z-0 relative">☀️</div>
                   
                   {/* Thumb circular deslizante */}
                   <div
-                    className={`absolute top-1 bottom-1 w-10 h-10 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out z-10 ${
-                      themeDraft.mode === 'light' ? 'translate-x-12' : 'translate-x-0'
+                    className={`absolute top-1 bottom-1 w-12 h-12 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out z-10 ${
+                      themeDraft.mode === 'light' ? 'translate-x-16' : 'translate-x-1'
                     }`}
                   />
                 </button>
