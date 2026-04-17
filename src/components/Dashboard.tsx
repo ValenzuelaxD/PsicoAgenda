@@ -192,9 +192,16 @@ export function Dashboard({
             backgroundAttachment: 'fixed'
           }}
         >
-          {/* Overlay para legibilidad */}
+          {/* Overlay dinámico según el modo */}
           {imagenTema && (
-            <div className="absolute inset-0 bg-black/40 rounded-md pointer-events-none" />
+            <div 
+              className="absolute inset-0 rounded-md pointer-events-none" 
+              style={{
+                backgroundColor: themePreferences.mode === 'light' 
+                  ? 'rgba(255, 255, 255, 0.15)' 
+                  : 'rgba(0, 0, 0, 0.4)'
+              }}
+            />
           )}
           
           <div className="relative z-10">
