@@ -702,19 +702,28 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
 
             <div className="space-y-3 border-t border-slate-700 pt-4">
               <p className="text-slate-100 font-medium">Modo de apariencia:</p>
-              <label className="relative inline-block h-12 w-28 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="peer sr-only"
-                  checked={themeDraft.mode === 'dark'}
-                  onChange={(event) => updateThemePreferences({ mode: event.target.checked ? 'dark' : 'light' })}
+              <div className="flex items-center gap-8">
+                <button
+                  type="button"
+                  onClick={() => updateThemePreferences({ mode: 'light' })}
+                  className={`w-14 h-14 rounded-full transition-all duration-300 shadow-lg ${
+                    themeDraft.mode === 'light'
+                      ? 'bg-white ring-2 ring-offset-2 ring-offset-slate-800 ring-amber-300 scale-110'
+                      : 'bg-gray-300 hover:bg-gray-400'
+                  }`}
+                  title="Modo claro"
                 />
-
-                <span className="absolute inset-0 rounded-full border border-slate-500 bg-slate-700/90 shadow-inner transition-colors duration-300 peer-checked:border-indigo-300 peer-checked:bg-indigo-500/95" />
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base leading-none">☀️</span>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-base leading-none">🌙</span>
-                <span className="pointer-events-none absolute left-1 top-1 h-10 w-10 rounded-full bg-black shadow-md transition-transform duration-300 ease-out peer-checked:translate-x-16" />
-              </label>
+                <button
+                  type="button"
+                  onClick={() => updateThemePreferences({ mode: 'dark' })}
+                  className={`w-14 h-14 rounded-full transition-all duration-300 shadow-lg ${
+                    themeDraft.mode === 'dark'
+                      ? 'bg-black ring-2 ring-offset-2 ring-offset-slate-800 ring-cyan-300 scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600'
+                  }`}
+                  title="Modo oscuro"
+                />
+              </div>
             </div>
 
 
