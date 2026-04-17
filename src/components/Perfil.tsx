@@ -708,33 +708,27 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
             {/* Toggle Luz/Oscuridad - Switch Moderno */}
             <div className="space-y-3 pt-4 border-t border-slate-700">
               <p className="text-slate-100 font-medium">Modo de luz:</p>
-              <div className="flex items-center gap-4">
-                {/* Contenedor del switch */}
-                <button
-                  type="button"
-                  onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                  className={`relative w-28 h-14 rounded-full transition-all duration-500 ease-in-out shadow-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 cursor-pointer ${
-                    themeDraft.mode === 'light'
-                      ? 'bg-purple-500 hover:bg-purple-600'
-                      : 'bg-slate-600 hover:bg-slate-700'
-                  }`}
-                >
-                  {/* Thumb circular deslizante */}
-                  <div
-                    className={`absolute top-1 bottom-1 w-12 rounded-full bg-black shadow-lg transition-all duration-500 ease-in-out flex items-center justify-center text-lg ${
-                      themeDraft.mode === 'light' ? 'translate-x-14' : 'translate-x-1'
-                    }`}
-                  >
-                    {themeDraft.mode === 'light' ? '☀️' : '🌙'}
-                  </div>
-                </button>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={themeDraft.mode === 'light'}
+                onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
+                className={`relative h-12 w-28 rounded-full border transition-all duration-300 ease-out shadow-inner focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 ${
+                  themeDraft.mode === 'light'
+                    ? 'border-purple-300 bg-purple-500/95'
+                    : 'border-slate-500 bg-slate-700/95'
+                }`}
+              >
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg leading-none">🌙</span>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg leading-none">☀️</span>
 
-                {/* Iconos indicadores a los lados */}
-                <div className="flex items-center gap-3">
-                  <span className={`text-2xl transition-all ${themeDraft.mode === 'dark' ? 'text-slate-100 opacity-100' : 'text-slate-400 opacity-60'}`}>🌙</span>
-                  <span className={`text-2xl transition-all ${themeDraft.mode === 'light' ? 'text-slate-100 opacity-100' : 'text-slate-400 opacity-60'}`}>☀️</span>
-                </div>
-              </div>
+                {/* Thumb circular que se desplaza entre extremos */}
+                <span
+                  className={`absolute top-1 h-10 w-10 rounded-full bg-black shadow-md transition-transform duration-300 ease-out ${
+                    themeDraft.mode === 'light' ? 'translate-x-[62px]' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
           </CardContent>
         </Card>
