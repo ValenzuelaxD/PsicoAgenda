@@ -16,7 +16,7 @@ import {
 } from './ui/dialog';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../utils/api';
-import { ThemePreferences, THEME_PRESET_OPTIONS, buildThemePalette, normalizeThemePreferences, saveThemePreferences } from '../utils/theme';
+import { ThemePreferences, THEME_PRESET_OPTIONS, normalizeThemePreferences, saveThemePreferences } from '../utils/theme';
 
 interface PerfilProps {
   userName: string;
@@ -338,18 +338,6 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
     saveThemePreferences(nextTheme);
     onThemeUpdated(nextTheme);
   };
-
-  const handleThemeModeToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const darkEnabled = event.target.checked;
-    updateThemePreferences({ mode: darkEnabled ? 'dark' : 'light' });
-    console.log(darkEnabled ? 'Modo oscuro 🌙' : 'Modo claro ☀️');
-    document.body.classList.toggle('tema-oscuro', darkEnabled);
-    document.body.classList.toggle('tema-claro', !darkEnabled);
-  };
-
-  const themePalette = buildThemePalette(themeDraft);
-
-
 
   if (isLoading) {
     return (
@@ -712,26 +700,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               </div>
             </div>
 
-            {/* Toggle Luz/Oscuridad - Switch Moderno */}
-            <div className="space-y-3 pt-4 border-t border-slate-700">
-              <p className="text-slate-100 font-medium">Modo de luz:</p>
-              <label className="relative inline-block h-14 w-32 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="peer sr-only"
-                  checked={themeDraft.mode === 'dark'}
-                  onChange={handleThemeModeToggle}
-                />
 
-                <span className="slider absolute inset-0 rounded-full border border-slate-500 bg-slate-700/90 shadow-inner transition-colors duration-300 peer-checked:border-purple-300 peer-checked:bg-purple-500/95" />
-
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg leading-none">☀️</span>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg leading-none">🌙</span>
-
-                {/* Thumb circular: izquierda por defecto, derecha cuando checked */}
-                <span className="pointer-events-none absolute left-1 top-1 h-12 w-12 rounded-full bg-black shadow-md transition-transform duration-300 ease-out peer-checked:translate-x-[76px]" />
-              </label>
-            </div>
           </CardContent>
         </Card>
 
