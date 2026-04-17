@@ -5,6 +5,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { LoadingSplash } from './components/LoadingSplash';
 import { Toaster } from 'sonner';
 import { API_ENDPOINTS } from './utils/api';
+import { ThemePreferences, loadThemePreferences, saveThemePreferences } from './utils/theme';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -12,6 +13,7 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [userType, setUserType] = useState<'psicologo' | 'paciente' | 'admin'>('paciente');
   const [userPhoto, setUserPhoto] = useState('');
+  const [themePreferences, setThemePreferences] = useState<ThemePreferences>(() => loadThemePreferences());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -60,6 +62,15 @@ export default function App() {
     setIsAuthenticated(true);
     setUserName(name);
     setUserType(type);
+  };
+
+  const handleThemeUpdated = (nextTheme: ThemePreferences) => {
+    const normalizedTheme = {
+      ...nextTheme,
+    };
+
+    setThemePreferences(normalizedTheme);
+    saveThemePreferences(normalizedTheme);
   };
 
   const refreshSessionProfile = useCallback(async () => {
@@ -149,8 +160,10 @@ export default function App() {
           userName={userName} 
           userType={userType} 
           userPhoto={userPhoto}
+          themePreferences={themePreferences}
           onLogout={handleLogout} 
           onProfileUpdated={refreshSessionProfile}
+          onThemeUpdated={handleThemeUpdated}
         />
       )}
       <Toaster position="top-right" richColors />

@@ -16,19 +16,30 @@ import { ProgramarCita } from './ProgramarCita';
 import { NotificationCenter } from './NotificationCenter';
 import { AdminSolicitudes } from './AdminSolicitudes';
 import { ReportesCitas } from './ReportesCitas';
+import { ThemePreferences, buildThemeShellStyle, buildThemeSurfaceStyle } from '../utils/theme';
 
 interface DashboardProps {
   userName: string;
   userType: 'psicologo' | 'paciente' | 'admin';
   userPhoto: string;
+  themePreferences: ThemePreferences;
   onLogout: () => void;
   onProfileUpdated: () => void;
+  onThemeUpdated: (theme: ThemePreferences) => void;
 }
 
 export type ViewType = 'inicio' | 'agendar' | 'citas' | 'historial' | 'perfil' | 
   'registro-paciente' | 'buscar-paciente' | 'bitacora' | 'mi-agenda' | 'programar-cita' | 'reportes' | 'admin-solicitudes';
 
-export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUpdated }: DashboardProps) {
+export function Dashboard({
+  userName,
+  userType,
+  userPhoto,
+  themePreferences,
+  onLogout,
+  onProfileUpdated,
+  onThemeUpdated,
+}: DashboardProps) {
   const [currentView, setCurrentView] = useState<ViewType>(
     userType === 'admin' ? 'admin-solicitudes' : 'inicio'
   );
@@ -58,7 +69,15 @@ export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUp
       case 'historial':
         return <Historial />;
       case 'perfil':
-        return <Perfil userName={userName} userType={userType} onProfileUpdated={onProfileUpdated} />;
+        return (
+          <Perfil
+            userName={userName}
+            userType={userType}
+            onProfileUpdated={onProfileUpdated}
+            themePreferences={themePreferences}
+            onThemeUpdated={onThemeUpdated}
+          />
+        );
       case 'registro-paciente':
         return <RegistroPaciente onNavigate={handleNavigate} />;
       case 'buscar-paciente':
@@ -79,7 +98,7 @@ export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUp
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-900">
+    <div className="flex min-h-screen" style={buildThemeShellStyle(themePreferences)}>
       {/* Sidebar (desktop only) */}
       {!isMobile && (
         <Sidebar
@@ -87,6 +106,7 @@ export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUp
           userType={userType}
           onNavigate={handleNavigate}
           onLogout={onLogout}
+          themePreferences={themePreferences}
         />
       )}
 
@@ -98,10 +118,10 @@ export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUp
             onClick={() => setDrawerOpen(false)}
             aria-hidden
           />
-          <aside className="fixed left-0 top-0 z-50 h-[100dvh] w-[85vw] max-w-72 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-slate-100">Menu</h3>
-              <button onClick={() => setDrawerOpen(false)} className="text-slate-100">
+          <aside className="fixed left-0 top-0 z-50 h-[100dvh] w-[85vw] max-w-72 shadow-2xl flex flex-col" style={buildThemeSurfaceStyle(themePreferences)}>
+            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--theme-border)' }}>
+              <h3 style={{ color: 'var(--theme-text)' }}>Menu</h3>
+              <button onClick={() => setDrawerOpen(false)} style={{ color: 'var(--theme-text)' }}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -109,6 +129,7 @@ export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUp
               <Sidebar
                 currentView={currentView}
                 userType={userType}
+                themePreferences={themePreferences}
                 onNavigate={(v) => {
                   handleNavigate(v);
                   setDrawerOpen(false);
@@ -122,9 +143,21 @@ export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUp
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 min-w-0 ${isMobile ? 'ml-0' : 'ml-64'} bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900`}>
+      <main
+        className={`flex-1 min-w-0 ${isMobile ? 'ml-0' : 'ml-64'}`}
+        style={{
+          backgroundColor: 'transparent',
+          backdropFilter: 'blur(0px)',
+        }}
+      >
         {/* Top Bar con Notificaciones */}
-        <div className="sticky top-0 z-30 bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 px-4 py-3 sm:py-4">
+        <div
+          className="sticky top-0 z-30 backdrop-blur-sm border-b px-4 py-3 sm:py-4"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--theme-surface-strong) 82%, transparent)',
+            borderColor: 'var(--theme-border)',
+          }}
+        >
           <div className="flex items-start sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3 min-w-0">
               {isMobile && (
@@ -137,8 +170,8 @@ export function Dashboard({ userName, userType, userPhoto, onLogout, onProfileUp
                 </button>
               )}
               <div className="min-w-0">
-                <h2 className="text-slate-100 text-base sm:text-lg">PsicoAgenda</h2>
-                <p className="text-slate-400 text-xs sm:text-sm truncate">Sistema de gestion psicologica profesional</p>
+                <h2 className="text-base sm:text-lg" style={{ color: 'var(--theme-text)' }}>PsicoAgenda</h2>
+                <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--theme-muted)' }}>Sistema de gestion psicologica profesional</p>
               </div>
             </div>
             <NotificationCenter userType={userType} userName={userName} userPhoto={userPhoto} />

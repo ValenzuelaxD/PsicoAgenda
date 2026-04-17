@@ -4,6 +4,7 @@ import { ViewType } from './Dashboard';
 import { toast } from 'sonner';
 import logo from '../assets/8073927aac7f277f9a509202fa2f1e9e38c58702.png';
 import { useState } from 'react';
+import { ThemePreferences, buildThemeSurfaceStyle } from '../utils/theme';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,10 +21,11 @@ interface SidebarProps {
   userType: 'psicologo' | 'paciente' | 'admin';
   onNavigate: (view: ViewType) => void;
   onLogout: () => void;
+  themePreferences: ThemePreferences;
   isMobile?: boolean;
 }
 
-export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile = false }: SidebarProps) {
+export function Sidebar({ currentView, userType, onNavigate, onLogout, themePreferences, isMobile = false }: SidebarProps) {
   const [mostrarConfirmacionLogout, setMostrarConfirmacionLogout] = useState(false);
 
   // Desktop: fixed sidebar visible on sm+; Mobile: render full-width content suitable for Drawer
@@ -73,9 +75,9 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
   };
 
   return (
-    <aside className={containerClass}>
+    <aside className={containerClass} style={buildThemeSurfaceStyle(themePreferences)}>
       {/* Logo */}
-      <div className={`${isMobile ? 'p-4' : 'p-6'} border-b border-slate-700`}>
+      <div className={`${isMobile ? 'p-4' : 'p-6'} border-b`} style={{ borderColor: 'var(--theme-border)' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -83,7 +85,7 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
           className="flex flex-col items-center gap-2"
         >
           <img src={logo} alt="PsicoAgenda" className={`${isMobile ? 'h-16' : 'h-20'} w-auto`} />
-          <p className="text-teal-400 text-center text-sm">
+          <p className="text-center text-sm" style={{ color: 'var(--theme-primary)' }}>
             {userType === 'admin' ? 'Panel Admin' : userType === 'psicologo' ? 'Panel Psicologo' : 'Panel Paciente'}
           </p>
         </motion.div>
@@ -103,19 +105,20 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, isMobile 
               onClick={() => onNavigate(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                 isActive
-                  ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg'
-                  : 'text-slate-100 hover:bg-slate-700 hover:text-white'
+                  ? 'shadow-lg'
+                  : 'hover:text-white'
               }`}
+              style={isActive ? { backgroundImage: 'linear-gradient(90deg, var(--theme-primary), var(--theme-accent))', color: 'var(--theme-primary-contrast)' } : { color: 'var(--theme-text)' }}
             >
               <Icon className="w-5 h-5 stroke-2" />
-              <span className={`${isActive ? 'text-white' : 'text-slate-100'} min-w-0 truncate text-left`}>{item.label}</span>
+              <span className="min-w-0 truncate text-left">{item.label}</span>
             </motion.button>
           );
         })}
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-slate-700 mt-auto pb-[max(env(safe-area-inset-bottom),1rem)]">
+      <div className="p-4 border-t mt-auto pb-[max(env(safe-area-inset-bottom),1rem)]" style={{ borderColor: 'var(--theme-border)' }}>
         <motion.button
           onClick={() => setMostrarConfirmacionLogout(true)}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/20 transition-all"
