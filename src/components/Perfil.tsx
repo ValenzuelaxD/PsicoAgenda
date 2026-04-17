@@ -700,6 +700,23 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               </div>
             </div>
 
+            <div className="space-y-3 border-t border-slate-700 pt-4">
+              <p className="text-slate-100 font-medium">Modo de apariencia:</p>
+              <label className="relative inline-block h-12 w-28 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={themeDraft.mode === 'dark'}
+                  onChange={(event) => updateThemePreferences({ mode: event.target.checked ? 'dark' : 'light' })}
+                />
+
+                <span className="absolute inset-0 rounded-full border border-slate-500 bg-slate-700/90 shadow-inner transition-colors duration-300 peer-checked:border-indigo-300 peer-checked:bg-indigo-500/95" />
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base leading-none">☀️</span>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-base leading-none">🌙</span>
+                <span className="pointer-events-none absolute left-1 top-1 h-10 w-10 rounded-full bg-black shadow-md transition-transform duration-300 ease-out peer-checked:translate-x-16" />
+              </label>
+            </div>
+
 
           </CardContent>
         </Card>
