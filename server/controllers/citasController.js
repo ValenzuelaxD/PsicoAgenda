@@ -218,12 +218,15 @@ const getMisCitas = async (req, res) => {
   const rol = req.user.rol;
 
   try {
+    console.log(`[getMisCitas] Obteniendo citas para usuario ${usuarioId} con rol ${rol}`);
+    
     let query;
     let params = [usuarioId];
 
     if (rol === 'paciente') {
       const pacienteId = await getPacienteIdByUsuario(usuarioId);
       if (!pacienteId) {
+        console.log(`[getMisCitas] No hay perfil de paciente para usuario ${usuarioId}`);
         return res.status(404).json({ message: 'Perfil de paciente no encontrado.' });
       }
 
@@ -248,6 +251,7 @@ const getMisCitas = async (req, res) => {
     } else if (rol === 'psicologa') {
       const psicologaId = await getPsicologaIdByUsuario(usuarioId);
       if (!psicologaId) {
+        console.log(`[getMisCitas] No hay perfil de psicóloga para usuario ${usuarioId}`);
         return res.status(404).json({ message: 'Perfil de psicóloga no encontrado.' });
       }
 
@@ -275,7 +279,10 @@ const getMisCitas = async (req, res) => {
       params = [];
     }
 
+    console.log(`[getMisCitas] Ejecutando query con params:`, params);
     const result = await db.query(query, params);
+    console.log(`[getMisCitas] Se encontraron ${result.rows.length} citas`);
+    
     res.json(
       result.rows.map((row) => ({
         ...row,
@@ -290,8 +297,11 @@ const getMisCitas = async (req, res) => {
       }))
     );
   } catch (error) {
-    console.error('Error al obtener citas:', error);
-    res.status(500).json({ message: 'Error interno del servidor.' });
+    console.error('[getMisCitas] Error:', error);
+    res.status(500).json({ 
+      message: 'Error interno del servidor.',
+      error: error.message
+    });
   }
 };
 

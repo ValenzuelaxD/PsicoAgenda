@@ -204,7 +204,12 @@ export function Dashboard({
             />
           )}
           
-          <div className="relative z-10">
+          <div 
+            className="relative z-10"
+            style={{
+              color: themePreferences.mode === 'light' ? '#1a1a1a' : 'inherit'
+            }}
+          >
             <AnimatePresence>
               <motion.div 
                 key={currentView}
