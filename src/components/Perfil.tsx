@@ -627,9 +627,9 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Elige un Tema */}
-            <div className="space-y-3">
-              <p className="text-slate-100 font-medium">Elige un tema:</p>
-              <div className="flex flex-wrap gap-6 justify-center">
+            <div className="space-y-4">
+              <p className="text-slate-100 font-medium text-sm">Elige un tema:</p>
+              <div className="flex flex-wrap gap-4 justify-start">
                 {THEME_PRESET_OPTIONS.map((option) => {
                   const isSelected = themeDraft.preset === option.preset;
 
@@ -656,43 +656,33 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                       key={option.preset}
                       type="button"
                       onClick={() => updateThemePreferences({ preset: option.preset })}
-                      className={`relative rounded-full transition-all duration-300 cursor-pointer group ${
-                        isSelected 
-                          ? 'scale-110' 
-                          : 'hover:scale-105'
-                      }`}
+                      className="relative group"
+                      title={option.label}
                     >
-                      {/* Glow de fondo cuando está seleccionado */}
-                      {isSelected && (
-                        <div
-                          className="absolute inset-0 rounded-full blur-lg opacity-60 animate-pulse"
-                          style={{
-                            background: `linear-gradient(90deg, ${colors.primary} 50%, ${colors.accent} 50%)`,
-                            width: '64px',
-                            height: '64px',
-                            left: '-2px',
-                            top: '-2px',
-                          }}
-                        />
-                      )}
-                      
-                      {/* Círculo principal */}
+                      {/* Círculo con borde indicador */}
                       <div
-                        className={`relative w-12 h-12 rounded-full border-3 shadow-lg transition-all duration-300 ${
+                        className={`relative w-14 h-14 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center ${
                           isSelected 
-                            ? 'border-white' 
-                            : 'border-white/30 hover:border-white/50'
+                            ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-white shadow-lg' 
+                            : 'hover:ring-1 hover:ring-offset-1 hover:ring-offset-slate-800 hover:ring-slate-400'
                         }`}
                         style={{
-                          background: `linear-gradient(90deg, ${colors.primary} 50%, ${colors.accent} 50%)`
+                          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.accent} 100%)`
                         }}
                       >
-                        {/* Check mark cuando está seleccionado */}
+                        {/* Indicador de selección tipo checkmark */}
                         {isSelected && (
-                          <div className="absolute inset-0 flex items-center justify-center text-white font-bold">
-                            ✓
+                          <div className="absolute inset-0 rounded-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
                           </div>
                         )}
+                      </div>
+                      
+                      {/* Tooltip con nombre del tema */}
+                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-slate-100 text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-slate-700">
+                        {option.label}
                       </div>
                     </button>
                   );
