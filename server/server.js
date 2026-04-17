@@ -14,6 +14,30 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const PORT = process.env.PORT || 3001;
 
+// Verificar conexión a BD al iniciar
+let dbConnected = false;
+
+async function verifyDatabaseConnection() {
+  try {
+    console.log('\n🔍 Verificando conexión a Base de Datos...');
+    console.log(`   Host: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+    console.log(`   Database: ${process.env.DB_DATABASE}`);
+    console.log(`   User: ${process.env.DB_USER}`);
+    
+    const result = await db.query('SELECT NOW()');
+    console.log('✅ ¡Conexión exitosa a la Base de Datos!\n');
+    dbConnected = true;
+    return true;
+  } catch (error) {
+    console.error('❌ Error de conexión a Base de Datos:', error.message);
+    console.log('\n⚠️  IMPORTANTE:');
+    console.log('   Si usas Cloud SQL Proxy, ejecuta en otra terminal:');
+    console.log('   cloud_sql_proxy -instances=PROJECT:REGION:INSTANCE=tcp:5433\n');
+    dbConnected = false;
+    return false;
+  }
+}
+
 // Basic route
 app.get('/', (req, res) => {
   res.send('PsicoAgenda API is running!');
@@ -51,8 +75,23 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-  console.log(`📝 Test connection: http://localhost:${PORT}/test-db`);
-  console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth/login`);
-});
+// Iniciar servidor
+async function startServer() {
+  // Verificar BD primero
+  const connected = await verifyDatabaseConnection();
+  
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running on port ${PORT}`);
+    console.log(`📝 Test connection: http://localhost:${PORT}/test-db`);
+    console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth/login`);
+    
+    if (!connected) {
+      console.log('\n⚠️  ADVERTENCIA: El servidor está corriendo pero sin conexión a BD');
+      console.log('   Por favor, asegúrate de que:');
+      console.log('   1. Cloud SQL Proxy está corriendo');
+      console.log('   2. Las credenciales en .env son correctas\n');
+    }
+  });
+}
+
+startServer();
