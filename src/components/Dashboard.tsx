@@ -102,13 +102,7 @@ export function Dashboard({
   return (
     <div 
       className="flex min-h-screen" 
-      style={{
-        ...buildThemeShellStyle(themePreferences),
-        backgroundImage: imagenTema ? `url('${imagenTema}')` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
+      style={buildThemeShellStyle(themePreferences)}
     >
       {/* Sidebar (desktop only) */}
       {!isMobile && (
@@ -189,18 +183,33 @@ export function Dashboard({
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 lg:p-8">
-          <AnimatePresence>
-            <motion.div 
-              key={currentView}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {renderView()}
-            </motion.div>
-          </AnimatePresence>
+        <div 
+          className="p-4 sm:p-6 lg:p-8 relative"
+          style={{
+            backgroundImage: imagenTema ? `url('${imagenTema}')` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          {/* Overlay para legibilidad */}
+          {imagenTema && (
+            <div className="absolute inset-0 bg-black/40 rounded-md pointer-events-none" />
+          )}
+          
+          <div className="relative z-10">
+            <AnimatePresence>
+              <motion.div 
+                key={currentView}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {renderView()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </main>
     </div>
