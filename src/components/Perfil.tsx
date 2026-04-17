@@ -6,7 +6,6 @@ import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { User, Mail, Phone, Calendar, MapPin, Shield, CheckCircle } from 'lucide-react';
-import { Switch } from './ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -338,6 +337,14 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
     setThemeDraft(nextTheme);
     saveThemePreferences(nextTheme);
     onThemeUpdated(nextTheme);
+  };
+
+  const handleThemeModeToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const darkEnabled = event.target.checked;
+    updateThemePreferences({ mode: darkEnabled ? 'dark' : 'light' });
+    console.log(darkEnabled ? 'Modo oscuro 🌙' : 'Modo claro ☀️');
+    document.body.classList.toggle('tema-oscuro', darkEnabled);
+    document.body.classList.toggle('tema-claro', !darkEnabled);
   };
 
   const themePalette = buildThemePalette(themeDraft);
@@ -708,27 +715,22 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
             {/* Toggle Luz/Oscuridad - Switch Moderno */}
             <div className="space-y-3 pt-4 border-t border-slate-700">
               <p className="text-slate-100 font-medium">Modo de luz:</p>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={themeDraft.mode === 'light'}
-                onClick={() => updateThemePreferences({ mode: themeDraft.mode === 'dark' ? 'light' : 'dark' })}
-                className={`relative h-12 w-28 rounded-full border transition-all duration-300 ease-out shadow-inner focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-400 ${
-                  themeDraft.mode === 'light'
-                    ? 'border-purple-300 bg-purple-500/95'
-                    : 'border-slate-500 bg-slate-700/95'
-                }`}
-              >
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg leading-none">🌙</span>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg leading-none">☀️</span>
-
-                {/* Thumb circular que se desplaza entre extremos */}
-                <span
-                  className={`absolute top-1 h-10 w-10 rounded-full bg-black shadow-md transition-transform duration-300 ease-out ${
-                    themeDraft.mode === 'light' ? 'translate-x-[62px]' : 'translate-x-1'
-                  }`}
+              <label className="relative inline-block h-14 w-32 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={themeDraft.mode === 'dark'}
+                  onChange={handleThemeModeToggle}
                 />
-              </button>
+
+                <span className="slider absolute inset-0 rounded-full border border-slate-500 bg-slate-700/90 shadow-inner transition-colors duration-300 peer-checked:border-purple-300 peer-checked:bg-purple-500/95" />
+
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg leading-none">☀️</span>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg leading-none">🌙</span>
+
+                {/* Thumb circular: izquierda por defecto, derecha cuando checked */}
+                <span className="pointer-events-none absolute left-1 top-1 h-12 w-12 rounded-full bg-black shadow-md transition-transform duration-300 ease-out peer-checked:translate-x-[76px]" />
+              </label>
             </div>
           </CardContent>
         </Card>
