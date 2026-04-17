@@ -13,6 +13,7 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [userType, setUserType] = useState<'psicologo' | 'paciente' | 'admin'>('paciente');
   const [userPhoto, setUserPhoto] = useState('');
+  const [imagenTema, setImagenTema] = useState('');
   const [themePreferences, setThemePreferences] = useState<ThemePreferences>(() => loadThemePreferences());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -28,6 +29,7 @@ export default function App() {
           const userData = JSON.parse(user);
           setUserName(userData.nombre || 'Usuario');
           setUserPhoto(userData.fotoperfil || '');
+          setImagenTema(userData.imagentema || '');
           setUserType(
             userData.rol === 'admin'
               ? 'admin'
@@ -106,6 +108,7 @@ export default function App() {
 
       setUserName(nombreCompleto);
       setUserPhoto(profile.fotoPerfil || '');
+      setImagenTema(profile.imagenTema || '');
 
       const userRaw = localStorage.getItem('user');
       if (userRaw) {
@@ -141,6 +144,8 @@ export default function App() {
       setIsAuthenticated(false);
       setUserName('');
       setUserType('paciente');
+      setUserPhoto('');
+      setImagenTema('');
       setIsLoggingOut(false);
     }, 1500);
   };
@@ -160,6 +165,7 @@ export default function App() {
           userName={userName} 
           userType={userType} 
           userPhoto={userPhoto}
+          imagenTema={imagenTema}
           themePreferences={themePreferences}
           onLogout={handleLogout} 
           onProfileUpdated={refreshSessionProfile}

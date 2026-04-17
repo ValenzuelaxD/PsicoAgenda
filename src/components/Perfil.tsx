@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { toast } from 'sonner';
-import { API_ENDPOINTS } from '../utils/api';
+import { API_ENDPOINTS, uploadImagenTema } from '../utils/api';
 import { ThemePreferences, THEME_PRESET_OPTIONS, normalizeThemePreferences, saveThemePreferences } from '../utils/theme';
 
 interface PerfilProps {
@@ -636,6 +636,31 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/png,image/jpeg,image/jpg,image/webp';
+                  input.onchange = async (e: any) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = async (event: any) => {
+                      try {
+                        const dataUrl = event.target.result;
+                        await uploadImagenTema(dataUrl, file.name);
+                        toast.success('Imagen de tema guardada correctamente');
+                        // Recargar perfil para ver cambios
+                        window.location.reload();
+                      } catch (error) {
+                        toast.error('Error al guardar imagen de tema');
+                        console.error(error);
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  };
+                  input.click();
+                }}
                 className="px-4 py-2 rounded-full bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-slate-100 text-sm font-medium transition-colors"
               >
                 🖼️ Tema de imagen

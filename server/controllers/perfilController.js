@@ -38,6 +38,11 @@ function construirFotoDesdeBd(mimeType, dataBuffer) {
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
 }
 
+function construirImagenTemaDesdeBd(mimeType, dataBuffer) {
+  if (!mimeType || !dataBuffer) return '';
+  return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
+}
+
 const getMiPerfil = async (req, res) => {
   const usuarioId = req.user.id;
 
@@ -53,6 +58,9 @@ const getMiPerfil = async (req, res) => {
         u.telefono,
         u.fotoperfil_mime,
         u.fotoperfil_data,
+        u.imagentema_mime,
+        u.imagentema_data,
+        u.imagentema_nombre,
         u.fecharegistro,
         u.rol,
         p.fechanacimiento,
@@ -95,6 +103,8 @@ const getMiPerfil = async (req, res) => {
         email: row.correo,
         telefono: row.telefono || '',
         fotoPerfil: construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data),
+        imagenTema: construirImagenTemaDesdeBd(row.imagentema_mime, row.imagentema_data),
+        imagenTemaNombre: row.imagentema_nombre || '',
         fechaRegistro: row.fecharegistro || null,
         fechaNacimiento: row.fechanacimiento || null,
         genero: row.genero || '',
@@ -382,4 +392,73 @@ const cambiarMiPassword = async (req, res) => {
   }
 };
 
-module.exports = { getMiPerfil, actualizarMiPerfil, cambiarMiPassword };
+const actualizarImagenTema = async (req, res) => {
+  const usuarioId = req.user.id;
+  const { imagenTema, imagenTemaNombre } = req.body;
+
+  try {
+    let imagenTemaMime = null;
+    let imagenTemaData = null;
+
+    if (typeof imagenTema === 'string' && imagenTema.trim() === '') {
+      imagenTemaMime = null;
+      imagenTemaData = null;
+    } else if (typeof imagenTema === 'string' && imagenTema.startsWith('data:image/')) {
+      const imagenExtraida = extraerFotoDesdeDataUrl(imagenTema);
+      if (!imagenExtraida) {
+        return res.status(400).json({
+          success: false,
+          message: 'Formato de imagen no válido. Usa PNG, JPG o WEBP.'
+        });
+      }
+
+      if (imagenExtraida.buffer.length > MAX_FOTO_PERFIL_BYTES) {
+        return res.status(400).json({
+          success: false,
+          message: 'La imagen no debe superar los 10MB.'
+        });
+      }
+
+      imagenTemaMime = imagenExtraida.mimeType;
+      imagenTemaData = imagenExtraida.buffer;
+    }
+
+    const updateQuery = `
+      UPDATE usuarios
+      SET 
+        imagentema_mime = $1,
+        imagentema_data = $2,
+        imagentema_nombre = $3
+      WHERE usuarioid = $4
+      RETURNING usuarioid
+    `;
+
+    const result = await db.query(updateQuery, [
+      imagenTemaMime,
+      imagenTemaData,
+      imagenTemaNombre || 'tema-personalizado',
+      usuarioId
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Imagen de tema actualizada correctamente.'
+    });
+  } catch (error) {
+    console.error('Error al actualizar imagen de tema:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar imagen de tema.',
+      error: error.message
+    });
+  }
+};
+
+module.exports = { getMiPerfil, actualizarMiPerfil, cambiarMiPassword, actualizarImagenTema };

@@ -107,4 +107,25 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   }
 }
 
+export const uploadImagenTema = async (imagenData: string, nombre: string) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_BASE_URL}/api/perfil/tema-imagen`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      imagenTema: imagenData,
+      imagenTemaNombre: nombre,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Error al guardar imagen de tema');
+  }
+
+  return response.json();
+};
+
 export default API_ENDPOINTS;

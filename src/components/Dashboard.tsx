@@ -22,6 +22,7 @@ interface DashboardProps {
   userName: string;
   userType: 'psicologo' | 'paciente' | 'admin';
   userPhoto: string;
+  imagenTema: string;
   themePreferences: ThemePreferences;
   onLogout: () => void;
   onProfileUpdated: () => void;
@@ -35,6 +36,7 @@ export function Dashboard({
   userName,
   userType,
   userPhoto,
+  imagenTema,
   themePreferences,
   onLogout,
   onProfileUpdated,
@@ -98,7 +100,16 @@ export function Dashboard({
   };
 
   return (
-    <div className="flex min-h-screen" style={buildThemeShellStyle(themePreferences)}>
+    <div 
+      className="flex min-h-screen" 
+      style={{
+        ...buildThemeShellStyle(themePreferences),
+        backgroundImage: imagenTema ? `url('${imagenTema}')` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       {/* Sidebar (desktop only) */}
       {!isMobile && (
         <Sidebar

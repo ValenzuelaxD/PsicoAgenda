@@ -11,7 +11,7 @@ const { getPsicologas, getDisponibilidad } = require('../controllers/psicologasC
 // Importar controladores
 const { getPacientes, crearPaciente, actualizarPaciente, eliminarPaciente } = require('../controllers/pacientesController');
 const { getMiHistorial, getHistorial, crearEntradaHistorial, actualizarEntradaHistorial } = require('../controllers/historialClinicoController');
-const { getMiPerfil, actualizarMiPerfil, cambiarMiPassword } = require('../controllers/perfilController');
+const { getMiPerfil, actualizarMiPerfil, cambiarMiPassword, actualizarImagenTema } = require('../controllers/perfilController');
 const { getReporteCitas } = require('../controllers/reportesController');
 const { getMiAgenda, crearAgenda, actualizarAgenda, eliminarAgenda } = require('../controllers/agendasController');
 const {
@@ -72,6 +72,7 @@ router.put('/historialclinico/:id', protegerRuta, actualizarEntradaHistorial);
 router.get('/perfil', protegerRuta, getMiPerfil);
 router.put('/perfil', protegerRuta, actualizarMiPerfil);
 router.put('/perfil/password', protegerRuta, cambiarMiPassword);
+router.put('/perfil/tema-imagen', protegerRuta, actualizarImagenTema);
 router.get('/reportes/citas', protegerRuta, getReporteCitas);
 router.get('/admin/solicitudes-psicologas', protegerRuta, autorizarRol('admin'), getSolicitudesPsicologas);
 router.put('/admin/solicitudes-psicologas/:id/aprobar', protegerRuta, autorizarRol('admin'), aprobarSolicitudPsicologa);
