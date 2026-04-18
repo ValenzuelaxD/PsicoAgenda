@@ -5,6 +5,34 @@ const construirFotoDesdeBd = (mimeType, dataBuffer) => {
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
 };
 
+const obtenerFotosPerfilPorUsuario = async (usuarioIds = []) => {
+  const idsUnicos = [...new Set(
+    usuarioIds
+      .map((id) => Number(id))
+      .filter((id) => Number.isInteger(id) && id > 0)
+  )];
+
+  if (idsUnicos.length === 0) {
+    return new Map();
+  }
+
+  const result = await db.query(
+    `
+      SELECT usuarioid, fotoperfil_mime, fotoperfil_data
+      FROM usuarios
+      WHERE usuarioid = ANY($1::int[])
+    `,
+    [idsUnicos]
+  );
+
+  const fotosPorUsuario = new Map();
+  result.rows.forEach((row) => {
+    fotosPorUsuario.set(row.usuarioid, construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data));
+  });
+
+  return fotosPorUsuario;
+};
+
 const getPacienteDashboard = async (req, res) => {
   const usuarioId = req.user.id;
 
@@ -32,7 +60,15 @@ const getPacienteDashboard = async (req, res) => {
       LIMIT 1`;
 
     const proximasCitasQuery = `
-      SELECT c.citaid, c.fechahora, c.modalidad, c.estado, u.nombre, u.apellidopaterno, ps.consultorio, u.fotoperfil_mime, u.fotoperfil_data
+      SELECT
+        c.citaid,
+        c.fechahora,
+        c.modalidad,
+        c.estado,
+        u.nombre,
+        u.apellidopaterno,
+        ps.consultorio,
+        u.usuarioid AS psicologa_usuarioid
       FROM citas c
       JOIN psicologas ps ON c.psicologaid = ps.psicologaid
       JOIN usuarios u ON ps.usuarioid = u.usuarioid
@@ -40,15 +76,29 @@ const getPacienteDashboard = async (req, res) => {
       ORDER BY c.fechahora ASC
       LIMIT 5`;
 
-    const proximaCitaResult = await db.query(proximaCitaQuery, [pacienteId]);
-    const sesionesTotalesResult = await db.query(sesionesTotalesQuery, [pacienteId]);
-    const ultimaSesionResult = await db.query(ultimaSesionQuery, [pacienteId]);
-    const proximasCitasResult = await db.query(proximasCitasQuery, [pacienteId]);
+    const [
+      proximaCitaResult,
+      sesionesTotalesResult,
+      ultimaSesionResult,
+      proximasCitasResult,
+    ] = await Promise.all([
+      db.query(proximaCitaQuery, [pacienteId]),
+      db.query(sesionesTotalesQuery, [pacienteId]),
+      db.query(ultimaSesionQuery, [pacienteId]),
+      db.query(proximasCitasQuery, [pacienteId]),
+    ]);
 
-    const proximasCitasConFoto = proximasCitasResult.rows.map(row => ({
-      ...row,
-      fotoperfil: construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data)
-    }));
+    const fotosPorUsuario = await obtenerFotosPerfilPorUsuario(
+      proximasCitasResult.rows.map((row) => row.psicologa_usuarioid)
+    );
+
+    const proximasCitasConFoto = proximasCitasResult.rows.map((row) => {
+      const { psicologa_usuarioid, ...resto } = row;
+      return {
+        ...resto,
+        fotoperfil: fotosPorUsuario.get(psicologa_usuarioid) || '',
+      };
+    });
 
     res.json({
       proximaCita: proximaCitaResult.rows[0]?.fechahora,
@@ -79,15 +129,16 @@ const getPsicologoDashboard = async (req, res) => {
 
     const citasHoyQuery = `
       SELECT
-        c.*, 
+        c.*,
         u.nombre as paciente_nombre,
         u.apellidopaterno as paciente_apellido,
-        u.fotoperfil_mime as paciente_fotoperfil_mime,
-        u.fotoperfil_data as paciente_fotoperfil_data
+        u.usuarioid as paciente_usuarioid
       FROM citas c
       JOIN pacientes p ON c.pacienteid = p.pacienteid
       JOIN usuarios u ON p.usuarioid = u.usuarioid
-      WHERE c.psicologaid = $1 AND DATE(c.fechahora) = $2
+      WHERE c.psicologaid = $1
+        AND c.fechahora >= $2::date
+        AND c.fechahora < ($2::date + interval '1 day')
       ORDER BY c.fechahora ASC
     `;
     const pacientesActivosQuery = `SELECT COUNT(DISTINCT pacienteid) FROM citas WHERE psicologaid = $1`;
@@ -108,8 +159,7 @@ const getPsicologoDashboard = async (req, res) => {
         c.duracionmin,
         u.nombre AS paciente_nombre,
         u.apellidopaterno AS paciente_apellido,
-        u.fotoperfil_mime AS paciente_fotoperfil_mime,
-        u.fotoperfil_data AS paciente_fotoperfil_data
+        u.usuarioid AS paciente_usuarioid
       FROM citas c
       JOIN pacientes p ON c.pacienteid = p.pacienteid
       JOIN usuarios u ON p.usuarioid = u.usuarioid
@@ -120,24 +170,43 @@ const getPsicologoDashboard = async (req, res) => {
       LIMIT 5
     `;
 
-    const citasHoyResult = await db.query(citasHoyQuery, [psicologaId, fechaObjetivo]);
-    const pacientesActivosResult = await db.query(pacientesActivosQuery, [psicologaId]);
-    const citasSemanaResult = await db.query(citasSemanaQuery, [psicologaId]);
-    const citasPendientesResult = await db.query(citasPendientesQuery, [psicologaId]);
-    const pendientesPorConfirmarResult = await db.query(pendientesPorConfirmarQuery, [psicologaId]);
+    const [
+      citasHoyResult,
+      pacientesActivosResult,
+      citasSemanaResult,
+      citasPendientesResult,
+      pendientesPorConfirmarResult,
+    ] = await Promise.all([
+      db.query(citasHoyQuery, [psicologaId, fechaObjetivo]),
+      db.query(pacientesActivosQuery, [psicologaId]),
+      db.query(citasSemanaQuery, [psicologaId]),
+      db.query(citasPendientesQuery, [psicologaId]),
+      db.query(pendientesPorConfirmarQuery, [psicologaId]),
+    ]);
+
+    const fotosPorUsuario = await obtenerFotosPerfilPorUsuario([
+      ...citasHoyResult.rows.map((row) => row.paciente_usuarioid),
+      ...pendientesPorConfirmarResult.rows.map((row) => row.paciente_usuarioid),
+    ]);
 
     res.json({
-      citasHoy: citasHoyResult.rows.map((row) => ({
-        ...row,
-        paciente_fotoperfil: construirFotoDesdeBd(row.paciente_fotoperfil_mime, row.paciente_fotoperfil_data),
-      })),
+      citasHoy: citasHoyResult.rows.map((row) => {
+        const { paciente_usuarioid, ...resto } = row;
+        return {
+          ...resto,
+          paciente_fotoperfil: fotosPorUsuario.get(paciente_usuarioid) || '',
+        };
+      }),
       pacientesActivos: parseInt(pacientesActivosResult.rows[0].count, 10),
       citasSemana: parseInt(citasSemanaResult.rows[0].count, 10),
       citasPendientes: parseInt(citasPendientesResult.rows[0].count, 10),
-      pendientesPorConfirmar: pendientesPorConfirmarResult.rows.map((row) => ({
-        ...row,
-        paciente_fotoperfil: construirFotoDesdeBd(row.paciente_fotoperfil_mime, row.paciente_fotoperfil_data),
-      })),
+      pendientesPorConfirmar: pendientesPorConfirmarResult.rows.map((row) => {
+        const { paciente_usuarioid, ...resto } = row;
+        return {
+          ...resto,
+          paciente_fotoperfil: fotosPorUsuario.get(paciente_usuarioid) || '',
+        };
+      }),
     });
 
   } catch (error) {

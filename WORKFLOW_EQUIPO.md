@@ -59,6 +59,29 @@ Comentario: backend debe responder success=true.
 - Hacer commits pequenos y claros.
 - Esperar Actions en verde antes del siguiente cambio grande.
 
+## 6.1) Dependencias (evitar errores de modulo faltante)
+
+Si aparece un error tipo "Cannot find module" o "Failed to resolve import", ejecutar desde la raiz:
+
+```bash
+npm run setup
+```
+
+Comentario: este comando instala dependencias del frontend y, automaticamente, tambien las del backend en /server.
+
+Verificacion opcional:
+
+```bash
+npm run deps:check
+```
+
+Regla de commit cuando se agrega/actualiza una dependencia:
+
+- Subir siempre package.json y package-lock.json de la raiz.
+- Si la dependencia es del backend, subir tambien server/package.json y server/package-lock.json.
+
+Nota importante: no se versiona node_modules. Cada integrante debe instalar dependencias en su maquina, pero con estos archivos en Git se garantiza que todos instalen exactamente las mismas versiones.
+
 ## 7) Configuracion de notificaciones (frontend)
 
 Archivo de referencia: .env.example

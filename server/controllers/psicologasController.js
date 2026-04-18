@@ -115,7 +115,8 @@ const getDisponibilidad = async (req, res) => {
       SELECT fechahora, duracionmin
       FROM citas
       WHERE psicologaid = $1
-        AND DATE(fechahora) = $2
+        AND fechahora >= $2::date
+        AND fechahora < ($2::date + interval '1 day')
         AND COALESCE(LOWER(TRIM(estado)), '') NOT IN ('cancelada', 'cancelado')
         ${excluirCita ? 'AND citaid <> $3' : ''}
     `;

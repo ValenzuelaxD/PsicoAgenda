@@ -1,4 +1,12 @@
 const db = require('../db');
+const crypto = require('crypto');
+
+let sharp = null;
+try {
+  sharp = require('sharp');
+} catch {
+  sharp = null;
+}
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 const ESTADOS_EDITABLES = ['Pendiente', 'Confirmada', 'Cancelada', 'Completada', 'Reagendada'];
@@ -11,6 +19,13 @@ const toPositiveInt = (value, defaultValue) => {
 
 const MAX_DIAS_ADELANTO_PACIENTE = toPositiveInt(process.env.MAX_BOOKING_DAYS_PACIENTE, 45);
 const MAX_DIAS_ADELANTO_PSICOLOGA = toPositiveInt(process.env.MAX_BOOKING_DAYS_PSICOLOGA, 180);
+const MIS_CITAS_CACHE_TTL_MS = toPositiveInt(process.env.MIS_CITAS_CACHE_TTL_MS, 60000);
+const MIS_CITAS_THUMB_SIZE_PX = toPositiveInt(process.env.MIS_CITAS_THUMB_SIZE_PX, 96);
+const MAX_MIS_CITAS_CACHE_ITEMS = toPositiveInt(process.env.MAX_MIS_CITAS_CACHE_ITEMS, 400);
+const MAX_MINIATURAS_CACHE_ITEMS = toPositiveInt(process.env.MAX_MINIATURAS_CACHE_ITEMS, 800);
+
+const misCitasResponseCache = new Map();
+const miniaturasFotoCache = new Map();
 
 const getMaxDiasAdelantoPorRol = (rol) => {
   if (rol === 'paciente') return MAX_DIAS_ADELANTO_PACIENTE;
@@ -36,6 +51,143 @@ const estaDentroDeVentana = (fechaHora, rol) => {
 const construirFotoDesdeBd = (mimeType, dataBuffer) => {
   if (!mimeType || !dataBuffer) return '';
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
+};
+
+const construirClaveMisCitasCache = ({ rol, usuarioId }) => `${rol}:${usuarioId}`;
+
+const obtenerMisCitasDesdeCache = ({ rol, usuarioId }) => {
+  const cacheKey = construirClaveMisCitasCache({ rol, usuarioId });
+  const cacheEntry = misCitasResponseCache.get(cacheKey);
+  if (!cacheEntry) {
+    return null;
+  }
+
+  if (cacheEntry.expiraEn <= Date.now()) {
+    misCitasResponseCache.delete(cacheKey);
+    return null;
+  }
+
+  return cacheEntry.payload;
+};
+
+const guardarMisCitasEnCache = ({ rol, usuarioId, payload }) => {
+  if (!Array.isArray(payload)) {
+    return;
+  }
+
+  if (misCitasResponseCache.size >= MAX_MIS_CITAS_CACHE_ITEMS) {
+    misCitasResponseCache.clear();
+  }
+
+  const cacheKey = construirClaveMisCitasCache({ rol, usuarioId });
+  misCitasResponseCache.set(cacheKey, {
+    expiraEn: Date.now() + MIS_CITAS_CACHE_TTL_MS,
+    payload,
+  });
+};
+
+const invalidarMisCitasCachePorUsuarios = ({ pacienteUsuarioId = null, psicologaUsuarioId = null } = {}) => {
+  const pacienteIdNum = Number(pacienteUsuarioId);
+  const psicologaIdNum = Number(psicologaUsuarioId);
+
+  if (!Number.isInteger(pacienteIdNum) && !Number.isInteger(psicologaIdNum)) {
+    misCitasResponseCache.clear();
+    return;
+  }
+
+  if (Number.isInteger(pacienteIdNum) && pacienteIdNum > 0) {
+    misCitasResponseCache.delete(construirClaveMisCitasCache({ rol: 'paciente', usuarioId: pacienteIdNum }));
+  }
+
+  if (Number.isInteger(psicologaIdNum) && psicologaIdNum > 0) {
+    misCitasResponseCache.delete(construirClaveMisCitasCache({ rol: 'psicologa', usuarioId: psicologaIdNum }));
+  }
+};
+
+const construirClaveMiniatura = ({ usuarioId, mimeType, dataBuffer }) => {
+  const hash = crypto.createHash('sha1').update(dataBuffer).digest('hex').slice(0, 20);
+  return `${usuarioId}:${mimeType}:${MIS_CITAS_THUMB_SIZE_PX}:${hash}`;
+};
+
+const construirFotoMiniaturaDesdeBd = async (usuarioId, mimeType, dataBuffer) => {
+  if (!mimeType || !dataBuffer) {
+    return '';
+  }
+
+  if (!sharp) {
+    return construirFotoDesdeBd(mimeType, dataBuffer);
+  }
+
+  const mimeNormalizado = String(mimeType).toLowerCase();
+  if (!mimeNormalizado.startsWith('image/')) {
+    return construirFotoDesdeBd(mimeType, dataBuffer);
+  }
+
+  const cacheKey = construirClaveMiniatura({ usuarioId, mimeType: mimeNormalizado, dataBuffer });
+  const miniaturaEnCache = miniaturasFotoCache.get(cacheKey);
+  if (miniaturaEnCache) {
+    return miniaturaEnCache;
+  }
+
+  try {
+    const miniatura = await sharp(dataBuffer)
+      .rotate()
+      .resize(MIS_CITAS_THUMB_SIZE_PX, MIS_CITAS_THUMB_SIZE_PX, {
+        fit: 'cover',
+        position: 'attention',
+      })
+      .webp({ quality: 72 })
+      .toBuffer();
+
+    const dataUrl = `data:image/webp;base64,${miniatura.toString('base64')}`;
+
+    if (miniaturasFotoCache.size >= MAX_MINIATURAS_CACHE_ITEMS) {
+      miniaturasFotoCache.clear();
+    }
+    miniaturasFotoCache.set(cacheKey, dataUrl);
+
+    return dataUrl;
+  } catch {
+    return construirFotoDesdeBd(mimeType, dataBuffer);
+  }
+};
+
+const obtenerFotosPerfilPorUsuario = async (usuarioIds = [], { usarMiniatura = false } = {}) => {
+  const idsUnicos = [...new Set(
+    usuarioIds
+      .map((id) => Number(id))
+      .filter((id) => Number.isInteger(id) && id > 0)
+  )];
+
+  if (idsUnicos.length === 0) {
+    return new Map();
+  }
+
+  const result = await db.query(
+    `
+      SELECT usuarioid, fotoperfil_mime, fotoperfil_data
+      FROM usuarios
+      WHERE usuarioid = ANY($1::int[])
+    `,
+    [idsUnicos]
+  );
+
+  const fotosPorUsuario = new Map();
+  const fotosResueltas = await Promise.all(
+    result.rows.map(async (row) => {
+      const foto = usarMiniatura
+        ? await construirFotoMiniaturaDesdeBd(row.usuarioid, row.fotoperfil_mime, row.fotoperfil_data)
+        : construirFotoDesdeBd(row.fotoperfil_mime, row.fotoperfil_data);
+
+      return { usuarioid: row.usuarioid, foto };
+    })
+  );
+
+  fotosResueltas.forEach((row) => {
+    fotosPorUsuario.set(row.usuarioid, row.foto);
+  });
+
+  return fotosPorUsuario;
 };
 
 const getPacienteIdByUsuario = async (usuarioId) => {
@@ -108,7 +260,8 @@ const validarDisponibilidad = async ({ psicologaId, fechaHora, citaIdExcluir = n
       SELECT citaid, fechahora, duracionmin
       FROM citas
       WHERE psicologaid = $1
-        AND DATE(fechahora) = $2
+        AND fechahora >= $2::date
+        AND fechahora < ($2::date + interval '1 day')
         AND COALESCE(LOWER(TRIM(estado)), '') NOT IN ('cancelada', 'cancelado')
         ${excluirClause}
     `,
@@ -219,6 +372,15 @@ const getMisCitas = async (req, res) => {
 
   try {
     console.log(`[getMisCitas] Obteniendo citas para usuario ${usuarioId} con rol ${rol}`);
+
+    const usaCacheMisCitas = rol === 'paciente' || rol === 'psicologa';
+    if (usaCacheMisCitas) {
+      const payloadCache = obtenerMisCitasDesdeCache({ rol, usuarioId });
+      if (payloadCache) {
+        console.log(`[getMisCitas] Respondiendo desde cache para usuario ${usuarioId} (${rol})`);
+        return res.json(payloadCache);
+      }
+    }
     
     let query;
     let params = [usuarioId];
@@ -237,13 +399,18 @@ const getMisCitas = async (req, res) => {
           COALESCE(h.observaciones, h.tratamiento, h.diagnostico, c.notaspaciente) AS notasresumen,
           u.nombre AS psicologa_nombre,
           u.apellidopaterno AS psicologa_apellido,
-          u.fotoperfil_mime AS psicologa_fotoperfil_mime,
-          u.fotoperfil_data AS psicologa_fotoperfil_data,
+          u.usuarioid AS psicologa_usuarioid,
           ps.consultorio AS ubicacion
         FROM citas c
         JOIN psicologas ps ON c.psicologaid = ps.psicologaid
         JOIN usuarios u ON ps.usuarioid = u.usuarioid
-        LEFT JOIN historialclinico h ON h.citaid = c.citaid
+        LEFT JOIN LATERAL (
+          SELECT observaciones, tratamiento, diagnostico
+          FROM historialclinico h
+          WHERE h.citaid = c.citaid
+          ORDER BY h.fechaentrada DESC
+          LIMIT 1
+        ) h ON TRUE
         WHERE c.pacienteid = $1
         ORDER BY c.fechahora DESC
       `;
@@ -262,14 +429,19 @@ const getMisCitas = async (req, res) => {
           COALESCE(h.observaciones, h.tratamiento, h.diagnostico, c.notaspsicologa, c.notaspaciente) AS notasresumen,
           u.nombre AS paciente_nombre,
           u.apellidopaterno AS paciente_apellido,
-          u.fotoperfil_mime AS paciente_fotoperfil_mime,
-          u.fotoperfil_data AS paciente_fotoperfil_data,
+          u.usuarioid AS paciente_usuarioid,
           ps.consultorio AS ubicacion
         FROM citas c
         JOIN pacientes p ON c.pacienteid = p.pacienteid
         JOIN usuarios u ON p.usuarioid = u.usuarioid
         JOIN psicologas ps ON c.psicologaid = ps.psicologaid
-        LEFT JOIN historialclinico h ON h.citaid = c.citaid
+        LEFT JOIN LATERAL (
+          SELECT observaciones, tratamiento, diagnostico
+          FROM historialclinico h
+          WHERE h.citaid = c.citaid
+          ORDER BY h.fechaentrada DESC
+          LIMIT 1
+        ) h ON TRUE
         WHERE c.psicologaid = $1
         ORDER BY c.fechahora DESC
       `;
@@ -282,20 +454,39 @@ const getMisCitas = async (req, res) => {
     console.log(`[getMisCitas] Ejecutando query con params:`, params);
     const result = await db.query(query, params);
     console.log(`[getMisCitas] Se encontraron ${result.rows.length} citas`);
-    
-    res.json(
-      result.rows.map((row) => ({
-        ...row,
-        paciente_fotoperfil: rol === 'psicologa'
-          ? construirFotoDesdeBd(row.paciente_fotoperfil_mime, row.paciente_fotoperfil_data)
-          : row.paciente_fotoperfil,
-        psicologa_fotoperfil: rol === 'paciente'
-          ? construirFotoDesdeBd(row.psicologa_fotoperfil_mime, row.psicologa_fotoperfil_data)
-          : row.psicologa_fotoperfil,
-        notas: rol === 'psicologa' ? (row.notaspsicologa || '') : (row.notaspaciente || ''),
-        notasresumen: row.notasresumen || row.notaspsicologa || row.notaspaciente || '',
-      }))
-    );
+
+    let fotosPorUsuario = new Map();
+    if (rol === 'paciente') {
+      fotosPorUsuario = await obtenerFotosPerfilPorUsuario(result.rows.map((row) => row.psicologa_usuarioid), { usarMiniatura: true });
+    } else if (rol === 'psicologa') {
+      fotosPorUsuario = await obtenerFotosPerfilPorUsuario(result.rows.map((row) => row.paciente_usuarioid), { usarMiniatura: true });
+    }
+
+    const payload = result.rows.map((row) => {
+        const {
+          paciente_usuarioid,
+          psicologa_usuarioid,
+          ...rowSinUsuariosRelacionados
+        } = row;
+
+        return {
+          ...rowSinUsuariosRelacionados,
+          paciente_fotoperfil: rol === 'psicologa'
+            ? (fotosPorUsuario.get(paciente_usuarioid) || '')
+            : row.paciente_fotoperfil,
+          psicologa_fotoperfil: rol === 'paciente'
+            ? (fotosPorUsuario.get(psicologa_usuarioid) || '')
+            : row.psicologa_fotoperfil,
+          notas: rol === 'psicologa' ? (row.notaspsicologa || '') : (row.notaspaciente || ''),
+          notasresumen: row.notasresumen || row.notaspsicologa || row.notaspaciente || '',
+        };
+      });
+
+    if (rol === 'paciente' || rol === 'psicologa') {
+      guardarMisCitasEnCache({ rol, usuarioId, payload });
+    }
+
+    res.json(payload);
   } catch (error) {
     console.error('[getMisCitas] Error:', error);
     res.status(500).json({ 
@@ -435,6 +626,11 @@ const crearCita = async (req, res) => {
       });
     }
 
+    invalidarMisCitasCachePorUsuarios({
+      pacienteUsuarioId: contexto?.paciente_usuarioid,
+      psicologaUsuarioId: contexto?.psicologa_usuarioid,
+    });
+
     res.status(201).json({ citaId: result.rows[0].citaid });
   } catch (error) {
     console.error('Error al crear la cita:', error);
@@ -545,6 +741,11 @@ const actualizarCita = async (req, res) => {
       });
     }
 
+    invalidarMisCitasCachePorUsuarios({
+      pacienteUsuarioId: contextoActualizado?.paciente_usuarioid,
+      psicologaUsuarioId: contextoActualizado?.psicologa_usuarioid,
+    });
+
     res.json({
       ...result.rows[0],
       notas: req.user.rol === 'psicologa' ? (notaspsicologa || '') : (notaspaciente || ''),
@@ -602,6 +803,11 @@ const confirmarCita = async (req, res) => {
       });
     }
 
+    invalidarMisCitasCachePorUsuarios({
+      pacienteUsuarioId: contextoActualizado?.paciente_usuarioid,
+      psicologaUsuarioId: contextoActualizado?.psicologa_usuarioid,
+    });
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error al confirmar la cita:', error);
@@ -650,6 +856,11 @@ const cancelarCita = async (req, res) => {
         fechaEnvio: fechaCliente,
       });
     }
+
+    invalidarMisCitasCachePorUsuarios({
+      pacienteUsuarioId: contextoActualizado?.paciente_usuarioid,
+      psicologaUsuarioId: contextoActualizado?.psicologa_usuarioid,
+    });
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -703,7 +914,8 @@ const getMiDisponibilidad = async (req, res) => {
         SELECT fechahora, duracionmin
         FROM citas
         WHERE psicologaid = $1
-          AND DATE(fechahora) = $2
+          AND fechahora >= $2::date
+          AND fechahora < ($2::date + interval '1 day')
           AND COALESCE(LOWER(TRIM(estado)), '') NOT IN ('cancelada', 'cancelado')
       `,
       [psicologaId, fecha]

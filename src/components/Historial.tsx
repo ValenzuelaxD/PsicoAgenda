@@ -4,7 +4,10 @@ import { FileText, Calendar, TrendingUp, Clock } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
-import { API_ENDPOINTS } from '../utils/api';
+import { apiFetch, API_ENDPOINTS } from '../utils/api';
+
+const HISTORIAL_CACHE_PREFIX = 'historial_paciente_cache_v1';
+const HISTORIAL_CACHE_TTL_MS = 90 * 1000;
 
 export function Historial() {
   const [historial, setHistorial] = useState<any[]>([]);
@@ -12,24 +15,106 @@ export function Historial() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const construirClaveCacheHistorial = () => {
+    try {
+      const rawUser = localStorage.getItem('user');
+      if (!rawUser) {
+        return `${HISTORIAL_CACHE_PREFIX}:anon`;
+      }
+
+      const parsedUser = JSON.parse(rawUser);
+      const userId = String(parsedUser?.usuarioid || parsedUser?.id || 'anon');
+      return `${HISTORIAL_CACHE_PREFIX}:${userId}`;
+    } catch {
+      return `${HISTORIAL_CACHE_PREFIX}:anon`;
+    }
+  };
+
+  const leerCacheHistorial = () => {
+    try {
+      const raw = sessionStorage.getItem(construirClaveCacheHistorial());
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') {
+        return null;
+      }
+
+      const expiracion = Number(parsed.expiracion || 0);
+      if (!Number.isFinite(expiracion) || expiracion < Date.now()) {
+        sessionStorage.removeItem(construirClaveCacheHistorial());
+        return null;
+      }
+
+      return {
+        historial: Array.isArray(parsed.historial) ? parsed.historial : [],
+        estadisticas: parsed.estadisticas || {},
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const guardarCacheHistorial = (payload: { historial: any[]; estadisticas: any }) => {
+    try {
+      sessionStorage.setItem(
+        construirClaveCacheHistorial(),
+        JSON.stringify({
+          expiracion: Date.now() + HISTORIAL_CACHE_TTL_MS,
+          historial: payload.historial,
+          estadisticas: payload.estadisticas,
+        })
+      );
+    } catch {
+      // Ignorar errores de serialización o cuota.
+    }
+  };
+
+  const invalidarCacheHistorial = () => {
+    try {
+      sessionStorage.removeItem(construirClaveCacheHistorial());
+    } catch {
+      // Ignorar errores de storage.
+    }
+  };
+
   useEffect(() => {
-    const fetchHistorial = async () => {
+    const fetchHistorial = async (
+      { forzar = false, silencioso = false }: { forzar?: boolean; silencioso?: boolean } = {}
+    ) => {
       try {
+        if (!silencioso) {
+          setLoading(true);
+          setError(null);
+        }
+
+        if (!forzar) {
+          const dataCache = leerCacheHistorial();
+          if (dataCache) {
+            setHistorial(dataCache.historial);
+            setEstadisticas(dataCache.estadisticas);
+            if (!silencioso) {
+              setLoading(false);
+            }
+
+            void fetchHistorial({ forzar: true, silencioso: true });
+            return;
+          }
+        }
+
         const token = localStorage.getItem('token');
         if (!token) {
           throw new Error('No autenticado. Por favor inicia sesión.');
         }
 
-        const response = await fetch(API_ENDPOINTS.MI_HISTORIAL, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await apiFetch(API_ENDPOINTS.MI_HISTORIAL);
 
         if (response.status === 401) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          invalidarCacheHistorial();
           throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
         }
 
@@ -39,13 +124,23 @@ export function Historial() {
         }
 
         const data = await response.json();
-        setHistorial(data.historial || []);
-        setEstadisticas(data.estadisticas || {});
+        const payload = {
+          historial: Array.isArray(data?.historial) ? data.historial : [],
+          estadisticas: data?.estadisticas || {},
+        };
+
+        setHistorial(payload.historial);
+        setEstadisticas(payload.estadisticas);
+        guardarCacheHistorial(payload);
       } catch (err: any) {
-        setError(err.message);
-        toast.error(err.message);
+        if (!silencioso) {
+          setError(err.message);
+          toast.error(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (!silencioso) {
+          setLoading(false);
+        }
       }
     };
 

@@ -33,6 +33,9 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Cita, ESTADO_CITA, MODALIDAD_CITA } from '../utils/types';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
+const MIS_CITAS_CACHE_PREFIX = 'mis_citas_cache_v1';
+const MIS_CITAS_CACHE_TTL_MS = 45 * 1000;
+
 interface MisCitasProps {
   userType: 'psicologo' | 'paciente' | 'admin';
   onNavigate: (view: ViewType) => void;
@@ -57,16 +60,105 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const [mesCalendarioReagenda, setMesCalendarioReagenda] = useState(new Date());
   const [mesCalendarioEdicion, setMesCalendarioEdicion] = useState(new Date());
 
-  const fetchCitas = async () => {
+  const construirClaveCacheCitas = () => {
     try {
-      setLoading(true);
-      setError(null);
+      const rawUser = localStorage.getItem('user');
+      if (!rawUser) {
+        return `${MIS_CITAS_CACHE_PREFIX}:${userType}:anon`;
+      }
+
+      const parsedUser = JSON.parse(rawUser);
+      const userId = String(parsedUser?.usuarioid || parsedUser?.id || 'anon');
+      return `${MIS_CITAS_CACHE_PREFIX}:${userType}:${userId}`;
+    } catch {
+      return `${MIS_CITAS_CACHE_PREFIX}:${userType}:anon`;
+    }
+  };
+
+  const leerCacheCitas = (): Cita[] | null => {
+    try {
+      const raw = sessionStorage.getItem(construirClaveCacheCitas());
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      const expiracion = Number(parsed.expiracion || 0);
+      if (!Number.isFinite(expiracion) || expiracion < Date.now()) {
+        sessionStorage.removeItem(construirClaveCacheCitas());
+        return null;
+      }
+
+      if (!Array.isArray(parsed.payload)) {
+        return null;
+      }
+
+      return parsed.payload as Cita[];
+    } catch {
+      return null;
+    }
+  };
+
+  const guardarCacheCitas = (payload: Cita[]) => {
+    try {
+      sessionStorage.setItem(
+        construirClaveCacheCitas(),
+        JSON.stringify({
+          expiracion: Date.now() + MIS_CITAS_CACHE_TTL_MS,
+          payload,
+        })
+      );
+    } catch {
+      // Ignorar errores de serialización o cuota.
+    }
+  };
+
+  const invalidarCacheCitas = () => {
+    try {
+      sessionStorage.removeItem(construirClaveCacheCitas());
+    } catch {
+      // Ignorar errores de storage.
+    }
+  };
+
+  const actualizarCitasConCache = (value: Cita[] | ((prev: Cita[]) => Cita[])) => {
+    setCitas((prev) => {
+      const next = typeof value === 'function'
+        ? (value as (prev: Cita[]) => Cita[])(prev)
+        : value;
+      guardarCacheCitas(next);
+      return next;
+    });
+  };
+
+  const fetchCitas = async (
+    { forzar = false, silencioso = false }: { forzar?: boolean; silencioso?: boolean } = {}
+  ) => {
+    try {
+      if (!silencioso) {
+        setLoading(true);
+        setError(null);
+      }
+
+      if (!forzar) {
+        const citasEnCache = leerCacheCitas();
+        if (citasEnCache) {
+          setCitas(citasEnCache);
+          if (!silencioso) {
+            setLoading(false);
+          }
+
+          void fetchCitas({ forzar: true, silencioso: true });
+          return;
+        }
+      }
 
       const response = await apiFetch(API_ENDPOINTS.CITAS);
 
       if (response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        invalidarCacheCitas();
         throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
       }
 
@@ -76,12 +168,18 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
       }
 
       const data = await response.json();
-      setCitas(data);
+      const citasData = Array.isArray(data) ? (data as Cita[]) : [];
+      setCitas(citasData);
+      guardarCacheCitas(citasData);
     } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message);
+      if (!silencioso) {
+        setError(err.message);
+        toast.error(err.message);
+      }
     } finally {
-      setLoading(false);
+      if (!silencioso) {
+        setLoading(false);
+      }
     }
   };
 
@@ -442,7 +540,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           throw new Error(data.message || 'No fue posible cancelar la cita.');
         }
 
-        setCitas((prev) => prev.map((cita) => (cita.citaid === citaACancelar ? { ...cita, ...data } : cita)));
+        actualizarCitasConCache((prev) => prev.map((cita) => (cita.citaid === citaACancelar ? { ...cita, ...data } : cita)));
         toast.success('Cita cancelada exitosamente', {
           description: `Se ha notificado al ${userType === 'psicologo' ? 'paciente' : 'profesional'}`,
         });
@@ -502,7 +600,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           throw new Error(data.message || 'No fue posible actualizar la cita.');
         }
 
-        setCitas((prev) => prev.map((cita) => (cita.citaid === citaAEditar.citaid ? { ...cita, ...data, paciente_nombre: cita.paciente_nombre, paciente_apellido: cita.paciente_apellido, ubicacion: cita.ubicacion } : cita)));
+        actualizarCitasConCache((prev) => prev.map((cita) => (cita.citaid === citaAEditar.citaid ? { ...cita, ...data, paciente_nombre: cita.paciente_nombre, paciente_apellido: cita.paciente_apellido, ubicacion: cita.ubicacion } : cita)));
         toast.success('Cita modificada exitosamente', {
           description: 'Los cambios han sido guardados.',
         });
@@ -524,7 +622,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
         throw new Error(data.message || 'No fue posible confirmar la cita.');
       }
 
-      setCitas((prev) => prev.map((cita) => (cita.citaid === citaId ? { ...cita, ...data } : cita)));
+      actualizarCitasConCache((prev) => prev.map((cita) => (cita.citaid === citaId ? { ...cita, ...data } : cita)));
       toast.success('Cita confirmada exitosamente', {
         description: 'El estado ya se actualizó en la base de datos.',
       });
@@ -577,7 +675,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           throw new Error(data.message || 'No fue posible reagendar la cita.');
         }
 
-        setCitas((prev) => prev.map((cita) => (cita.citaid === citaAReagendar.citaid ? { ...cita, ...data, psicologa_nombre: cita.psicologa_nombre, psicologa_apellido: cita.psicologa_apellido, ubicacion: cita.ubicacion } : cita)));
+        actualizarCitasConCache((prev) => prev.map((cita) => (cita.citaid === citaAReagendar.citaid ? { ...cita, ...data, psicologa_nombre: cita.psicologa_nombre, psicologa_apellido: cita.psicologa_apellido, ubicacion: cita.ubicacion } : cita)));
         toast.success('Reagendamiento guardado', {
           description: 'La cita fue actualizada y notificada.',
         });

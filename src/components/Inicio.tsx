@@ -8,6 +8,9 @@ import { toast } from 'sonner';
 import { PacienteDashboardData, PsicologaDashboardData } from '../utils/types';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
+const DASHBOARD_CACHE_PREFIX = 'dashboard_cache_v1';
+const DASHBOARD_CACHE_TTL_MS = 60 * 1000;
+
 interface InicioProps {
   userName: string;
   userType: 'psicologo' | 'paciente' | 'admin';
@@ -20,6 +23,48 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmandoCitaId, setConfirmandoCitaId] = useState<number | null>(null);
+
+  const construirClaveCacheDashboard = (endpoint: string) => `${DASHBOARD_CACHE_PREFIX}:${userType}:${endpoint}`;
+
+  const leerCacheDashboard = (cacheKey: string) => {
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      const expiracion = Number(parsed.expiracion || 0);
+      if (!Number.isFinite(expiracion) || expiracion < Date.now()) {
+        sessionStorage.removeItem(cacheKey);
+        return null;
+      }
+
+      return parsed.payload ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const guardarCacheDashboard = (cacheKey: string, payload: unknown) => {
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        expiracion: Date.now() + DASHBOARD_CACHE_TTL_MS,
+        payload,
+      }));
+    } catch {
+      // Ignorar errores de cuota o serialización.
+    }
+  };
+
+  const invalidarCacheDashboard = () => {
+    try {
+      const claves = Object.keys(sessionStorage).filter((key) => key.startsWith(DASHBOARD_CACHE_PREFIX));
+      claves.forEach((key) => sessionStorage.removeItem(key));
+    } catch {
+      // Ignorar errores de acceso al storage.
+    }
+  };
 
   const extraerFechaHoraLocal = (fechaHora?: string) => {
     const valor = String(fechaHora || '').trim();
@@ -102,24 +147,36 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
 
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         const token = localStorage.getItem('token');
         if (!token) {
           throw new Error("No autenticado. Por favor inicia sesión.");
         }
 
-    const endpoint = userType === 'paciente'
-      ? API_ENDPOINTS.DASHBOARD_PACIENTE
-      : `${API_ENDPOINTS.DASHBOARD_PSICOLOGO}?fecha=${obtenerFechaLocalISO()}`;
-        const response = await fetch(endpoint, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        const endpoint = userType === 'paciente'
+          ? API_ENDPOINTS.DASHBOARD_PACIENTE
+          : `${API_ENDPOINTS.DASHBOARD_PSICOLOGO}?fecha=${obtenerFechaLocalISO()}`;
+        const cacheKey = construirClaveCacheDashboard(endpoint);
+        const payloadCache = leerCacheDashboard(cacheKey);
+
+        if (payloadCache) {
+          if (userType === 'paciente') {
+            setPacienteData(payloadCache as PacienteDashboardData);
+          } else {
+            setPsicologoData(payloadCache as PsicologaDashboardData);
           }
-        });
+          setLoading(false);
+          return;
+        }
+
+        const response = await apiFetch(endpoint);
 
         if (response.status === 401) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          invalidarCacheDashboard();
           throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
         }
 
@@ -134,6 +191,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
         } else {
           setPsicologoData(data);
         }
+        guardarCacheDashboard(cacheKey, data);
       } catch (err: any) {
         setError(err.message);
         toast.error(err.message);
@@ -375,6 +433,8 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
             pendientesPorConfirmar: (prev.pendientesPorConfirmar || []).filter((cita) => cita.citaid !== citaId),
           };
         });
+
+        invalidarCacheDashboard();
 
         toast.success('Cita confirmada', {
           description: 'La cita se confirmó correctamente desde Inicio.',

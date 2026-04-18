@@ -57,6 +57,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "setup": "npm install",
+    "setup:ci": "npm ci && npm --prefix server ci",
+    "postinstall": "npm --prefix server install",
+    "deps:check": "npm ls --depth=0 && npm --prefix server ls --depth=0"
   }
 }
