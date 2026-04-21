@@ -171,6 +171,8 @@ Variables requeridas:
 - SMTP_TLS_REJECT_UNAUTHORIZED = true
 - MAIL_FROM_NAME = PsicoAgenda
 - MAIL_FROM_ADDRESS = virtual@psicoagenda.online
+- MAIL_SUPPORT_ADDRESS = info@psicoagenda.online
+- APP_WEB_URL = https://psicoagenda-489800.web.app
 - APP_TIMEZONE = America/Mexico_City
 
 Importante:

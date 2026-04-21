@@ -7,6 +7,10 @@ const {
   cancelarReunionZoom,
 } = require('./zoomService');
 const { isEmailIntegrationEnabled, enviarCorreo } = require('./mailService');
+const {
+  construirTemplatesAccesoZoom,
+  construirTemplatesCancelacionZoom,
+} = require('./emailTemplateService');
 
 const APP_TIMEZONE = String(process.env.APP_TIMEZONE || 'America/Mexico_City').trim();
 
@@ -33,36 +37,10 @@ const esEstadoCancelada = (estado) => {
   return normalized === 'cancelada' || normalized === 'cancelado';
 };
 
-const escapeHtml = (value) => {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-};
-
 const obtenerNombreCompleto = (nombre, apellido) => {
   return `${String(nombre || '').trim()} ${String(apellido || '').trim()}`.trim();
 };
 
-const formatearFechaHora = (fecha) => {
-  const date = new Date(fecha);
-  if (Number.isNaN(date.getTime())) {
-    return 'fecha no disponible';
-  }
-
-  return date.toLocaleString('es-MX', {
-    timeZone: APP_TIMEZONE,
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-};
 
 const obtenerCitaVirtual = async (citaId) => {
   const result = await db.query(
@@ -164,131 +142,22 @@ const actualizarLogCorreo = async ({ correoId, estado, providerMessageId = null,
   );
 };
 
-const construirTemplatesConfirmacion = ({ contexto, joinUrl, startUrl, password, tipoEvento }) => {
-  const pacienteNombre = obtenerNombreCompleto(contexto.paciente_nombre, contexto.paciente_apellido);
-  const psicologaNombre = obtenerNombreCompleto(contexto.psicologa_nombre, contexto.psicologa_apellido);
-  const fechaTexto = formatearFechaHora(contexto.fechahora);
-  const esReagenda = tipoEvento === 'reagenda';
-
-  const asuntoPaciente = esReagenda
-    ? 'PsicoAgenda: actualizacion de acceso a tu cita en linea'
-    : 'PsicoAgenda: acceso a tu cita en linea';
-
-  const asuntoPsicologa = esReagenda
-    ? 'PsicoAgenda: reunion Zoom actualizada'
-    : 'PsicoAgenda: reunion Zoom creada';
-
-  const textoPaciente = [
-    `Hola ${pacienteNombre},`,
-    '',
-    esReagenda
-      ? `Tu cita con ${psicologaNombre} fue reagendada.`
-      : `Tu cita con ${psicologaNombre} fue programada.`,
-    `Fecha y hora: ${fechaTexto} (${APP_TIMEZONE})`,
-    `Enlace de acceso: ${joinUrl}`,
-    password ? `Codigo de acceso: ${password}` : '',
-    '',
-    'Si no puedes asistir, por favor avisa con anticipacion desde PsicoAgenda.',
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  const htmlPaciente = `
-    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;max-width:680px;margin:0 auto;padding:16px;">
-      <h2 style="margin-bottom:8px;">PsicoAgenda</h2>
-      <p>Hola <strong>${escapeHtml(pacienteNombre)}</strong>,</p>
-      <p>${esReagenda ? 'Tu cita fue reagendada.' : 'Tu cita fue programada.'}</p>
-      <p><strong>Psicologa:</strong> ${escapeHtml(psicologaNombre)}<br/>
-      <strong>Fecha y hora:</strong> ${escapeHtml(fechaTexto)} (${escapeHtml(APP_TIMEZONE)})</p>
-      <p><strong>Enlace de acceso:</strong><br/>
-      <a href="${escapeHtml(joinUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(joinUrl)}</a></p>
-      ${password ? `<p><strong>Codigo de acceso:</strong> ${escapeHtml(password)}</p>` : ''}
-      <p>Si no puedes asistir, por favor avisa con anticipacion desde PsicoAgenda.</p>
-    </div>
-  `;
-
-  const textoPsicologa = [
-    `Hola ${psicologaNombre},`,
-    '',
-    esReagenda
-      ? `La reunion Zoom para la cita con ${pacienteNombre} fue actualizada.`
-      : `Se creo una reunion Zoom para la cita con ${pacienteNombre}.`,
-    `Fecha y hora: ${fechaTexto} (${APP_TIMEZONE})`,
-    `Join URL: ${joinUrl}`,
-    startUrl ? `Start URL (solo anfitrion): ${startUrl}` : '',
-    password ? `Codigo de acceso: ${password}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  const htmlPsicologa = `
-    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;max-width:680px;margin:0 auto;padding:16px;">
-      <h2 style="margin-bottom:8px;">PsicoAgenda</h2>
-      <p>Hola <strong>${escapeHtml(psicologaNombre)}</strong>,</p>
-      <p>${esReagenda
-        ? `La reunion Zoom para la cita con ${escapeHtml(pacienteNombre)} fue actualizada.`
-        : `Se creo una reunion Zoom para la cita con ${escapeHtml(pacienteNombre)}.`}</p>
-      <p><strong>Fecha y hora:</strong> ${escapeHtml(fechaTexto)} (${escapeHtml(APP_TIMEZONE)})</p>
-      <p><strong>Join URL:</strong><br/>
-      <a href="${escapeHtml(joinUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(joinUrl)}</a></p>
-      ${startUrl ? `<p><strong>Start URL (solo anfitrion):</strong><br/><a href="${escapeHtml(startUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(startUrl)}</a></p>` : ''}
-      ${password ? `<p><strong>Codigo de acceso:</strong> ${escapeHtml(password)}</p>` : ''}
-    </div>
-  `;
-
-  return {
-    paciente: {
-      asunto: asuntoPaciente,
-      texto: textoPaciente,
-      html: htmlPaciente,
-    },
-    psicologa: {
-      asunto: asuntoPsicologa,
-      texto: textoPsicologa,
-      html: htmlPsicologa,
-    },
-  };
+const construirTemplatesConfirmacion = async ({ contexto, joinUrl, startUrl, password, tipoEvento }) => {
+  return construirTemplatesAccesoZoom({
+    contexto,
+    joinUrl,
+    startUrl,
+    password,
+    tipoEvento,
+    timezone: APP_TIMEZONE,
+  });
 };
 
-const construirTemplateCancelacion = ({ contexto }) => {
-  const pacienteNombre = obtenerNombreCompleto(contexto.paciente_nombre, contexto.paciente_apellido);
-  const psicologaNombre = obtenerNombreCompleto(contexto.psicologa_nombre, contexto.psicologa_apellido);
-  const fechaTexto = formatearFechaHora(contexto.fechahora);
-
-  const asunto = 'PsicoAgenda: cita en linea cancelada';
-
-  return {
-    paciente: {
-      asunto,
-      texto: [
-        `Hola ${pacienteNombre},`,
-        '',
-        `La cita en linea con ${psicologaNombre} del ${fechaTexto} fue cancelada.`,
-      ].join('\n'),
-      html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;max-width:680px;margin:0 auto;padding:16px;">
-          <h2 style="margin-bottom:8px;">PsicoAgenda</h2>
-          <p>Hola <strong>${escapeHtml(pacienteNombre)}</strong>,</p>
-          <p>La cita en linea con ${escapeHtml(psicologaNombre)} del ${escapeHtml(fechaTexto)} fue cancelada.</p>
-        </div>
-      `,
-    },
-    psicologa: {
-      asunto,
-      texto: [
-        `Hola ${psicologaNombre},`,
-        '',
-        `La cita en linea con ${pacienteNombre} del ${fechaTexto} fue cancelada.`,
-      ].join('\n'),
-      html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;max-width:680px;margin:0 auto;padding:16px;">
-          <h2 style="margin-bottom:8px;">PsicoAgenda</h2>
-          <p>Hola <strong>${escapeHtml(psicologaNombre)}</strong>,</p>
-          <p>La cita en linea con ${escapeHtml(pacienteNombre)} del ${escapeHtml(fechaTexto)} fue cancelada.</p>
-        </div>
-      `,
-    },
-  };
+const construirTemplateCancelacion = async ({ contexto }) => {
+  return construirTemplatesCancelacionZoom({
+    contexto,
+    timezone: APP_TIMEZONE,
+  });
 };
 
 const enviarCorreoConBitacora = async ({ citaId, destinatario, tipo, asunto, texto, html }) => {
@@ -421,7 +290,7 @@ const enviarCorreosAcceso = async ({ contexto, joinUrl, startUrl, password, tipo
     return;
   }
 
-  const templates = construirTemplatesConfirmacion({ contexto, joinUrl, startUrl, password, tipoEvento });
+  const templates = await construirTemplatesConfirmacion({ contexto, joinUrl, startUrl, password, tipoEvento });
   const tipo = tipoEvento === 'reagenda' ? 'reagenda' : 'confirmacion';
 
   if (contexto.paciente_correo) {
@@ -452,7 +321,7 @@ const enviarCorreosCancelacion = async ({ contexto }) => {
     return;
   }
 
-  const templates = construirTemplateCancelacion({ contexto });
+  const templates = await construirTemplateCancelacion({ contexto });
 
   if (contexto.paciente_correo) {
     await enviarCorreoConBitacora({

@@ -11,6 +11,7 @@
     "migrate:virtual-integrations": "node migrate-virtual-integrations.js"
   },
   "dependencies": {
+    "@react-email/render": "^2.0.7",
     "axios": "^1.13.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
@@ -19,6 +20,9 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^7.0.10",
     "pg": "^8.11.5",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-email": "^6.0.0",
     "sharp": "^0.33.5"
   },
   "devDependencies": {
