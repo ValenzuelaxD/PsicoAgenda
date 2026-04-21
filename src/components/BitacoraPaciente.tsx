@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -39,6 +39,14 @@ interface CasoEspecialMeta {
   tipos: CasoEspecialTipo[];
   severidad: SeveridadCaso;
   estado: EstadoCaso;
+  detalle?: {
+    accionInmediata?: string;
+    planSeguimiento24h?: string;
+    relacionFamiliar?: string;
+    consentimientoFamiliar?: 'Si' | 'No';
+    horaFueraHorario?: string;
+    motivoFueraHorario?: string;
+  };
 }
 
 interface BitacoraEntrada extends HistorialClinico {
@@ -157,6 +165,14 @@ const parseObservaciones = (textoOriginal: string | undefined): { observacionesL
         tipos,
         severidad,
         estado,
+        detalle: {
+          accionInmediata: String(parsed?.detalle?.accionInmediata || ''),
+          planSeguimiento24h: String(parsed?.detalle?.planSeguimiento24h || ''),
+          relacionFamiliar: String(parsed?.detalle?.relacionFamiliar || ''),
+          consentimientoFamiliar: parsed?.detalle?.consentimientoFamiliar === 'No' ? 'No' : 'Si',
+          horaFueraHorario: String(parsed?.detalle?.horaFueraHorario || ''),
+          motivoFueraHorario: String(parsed?.detalle?.motivoFueraHorario || ''),
+        },
       },
     };
   } catch {
@@ -175,6 +191,15 @@ const buildObservacionesPayload = (observacionesLimpias: string, casoEspecial: C
 
   return `${texto}\n\n${META_PREFIX}${JSON.stringify(casoEspecial)}`;
 };
+
+const normalizarDetalleCaso = (detalle: CasoEspecialMeta['detalle'] | undefined) => ({
+  accionInmediata: String(detalle?.accionInmediata || ''),
+  planSeguimiento24h: String(detalle?.planSeguimiento24h || ''),
+  relacionFamiliar: String(detalle?.relacionFamiliar || ''),
+  consentimientoFamiliar: detalle?.consentimientoFamiliar === 'No' ? 'No' : 'Si',
+  horaFueraHorario: String(detalle?.horaFueraHorario || ''),
+  motivoFueraHorario: String(detalle?.motivoFueraHorario || ''),
+});
 
 const normalizarEntrada = (entrada: HistorialClinico): BitacoraEntrada => {
   const parsed = parseObservaciones(entrada.observaciones);
@@ -200,6 +225,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [tiposCaso, setTiposCaso] = useState<CasoEspecialTipo[]>([]);
   const [severidadCaso, setSeveridadCaso] = useState<SeveridadCaso>('Media');
   const [estadoCaso, setEstadoCaso] = useState<EstadoCaso>('Abierto');
+  const [detalleCaso, setDetalleCaso] = useState(normalizarDetalleCaso(undefined));
 
   const [editarEntrada, setEditarEntrada] = useState<BitacoraEntrada | null>(null);
   const [notaEditar, setNotaEditar] = useState('');
@@ -208,6 +234,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [tiposCasoEditar, setTiposCasoEditar] = useState<CasoEspecialTipo[]>([]);
   const [severidadCasoEditar, setSeveridadCasoEditar] = useState<SeveridadCaso>('Media');
   const [estadoCasoEditar, setEstadoCasoEditar] = useState<EstadoCaso>('Abierto');
+  const [detalleCasoEditar, setDetalleCasoEditar] = useState(normalizarDetalleCaso(undefined));
 
   const [filtroCasoEspecial, setFiltroCasoEspecial] = useState<'todos' | 'solo'>('todos');
   const [filtroTipo, setFiltroTipo] = useState<'todos' | CasoEspecialTipo>('todos');
@@ -215,6 +242,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoCaso>('todos');
 
   const [mostrarExito, setMostrarExito] = useState(false);
+  const ultimaAlertaUrgenciaRef = useRef('');
 
   const fetchPacientesList = async () => {
     try {
@@ -314,6 +342,40 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
     });
   }, [entradas, filtroCasoEspecial, filtroTipo, filtroSeveridad, filtroEstado]);
 
+  const resumenCasosEspeciales = useMemo(() => {
+    const entradasEspeciales = entradas.filter((entrada) => Boolean(entrada.casoEspecial));
+    const urgentesAbiertos = entradasEspeciales.filter((entrada) =>
+      entrada.casoEspecial?.tipos.includes('urgencia') && entrada.casoEspecial?.estado !== 'Cerrado'
+    ).length;
+
+    const porSeveridad = SEVERIDAD_OPCIONES.reduce((acc, severidad) => {
+      acc[severidad] = entradasEspeciales.filter((entrada) => entrada.casoEspecial?.severidad === severidad).length;
+      return acc;
+    }, {} as Record<SeveridadCaso, number>);
+
+    return {
+      totalEspeciales: entradasEspeciales.length,
+      urgentesAbiertos,
+      porSeveridad,
+    };
+  }, [entradas]);
+
+  useEffect(() => {
+    if (!pacienteSeleccionado) return;
+    const cantidadUrgente = resumenCasosEspeciales.urgentesAbiertos;
+    if (cantidadUrgente <= 0) return;
+
+    const claveAlerta = `${pacienteSeleccionado.pacienteid}:${cantidadUrgente}`;
+    if (ultimaAlertaUrgenciaRef.current === claveAlerta) {
+      return;
+    }
+
+    ultimaAlertaUrgenciaRef.current = claveAlerta;
+    toast.warning('Hay casos de urgencia abiertos', {
+      description: `${cantidadUrgente} caso(s) requieren seguimiento prioritario.`,
+    });
+  }, [pacienteSeleccionado, resumenCasosEspeciales.urgentesAbiertos]);
+
   const toggleTipoCaso = (tipo: CasoEspecialTipo) => {
     setTiposCaso((prev) =>
       prev.includes(tipo) ? prev.filter((item) => item !== tipo) : [...prev, tipo]
@@ -332,11 +394,27 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       return;
     }
 
+    if (tiposCaso.includes('urgencia') && (!detalleCaso.accionInmediata.trim() || !detalleCaso.planSeguimiento24h.trim())) {
+      toast.error('Para urgencia, captura acción inmediata y plan de seguimiento 24h.');
+      return;
+    }
+
+    if (tiposCaso.includes('familiar') && !detalleCaso.relacionFamiliar.trim()) {
+      toast.error('Para caso familiar, indica la relación del familiar o red de apoyo.');
+      return;
+    }
+
+    if (tiposCaso.includes('fuera_horario') && (!detalleCaso.horaFueraHorario.trim() || !detalleCaso.motivoFueraHorario.trim())) {
+      toast.error('Para fuera de horario, indica hora y motivo del contacto.');
+      return;
+    }
+
     const metaCaso = tiposCaso.length > 0
       ? {
           tipos: tiposCaso,
           severidad: severidadCaso,
           estado: estadoCaso,
+          detalle: normalizarDetalleCaso(detalleCaso),
         }
       : null;
 
@@ -360,6 +438,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       setTiposCaso([]);
       setSeveridadCaso('Media');
       setEstadoCaso('Abierto');
+      setDetalleCaso(normalizarDetalleCaso(undefined));
       setEditando(false);
       setMostrarExito(true);
     } catch (err: any) {
@@ -375,6 +454,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
     setTiposCasoEditar(entrada.casoEspecial?.tipos || []);
     setSeveridadCasoEditar(entrada.casoEspecial?.severidad || 'Media');
     setEstadoCasoEditar(entrada.casoEspecial?.estado || 'Abierto');
+    setDetalleCasoEditar(normalizarDetalleCaso(entrada.casoEspecial?.detalle));
   };
 
   const handleGuardarEdicion = async () => {
@@ -383,11 +463,27 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       return;
     }
 
+    if (tiposCasoEditar.includes('urgencia') && (!detalleCasoEditar.accionInmediata.trim() || !detalleCasoEditar.planSeguimiento24h.trim())) {
+      toast.error('Para urgencia, captura acción inmediata y plan de seguimiento 24h.');
+      return;
+    }
+
+    if (tiposCasoEditar.includes('familiar') && !detalleCasoEditar.relacionFamiliar.trim()) {
+      toast.error('Para caso familiar, indica la relación del familiar o red de apoyo.');
+      return;
+    }
+
+    if (tiposCasoEditar.includes('fuera_horario') && (!detalleCasoEditar.horaFueraHorario.trim() || !detalleCasoEditar.motivoFueraHorario.trim())) {
+      toast.error('Para fuera de horario, indica hora y motivo del contacto.');
+      return;
+    }
+
     const metaCasoEditar = tiposCasoEditar.length > 0
       ? {
           tipos: tiposCasoEditar,
           severidad: severidadCasoEditar,
           estado: estadoCasoEditar,
+          detalle: normalizarDetalleCaso(detalleCasoEditar),
         }
       : null;
 
@@ -550,6 +646,30 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               <div className="space-y-4">
                 <div className="flex flex-col gap-3">
                   <h2 className="text-white">Historial de Sesiones</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="pt-4 pb-4 text-center">
+                        <p className="text-xs text-slate-400">Casos especiales</p>
+                        <p className="text-xl text-teal-300 font-semibold">{resumenCasosEspeciales.totalEspeciales}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="pt-4 pb-4 text-center">
+                        <p className="text-xs text-slate-400">Urgencias abiertas</p>
+                        <p className="text-xl text-rose-400 font-semibold">{resumenCasosEspeciales.urgentesAbiertos}</p>
+                      </CardContent>
+                    </Card>
+                    {SEVERIDAD_OPCIONES.slice(0, 3).map((nivel) => (
+                      <Card key={`resumen-${nivel}`} className="bg-slate-800/50 border-slate-700">
+                        <CardContent className="pt-4 pb-4 text-center">
+                          <p className="text-xs text-slate-400">Severidad {nivel}</p>
+                          <p className="text-xl font-semibold" style={{ color: nivel === 'Media' ? '#f59e0b' : nivel === 'Alta' ? '#f97316' : '#10b981' }}>
+                            {resumenCasosEspeciales.porSeveridad[nivel]}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                   <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3">
                     <p className="text-sm text-slate-300">Filtros de casos especiales</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -673,6 +793,30 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                       <CardContent>
                         <h4 className="text-slate-200 mb-2">Notas de la Sesión</h4>
                         <p className="text-slate-300 whitespace-pre-wrap">{entrada.observacionesLimpias}</p>
+
+                        {entrada.casoEspecial?.detalle && (
+                          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-2">
+                            <p className="text-xs uppercase tracking-wide text-slate-400">Detalle de caso especial</p>
+                            {entrada.casoEspecial.detalle.accionInmediata ? (
+                              <p className="text-sm text-slate-300"><span className="text-slate-400">Acción inmediata:</span> {entrada.casoEspecial.detalle.accionInmediata}</p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.planSeguimiento24h ? (
+                              <p className="text-sm text-slate-300"><span className="text-slate-400">Plan 24h:</span> {entrada.casoEspecial.detalle.planSeguimiento24h}</p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.relacionFamiliar ? (
+                              <p className="text-sm text-slate-300"><span className="text-slate-400">Relación familiar:</span> {entrada.casoEspecial.detalle.relacionFamiliar}</p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.consentimientoFamiliar ? (
+                              <p className="text-sm text-slate-300"><span className="text-slate-400">Consentimiento familiar:</span> {entrada.casoEspecial.detalle.consentimientoFamiliar}</p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.horaFueraHorario ? (
+                              <p className="text-sm text-slate-300"><span className="text-slate-400">Hora fuera de horario:</span> {entrada.casoEspecial.detalle.horaFueraHorario}</p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.motivoFueraHorario ? (
+                              <p className="text-sm text-slate-300"><span className="text-slate-400">Motivo fuera de horario:</span> {entrada.casoEspecial.detalle.motivoFueraHorario}</p>
+                            ) : null}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))
@@ -798,6 +942,70 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   </div>
                 </div>
               )}
+
+              {tiposCaso.includes('urgencia') && (
+                <div className="space-y-2 rounded-lg border border-rose-700/40 bg-rose-900/10 p-3">
+                  <Label className="text-rose-200">Acción inmediata (urgencia)</Label>
+                  <Textarea
+                    value={detalleCaso.accionInmediata}
+                    onChange={(e) => setDetalleCaso((prev) => ({ ...prev, accionInmediata: e.target.value }))}
+                    rows={2}
+                    className="bg-slate-700 border-slate-600 text-slate-100"
+                  />
+                  <Label className="text-rose-200">Plan de seguimiento 24h</Label>
+                  <Textarea
+                    value={detalleCaso.planSeguimiento24h}
+                    onChange={(e) => setDetalleCaso((prev) => ({ ...prev, planSeguimiento24h: e.target.value }))}
+                    rows={2}
+                    className="bg-slate-700 border-slate-600 text-slate-100"
+                  />
+                </div>
+              )}
+
+              {tiposCaso.includes('familiar') && (
+                <div className="space-y-2 rounded-lg border border-violet-700/40 bg-violet-900/10 p-3">
+                  <Label className="text-violet-200">Relación del familiar o red de apoyo</Label>
+                  <Input
+                    value={detalleCaso.relacionFamiliar}
+                    onChange={(e) => setDetalleCaso((prev) => ({ ...prev, relacionFamiliar: e.target.value }))}
+                    className="h-11 bg-slate-700 border-slate-600 text-slate-100"
+                  />
+                  <Label className="text-violet-200">Consentimiento informado</Label>
+                  <div className="flex gap-2">
+                    {(['Si', 'No'] as const).map((valor) => (
+                      <Button
+                        key={`consent-${valor}`}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDetalleCaso((prev) => ({ ...prev, consentimientoFamiliar: valor }))}
+                        className={detalleCaso.consentimientoFamiliar === valor ? 'bg-violet-600 text-white border-transparent' : 'border-slate-600 bg-slate-800 text-slate-200'}
+                      >
+                        {valor}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tiposCaso.includes('fuera_horario') && (
+                <div className="space-y-2 rounded-lg border border-amber-700/40 bg-amber-900/10 p-3">
+                  <Label className="text-amber-200">Hora del contacto fuera de horario</Label>
+                  <Input
+                    value={detalleCaso.horaFueraHorario}
+                    onChange={(e) => setDetalleCaso((prev) => ({ ...prev, horaFueraHorario: e.target.value }))}
+                    placeholder="Ej. 22:30"
+                    className="h-11 bg-slate-700 border-slate-600 text-slate-100"
+                  />
+                  <Label className="text-amber-200">Motivo fuera de horario</Label>
+                  <Textarea
+                    value={detalleCaso.motivoFueraHorario}
+                    onChange={(e) => setDetalleCaso((prev) => ({ ...prev, motivoFueraHorario: e.target.value }))}
+                    rows={2}
+                    className="bg-slate-700 border-slate-600 text-slate-100"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -921,6 +1129,70 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         ))}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {tiposCasoEditar.includes('urgencia') && (
+                  <div className="space-y-2 rounded-lg border border-rose-700/40 bg-rose-900/10 p-3">
+                    <Label className="text-rose-200">Acción inmediata (urgencia)</Label>
+                    <Textarea
+                      value={detalleCasoEditar.accionInmediata}
+                      onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, accionInmediata: e.target.value }))}
+                      rows={2}
+                      className="bg-slate-700 border-slate-600 text-slate-100"
+                    />
+                    <Label className="text-rose-200">Plan de seguimiento 24h</Label>
+                    <Textarea
+                      value={detalleCasoEditar.planSeguimiento24h}
+                      onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, planSeguimiento24h: e.target.value }))}
+                      rows={2}
+                      className="bg-slate-700 border-slate-600 text-slate-100"
+                    />
+                  </div>
+                )}
+
+                {tiposCasoEditar.includes('familiar') && (
+                  <div className="space-y-2 rounded-lg border border-violet-700/40 bg-violet-900/10 p-3">
+                    <Label className="text-violet-200">Relación del familiar o red de apoyo</Label>
+                    <Input
+                      value={detalleCasoEditar.relacionFamiliar}
+                      onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, relacionFamiliar: e.target.value }))}
+                      className="h-11 bg-slate-700 border-slate-600 text-slate-100"
+                    />
+                    <Label className="text-violet-200">Consentimiento informado</Label>
+                    <div className="flex gap-2">
+                      {(['Si', 'No'] as const).map((valor) => (
+                        <Button
+                          key={`consent-edit-${valor}`}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDetalleCasoEditar((prev) => ({ ...prev, consentimientoFamiliar: valor }))}
+                          className={detalleCasoEditar.consentimientoFamiliar === valor ? 'bg-violet-600 text-white border-transparent' : 'border-slate-600 bg-slate-800 text-slate-200'}
+                        >
+                          {valor}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {tiposCasoEditar.includes('fuera_horario') && (
+                  <div className="space-y-2 rounded-lg border border-amber-700/40 bg-amber-900/10 p-3">
+                    <Label className="text-amber-200">Hora del contacto fuera de horario</Label>
+                    <Input
+                      value={detalleCasoEditar.horaFueraHorario}
+                      onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, horaFueraHorario: e.target.value }))}
+                      placeholder="Ej. 22:30"
+                      className="h-11 bg-slate-700 border-slate-600 text-slate-100"
+                    />
+                    <Label className="text-amber-200">Motivo fuera de horario</Label>
+                    <Textarea
+                      value={detalleCasoEditar.motivoFueraHorario}
+                      onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, motivoFueraHorario: e.target.value }))}
+                      rows={2}
+                      className="bg-slate-700 border-slate-600 text-slate-100"
+                    />
                   </div>
                 )}
               </div>

@@ -8,6 +8,24 @@ import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
 const HISTORIAL_CACHE_PREFIX = 'historial_paciente_cache_v1';
 const HISTORIAL_CACHE_TTL_MS = 90 * 1000;
+const META_PREFIX = '[PSICOAGENDA_CASO_ESPECIAL]';
+
+const parseObservacionesPaciente = (textoOriginal?: string): { textoLimpio: string; meta: any | null } => {
+  const texto = String(textoOriginal || '');
+  const indiceMeta = texto.lastIndexOf(META_PREFIX);
+  if (indiceMeta === -1) {
+    return { textoLimpio: texto, meta: null };
+  }
+
+  const textoLimpio = texto.slice(0, indiceMeta).trimEnd();
+  const rawMeta = texto.slice(indiceMeta + META_PREFIX.length).trim();
+
+  try {
+    return { textoLimpio, meta: JSON.parse(rawMeta) };
+  } catch {
+    return { textoLimpio: texto, meta: null };
+  }
+};
 
 export function Historial() {
   const [historial, setHistorial] = useState<any[]>([]);
@@ -159,6 +177,25 @@ export function Historial() {
     return `${meses} meses`;
   };
 
+  const resumenCasosEspeciales = useMemo(() => {
+    const registros = historial.map((entrada) => {
+      const parsed = parseObservacionesPaciente(entrada.observaciones);
+      return {
+        meta: parsed.meta,
+      };
+    });
+
+    const totalEspeciales = registros.filter((item) => Array.isArray(item.meta?.tipos) && item.meta.tipos.length > 0).length;
+    const urgenciasAbiertas = registros.filter(
+      (item) => Array.isArray(item.meta?.tipos) && item.meta.tipos.includes('urgencia') && item.meta?.estado !== 'Cerrado'
+    ).length;
+
+    return {
+      totalEspeciales,
+      urgenciasAbiertas,
+    };
+  }, [historial]);
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
@@ -218,6 +255,26 @@ export function Historial() {
                   : 'N/A'
                 }
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-slate-400 mb-1">Casos Especiales Registrados</p>
+              <p className="text-teal-400 text-2xl font-semibold">{resumenCasosEspeciales.totalEspeciales}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-slate-400 mb-1">Urgencias en Seguimiento</p>
+              <p className="text-rose-400 text-2xl font-semibold">{resumenCasosEspeciales.urgenciasAbiertas}</p>
             </div>
           </CardContent>
         </Card>
@@ -309,7 +366,7 @@ export function Historial() {
                 {entrada.observaciones && (
                   <div>
                     <h4 className="text-slate-200 mb-2">Observaciones</h4>
-                    <p className="text-slate-300">{entrada.observaciones}</p>
+                    <p className="text-slate-300 whitespace-pre-wrap">{parseObservacionesPaciente(entrada.observaciones).textoLimpio}</p>
                   </div>
                 )}
 
