@@ -1,5 +1,9 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
+const { isEmailIntegrationEnabled, enviarCorreo } = require('../services/mailService');
+const { construirTemplateCambioPassword } = require('../services/emailTemplateService');
+
+const APP_TIMEZONE = String(process.env.APP_TIMEZONE || 'America/Mexico_City').trim();
 
 const GENEROS_PERMITIDOS = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir'];
 const MAX_FOTO_PERFIL_BYTES = 10 * 1024 * 1024;
@@ -351,7 +355,7 @@ const cambiarMiPassword = async (req, res) => {
 
   try {
     const result = await db.query(
-      'SELECT contrasenahash FROM usuarios WHERE usuarioid = $1',
+      'SELECT contrasenahash, correo, nombre, apellidopaterno FROM usuarios WHERE usuarioid = $1',
       [usuarioId]
     );
 
@@ -377,6 +381,29 @@ const cambiarMiPassword = async (req, res) => {
       'UPDATE usuarios SET contrasenahash = $1 WHERE usuarioid = $2',
       [nuevoHash, usuarioId]
     );
+
+    if (isEmailIntegrationEnabled()) {
+      const usuario = result.rows[0];
+      Promise.resolve()
+        .then(async () => {
+          const template = await construirTemplateCambioPassword({
+            nombre: usuario.nombre,
+            apellidoPaterno: usuario.apellidopaterno,
+            fechaCambio: new Date(),
+            timezone: APP_TIMEZONE,
+          });
+
+          await enviarCorreo({
+            to: usuario.correo,
+            subject: template.asunto,
+            text: template.texto,
+            html: template.html,
+          });
+        })
+        .catch((emailError) => {
+          console.error('[perfil.cambiarMiPassword] Error enviando correo de confirmacion:', emailError.message);
+        });
+    }
 
     return res.json({
       success: true,

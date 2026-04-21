@@ -546,9 +546,66 @@ const construirTemplateBienvenidaRegistro = async ({
   };
 };
 
+const construirTemplateCambioPassword = async ({
+  nombre,
+  apellidoPaterno,
+  fechaCambio,
+  timezone = 'America/Mexico_City',
+}) => {
+  const nombreCompleto = obtenerNombreCompleto(nombre, apellidoPaterno) || 'usuario';
+  const asunto = 'PsicoAgenda: tu contrasena fue actualizada';
+  const fechaFormateada = formatearFechaHora(fechaCambio || new Date(), timezone);
+
+  const html = await renderTransactionalHtml({
+    preview: 'Se detecto un cambio de contrasena en tu cuenta',
+    statusLabel: 'Seguridad',
+    statusTone: 'success',
+    title: 'Cambio de contrasena confirmado',
+    greeting: `Hola ${limpiarTexto(nombreCompleto, 'usuario')},`,
+    intro: 'Te confirmamos que la contrasena de tu cuenta fue actualizada correctamente desde la seccion Mi perfil > Seguridad.',
+    details: [
+      { label: 'Evento', value: 'Cambio de contrasena' },
+      { label: 'Fecha y hora', value: `${fechaFormateada} (${timezone})` },
+      { label: 'Plataforma', value: 'PsicoAgenda' },
+    ],
+    primaryAction: {
+      label: 'Abrir PsicoAgenda',
+      href: APP_WEB_URL,
+    },
+    secondaryAction: {
+      label: 'Contactar soporte',
+      href: `mailto:${SUPPORT_EMAIL}`,
+    },
+    recommendations: [
+      'Si no reconoces este cambio, restablece tu contrasena de inmediato.',
+      'Cierra sesiones activas en dispositivos que no reconozcas.',
+      'Evita reutilizar contrasenas en otros servicios.',
+    ],
+    footerNote: 'Este es un aviso de seguridad automatico de PsicoAgenda.',
+  });
+
+  const texto = [
+    `Hola ${nombreCompleto},`,
+    '',
+    'Tu contrasena en PsicoAgenda fue actualizada correctamente.',
+    `Fecha y hora del cambio: ${fechaFormateada} (${timezone})`,
+    '',
+    'Si no reconoces esta accion, cambia tu contrasena de inmediato y contacta a soporte.',
+    `Soporte: ${SUPPORT_EMAIL}`,
+    `Plataforma: ${APP_WEB_URL}`,
+  ].join('\n');
+
+  return {
+    asunto,
+    texto,
+    html,
+  };
+};
+
 module.exports = {
   construirTemplatesAccesoZoom,
   construirTemplatesCancelacionZoom,
   construirTemplateBienvenidaRegistro,
+  construirTemplateCambioPassword,
   renderTransactionalHtml,
 };
