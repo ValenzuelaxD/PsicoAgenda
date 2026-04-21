@@ -83,6 +83,36 @@ const claseBotonOpcion = (activo: boolean, claseActiva: string) => {
   return 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700';
 };
 
+const claseSeveridadActiva = (nivel: SeveridadCaso) => {
+  switch (nivel) {
+    case 'Baja':
+      return 'bg-emerald-600 text-white border-transparent hover:opacity-90';
+    case 'Media':
+      return 'bg-amber-500 text-slate-900 border-transparent hover:opacity-90';
+    case 'Alta':
+      return 'bg-orange-500 text-white border-transparent hover:opacity-90';
+    case 'Critica':
+      return 'bg-rose-600 text-white border-transparent hover:opacity-90';
+    default:
+      return 'bg-teal-600 text-white border-transparent hover:opacity-90';
+  }
+};
+
+const claseEstadoActiva = (estado: EstadoCaso) => {
+  switch (estado) {
+    case 'Abierto':
+      return 'bg-sky-600 text-white border-transparent hover:opacity-90';
+    case 'Seguimiento':
+      return 'bg-violet-600 text-white border-transparent hover:opacity-90';
+    case 'Escalado':
+      return 'bg-fuchsia-600 text-white border-transparent hover:opacity-90';
+    case 'Cerrado':
+      return 'bg-slate-600 text-white border-transparent hover:opacity-90';
+    default:
+      return 'bg-teal-600 text-white border-transparent hover:opacity-90';
+  }
+};
+
 const esTipoCasoValido = (value: string): value is CasoEspecialTipo =>
   TIPOS_CASO_OPCIONES.some((opcion) => opcion.value === value);
 
@@ -741,7 +771,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                           size="sm"
                           variant="outline"
                           onClick={() => setSeveridadCaso(nivel)}
-                          className={claseBotonOpcion(severidadCaso === nivel, clasesSeveridad[nivel])}
+                          className={severidadCaso === nivel ? claseSeveridadActiva(nivel) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                         >
                           {nivel}
                         </Button>
@@ -759,7 +789,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                           size="sm"
                           variant="outline"
                           onClick={() => setEstadoCaso(estado)}
-                          className={claseBotonOpcion(estadoCaso === estado, clasesEstado[estado])}
+                          className={estadoCaso === estado ? claseEstadoActiva(estado) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                         >
                           {estado}
                         </Button>
@@ -866,7 +896,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => setSeveridadCasoEditar(nivel)}
-                            className={claseBotonOpcion(severidadCasoEditar === nivel, clasesSeveridad[nivel])}
+                            className={severidadCasoEditar === nivel ? claseSeveridadActiva(nivel) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                           >
                             {nivel}
                           </Button>
@@ -884,7 +914,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => setEstadoCasoEditar(estado)}
-                            className={claseBotonOpcion(estadoCasoEditar === estado, clasesEstado[estado])}
+                            className={estadoCasoEditar === estado ? claseEstadoActiva(estado) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                           >
                             {estado}
                           </Button>
