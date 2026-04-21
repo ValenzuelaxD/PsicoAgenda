@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -23,11 +23,135 @@ interface BitacoraPacienteProps {
   pacienteId?: number;
 }
 
+type CasoEspecialTipo =
+  | 'urgencia'
+  | 'familiar'
+  | 'fuera_horario'
+  | 'riesgo_autolesivo'
+  | 'violencia'
+  | 'abandono'
+  | 'otro';
+
+type SeveridadCaso = 'Baja' | 'Media' | 'Alta' | 'Critica';
+type EstadoCaso = 'Abierto' | 'Seguimiento' | 'Escalado' | 'Cerrado';
+
+interface CasoEspecialMeta {
+  tipos: CasoEspecialTipo[];
+  severidad: SeveridadCaso;
+  estado: EstadoCaso;
+}
+
+interface BitacoraEntrada extends HistorialClinico {
+  observacionesLimpias: string;
+  casoEspecial: CasoEspecialMeta | null;
+}
+
+const META_PREFIX = '[PSICOAGENDA_CASO_ESPECIAL]';
+
+const TIPOS_CASO_OPCIONES: Array<{ value: CasoEspecialTipo; label: string }> = [
+  { value: 'urgencia', label: 'Urgencia' },
+  { value: 'familiar', label: 'Familiar' },
+  { value: 'fuera_horario', label: 'Fuera de horario' },
+  { value: 'riesgo_autolesivo', label: 'Riesgo autolesivo' },
+  { value: 'violencia', label: 'Violencia' },
+  { value: 'abandono', label: 'Abandono' },
+  { value: 'otro', label: 'Otro' },
+];
+
+const SEVERIDAD_OPCIONES: SeveridadCaso[] = ['Baja', 'Media', 'Alta', 'Critica'];
+const ESTADO_OPCIONES: EstadoCaso[] = ['Abierto', 'Seguimiento', 'Escalado', 'Cerrado'];
+
+const clasesSeveridad: Record<SeveridadCaso, string> = {
+  Baja: 'bg-emerald-600 text-white',
+  Media: 'bg-amber-500 text-slate-900',
+  Alta: 'bg-orange-500 text-white',
+  Critica: 'bg-rose-600 text-white',
+};
+
+const clasesEstado: Record<EstadoCaso, string> = {
+  Abierto: 'bg-sky-600 text-white',
+  Seguimiento: 'bg-violet-600 text-white',
+  Escalado: 'bg-fuchsia-600 text-white',
+  Cerrado: 'bg-slate-600 text-white',
+};
+
+const esTipoCasoValido = (value: string): value is CasoEspecialTipo =>
+  TIPOS_CASO_OPCIONES.some((opcion) => opcion.value === value);
+
+const esSeveridadValida = (value: string): value is SeveridadCaso =>
+  SEVERIDAD_OPCIONES.includes(value as SeveridadCaso);
+
+const esEstadoValido = (value: string): value is EstadoCaso =>
+  ESTADO_OPCIONES.includes(value as EstadoCaso);
+
+const parseObservaciones = (textoOriginal: string | undefined): { observacionesLimpias: string; casoEspecial: CasoEspecialMeta | null } => {
+  const texto = String(textoOriginal || '');
+  const indiceMeta = texto.lastIndexOf(META_PREFIX);
+
+  if (indiceMeta === -1) {
+    return {
+      observacionesLimpias: texto,
+      casoEspecial: null,
+    };
+  }
+
+  const observacionesLimpias = texto.slice(0, indiceMeta).trimEnd();
+  const rawMeta = texto.slice(indiceMeta + META_PREFIX.length).trim();
+
+  try {
+    const parsed = JSON.parse(rawMeta);
+    const tipos = Array.isArray(parsed?.tipos)
+      ? parsed.tipos.filter((tipo: string) => esTipoCasoValido(tipo))
+      : [];
+    const severidad = esSeveridadValida(String(parsed?.severidad || '')) ? parsed.severidad : 'Media';
+    const estado = esEstadoValido(String(parsed?.estado || '')) ? parsed.estado : 'Abierto';
+
+    if (tipos.length === 0) {
+      return {
+        observacionesLimpias: texto,
+        casoEspecial: null,
+      };
+    }
+
+    return {
+      observacionesLimpias,
+      casoEspecial: {
+        tipos,
+        severidad,
+        estado,
+      },
+    };
+  } catch {
+    return {
+      observacionesLimpias: texto,
+      casoEspecial: null,
+    };
+  }
+};
+
+const buildObservacionesPayload = (observacionesLimpias: string, casoEspecial: CasoEspecialMeta | null): string => {
+  const texto = String(observacionesLimpias || '').trim();
+  if (!casoEspecial || casoEspecial.tipos.length === 0) {
+    return texto;
+  }
+
+  return `${texto}\n\n${META_PREFIX}${JSON.stringify(casoEspecial)}`;
+};
+
+const normalizarEntrada = (entrada: HistorialClinico): BitacoraEntrada => {
+  const parsed = parseObservaciones(entrada.observaciones);
+  return {
+    ...entrada,
+    observacionesLimpias: parsed.observacionesLimpias,
+    casoEspecial: parsed.casoEspecial,
+  };
+};
+
 export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<Paciente | null>(null);
-  const [entradas, setEntradas] = useState<HistorialClinico[]>([]);
+  const [entradas, setEntradas] = useState<BitacoraEntrada[]>([]);
   const [loadingPacientes, setLoadingPacientes] = useState(true);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
 
@@ -35,11 +159,22 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [nuevaNota, setNuevaNota] = useState('');
   const [diagnostico, setDiagnostico] = useState('');
   const [tratamiento, setTratamiento] = useState('');
+  const [tiposCaso, setTiposCaso] = useState<CasoEspecialTipo[]>([]);
+  const [severidadCaso, setSeveridadCaso] = useState<SeveridadCaso>('Media');
+  const [estadoCaso, setEstadoCaso] = useState<EstadoCaso>('Abierto');
 
-  const [editarEntrada, setEditarEntrada] = useState<HistorialClinico | null>(null);
+  const [editarEntrada, setEditarEntrada] = useState<BitacoraEntrada | null>(null);
   const [notaEditar, setNotaEditar] = useState('');
   const [diagnosticoEditar, setDiagnosticoEditar] = useState('');
   const [tratamientoEditar, setTratamientoEditar] = useState('');
+  const [tiposCasoEditar, setTiposCasoEditar] = useState<CasoEspecialTipo[]>([]);
+  const [severidadCasoEditar, setSeveridadCasoEditar] = useState<SeveridadCaso>('Media');
+  const [estadoCasoEditar, setEstadoCasoEditar] = useState<EstadoCaso>('Abierto');
+
+  const [filtroCasoEspecial, setFiltroCasoEspecial] = useState<'todos' | 'solo'>('todos');
+  const [filtroTipo, setFiltroTipo] = useState<'todos' | CasoEspecialTipo>('todos');
+  const [filtroSeveridad, setFiltroSeveridad] = useState<'todas' | SeveridadCaso>('todas');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoCaso>('todos');
 
   const [mostrarExito, setMostrarExito] = useState(false);
 
@@ -101,7 +236,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         }
         if (!response.ok) throw new Error('Error al cargar el historial');
         const data = await response.json();
-        setEntradas(Array.isArray(data) ? data : []);
+        setEntradas(Array.isArray(data) ? data.map(normalizarEntrada) : []);
       } catch (err: any) {
         toast.error(err.message);
       } finally {
@@ -117,28 +252,76 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       .includes(busqueda.toLowerCase())
   );
 
+  const entradasFiltradas = useMemo(() => {
+    return entradas.filter((entrada) => {
+      const meta = entrada.casoEspecial;
+
+      if (filtroCasoEspecial === 'solo' && !meta) {
+        return false;
+      }
+
+      if (filtroTipo !== 'todos' && (!meta || !meta.tipos.includes(filtroTipo))) {
+        return false;
+      }
+
+      if (filtroSeveridad !== 'todas' && (!meta || meta.severidad !== filtroSeveridad)) {
+        return false;
+      }
+
+      if (filtroEstado !== 'todos' && (!meta || meta.estado !== filtroEstado)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [entradas, filtroCasoEspecial, filtroTipo, filtroSeveridad, filtroEstado]);
+
+  const toggleTipoCaso = (tipo: CasoEspecialTipo) => {
+    setTiposCaso((prev) =>
+      prev.includes(tipo) ? prev.filter((item) => item !== tipo) : [...prev, tipo]
+    );
+  };
+
+  const toggleTipoCasoEditar = (tipo: CasoEspecialTipo) => {
+    setTiposCasoEditar((prev) =>
+      prev.includes(tipo) ? prev.filter((item) => item !== tipo) : [...prev, tipo]
+    );
+  };
+
   const handleGuardarNota = async () => {
     if (!nuevaNota || !diagnostico || !tratamiento || !pacienteSeleccionado) {
       toast.error('Por favor completa todos los campos');
       return;
     }
+
+    const metaCaso = tiposCaso.length > 0
+      ? {
+          tipos: tiposCaso,
+          severidad: severidadCaso,
+          estado: estadoCaso,
+        }
+      : null;
+
     try {
       const response = await apiFetch(API_ENDPOINTS.HISTORIAL_CLINICO, {
         method: 'POST',
         body: JSON.stringify({
           pacienteId: pacienteSeleccionado.pacienteid,
-          observaciones: nuevaNota,
+          observaciones: buildObservacionesPayload(nuevaNota, metaCaso),
           diagnostico,
           tratamiento,
         }),
       });
       if (!response.ok) throw new Error('Error al guardar la nota');
-      const nuevaEntrada = await response.json();
+      const nuevaEntrada = normalizarEntrada(await response.json());
       setEntradas([nuevaEntrada, ...entradas]);
       toast.success('Entrada de bitácora guardada exitosamente');
       setNuevaNota('');
       setDiagnostico('');
       setTratamiento('');
+      setTiposCaso([]);
+      setSeveridadCaso('Media');
+      setEstadoCaso('Abierto');
       setEditando(false);
       setMostrarExito(true);
     } catch (err: any) {
@@ -148,9 +331,12 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
   const handleAbrirEditar = (entrada: HistorialClinico) => {
     setEditarEntrada(entrada);
-    setNotaEditar(entrada.observaciones ?? '');
+    setNotaEditar(entrada.observacionesLimpias ?? '');
     setDiagnosticoEditar(entrada.diagnostico ?? '');
     setTratamientoEditar(entrada.tratamiento ?? '');
+    setTiposCasoEditar(entrada.casoEspecial?.tipos || []);
+    setSeveridadCasoEditar(entrada.casoEspecial?.severidad || 'Media');
+    setEstadoCasoEditar(entrada.casoEspecial?.estado || 'Abierto');
   };
 
   const handleGuardarEdicion = async () => {
@@ -158,20 +344,29 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       toast.error('Por favor completa todos los campos');
       return;
     }
+
+    const metaCasoEditar = tiposCasoEditar.length > 0
+      ? {
+          tipos: tiposCasoEditar,
+          severidad: severidadCasoEditar,
+          estado: estadoCasoEditar,
+        }
+      : null;
+
     try {
       const response = await apiFetch(
         `${API_ENDPOINTS.HISTORIAL_CLINICO}/${editarEntrada.historialid}`,
         {
           method: 'PUT',
           body: JSON.stringify({
-            observaciones: notaEditar,
+            observaciones: buildObservacionesPayload(notaEditar, metaCasoEditar),
             diagnostico: diagnosticoEditar,
             tratamiento: tratamientoEditar,
           }),
         }
       );
       if (!response.ok) throw new Error('Error al actualizar la nota');
-      const entradaActualizada = await response.json();
+      const entradaActualizada = normalizarEntrada(await response.json());
       setEntradas(
         entradas.map((e) =>
           e.historialid === entradaActualizada.historialid ? entradaActualizada : e
@@ -358,6 +553,74 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
                       />
                     </div>
+
+                    <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+                      <p className="text-sm text-slate-200">Caso especial (opcional)</p>
+                      <div className="flex flex-wrap gap-2">
+                        {TIPOS_CASO_OPCIONES.map((tipo) => {
+                          const activo = tiposCaso.includes(tipo.value);
+                          return (
+                            <Button
+                              key={tipo.value}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => toggleTipoCaso(tipo.value)}
+                              className={activo
+                                ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+                                : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                            >
+                              {tipo.label}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      {tiposCaso.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="text-slate-300">Severidad</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {SEVERIDAD_OPCIONES.map((nivel) => (
+                                <Button
+                                  key={nivel}
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSeveridadCaso(nivel)}
+                                  className={severidadCaso === nivel
+                                    ? `${clasesSeveridad[nivel]} border-transparent hover:opacity-90`
+                                    : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                                >
+                                  {nivel}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-slate-300">Estado del caso</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {ESTADO_OPCIONES.map((estado) => (
+                                <Button
+                                  key={estado}
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEstadoCaso(estado)}
+                                  className={estadoCaso === estado
+                                    ? `${clasesEstado[estado]} border-transparent hover:opacity-90`
+                                    : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                                >
+                                  {estado}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                       <Button onClick={handleGuardarNota} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
                         <Save className="w-4 h-4 mr-2 stroke-2" />
@@ -377,20 +640,77 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
               {/* Historial de entradas */}
               <div className="space-y-4">
-                <h2 className="text-white">Historial de Sesiones</h2>
+                <div className="flex flex-col gap-3">
+                  <h2 className="text-white">Historial de Sesiones</h2>
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3">
+                    <p className="text-sm text-slate-300">Filtros de casos especiales</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setFiltroCasoEspecial(filtroCasoEspecial === 'solo' ? 'todos' : 'solo')}
+                        className={filtroCasoEspecial === 'solo'
+                          ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+                          : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                      >
+                        {filtroCasoEspecial === 'solo' ? 'Solo casos especiales' : 'Todos los registros'}
+                      </Button>
+
+                      <select
+                        value={filtroTipo}
+                        onChange={(e) => setFiltroTipo(e.target.value as 'todos' | CasoEspecialTipo)}
+                        className="h-9 rounded-md border border-slate-600 bg-slate-800 px-3 text-sm text-slate-100"
+                      >
+                        <option value="todos">Tipo: todos</option>
+                        {TIPOS_CASO_OPCIONES.map((tipo) => (
+                          <option key={tipo.value} value={tipo.value}>
+                            {tipo.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={filtroSeveridad}
+                        onChange={(e) => setFiltroSeveridad(e.target.value as 'todas' | SeveridadCaso)}
+                        className="h-9 rounded-md border border-slate-600 bg-slate-800 px-3 text-sm text-slate-100"
+                      >
+                        <option value="todas">Severidad: todas</option>
+                        {SEVERIDAD_OPCIONES.map((nivel) => (
+                          <option key={nivel} value={nivel}>
+                            {nivel}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={filtroEstado}
+                        onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoCaso)}
+                        className="h-9 rounded-md border border-slate-600 bg-slate-800 px-3 text-sm text-slate-100"
+                      >
+                        <option value="todos">Estado: todos</option>
+                        {ESTADO_OPCIONES.map((estado) => (
+                          <option key={estado} value={estado}>
+                            {estado}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 {loadingHistorial ? (
                   <p className="text-slate-400">Cargando historial...</p>
-                ) : entradas.length === 0 ? (
+                ) : entradasFiltradas.length === 0 ? (
                   <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                     <CardContent className="py-12 text-center">
                       <Calendar className="w-12 h-12 text-slate-500 mx-auto mb-3" />
                       <p className="text-slate-400">
-                        Sin entradas registradas para este paciente.
+                        No hay entradas que coincidan con los filtros actuales.
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
-                  entradas.map((entrada) => (
+                  entradasFiltradas.map((entrada) => (
                     <Card
                       key={entrada.historialid}
                       className="bg-slate-800/50 backdrop-blur-sm border-slate-700"
@@ -398,12 +718,33 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle className="flex items-center gap-3 text-slate-100 flex-wrap">
+                            <CardTitle className="flex items-center gap-2 text-slate-100 flex-wrap">
                               {entrada.diagnostico && (
                                 <Badge variant="default">{entrada.diagnostico}</Badge>
                               )}
                               {entrada.tratamiento && (
                                 <Badge variant="secondary">{entrada.tratamiento}</Badge>
+                              )}
+                              {!entrada.diagnostico && !entrada.tratamiento && (
+                                <Badge variant="outline" className="text-slate-200 border-slate-500">Entrada clinica</Badge>
+                              )}
+                              {entrada.casoEspecial?.tipos.map((tipo) => {
+                                const tipoLabel = TIPOS_CASO_OPCIONES.find((opcion) => opcion.value === tipo)?.label || tipo;
+                                return (
+                                  <Badge key={`${entrada.historialid}-${tipo}`} className="bg-slate-700 text-slate-100 border border-slate-600">
+                                    {tipoLabel}
+                                  </Badge>
+                                );
+                              })}
+                              {entrada.casoEspecial && (
+                                <>
+                                  <Badge className={clasesSeveridad[entrada.casoEspecial.severidad]}>
+                                    {entrada.casoEspecial.severidad}
+                                  </Badge>
+                                  <Badge className={clasesEstado[entrada.casoEspecial.estado]}>
+                                    {entrada.casoEspecial.estado}
+                                  </Badge>
+                                </>
                               )}
                             </CardTitle>
                             <CardDescription className="flex items-center gap-2 mt-1 text-slate-400">
@@ -423,7 +764,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                       </CardHeader>
                       <CardContent>
                         <h4 className="text-slate-200 mb-2">Notas de la Sesión</h4>
-                        <p className="text-slate-300">{entrada.observaciones}</p>
+                        <p className="text-slate-300 whitespace-pre-wrap">{entrada.observacionesLimpias}</p>
                       </CardContent>
                     </Card>
                   ))
@@ -488,6 +829,73 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   rows={6}
                   className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
                 />
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+                <p className="text-sm text-slate-200">Caso especial (opcional)</p>
+                <div className="flex flex-wrap gap-2">
+                  {TIPOS_CASO_OPCIONES.map((tipo) => {
+                    const activo = tiposCasoEditar.includes(tipo.value);
+                    return (
+                      <Button
+                        key={tipo.value}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => toggleTipoCasoEditar(tipo.value)}
+                        className={activo
+                          ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+                          : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                      >
+                        {tipo.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                {tiposCasoEditar.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Severidad</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {SEVERIDAD_OPCIONES.map((nivel) => (
+                          <Button
+                            key={nivel}
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSeveridadCasoEditar(nivel)}
+                            className={severidadCasoEditar === nivel
+                              ? `${clasesSeveridad[nivel]} border-transparent hover:opacity-90`
+                              : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                          >
+                            {nivel}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Estado del caso</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {ESTADO_OPCIONES.map((estado) => (
+                          <Button
+                            key={estado}
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEstadoCasoEditar(estado)}
+                            className={estadoCasoEditar === estado
+                              ? `${clasesEstado[estado]} border-transparent hover:opacity-90`
+                              : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                          >
+                            {estado}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">
