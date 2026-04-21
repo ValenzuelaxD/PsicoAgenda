@@ -374,6 +374,14 @@ const cambiarMiPassword = async (req, res) => {
       });
     }
 
+    const passwordRepetida = await bcrypt.compare(passwordNueva, result.rows[0].contrasenahash);
+    if (passwordRepetida) {
+      return res.status(400).json({
+        success: false,
+        message: 'La nueva contraseña no puede ser igual a la contraseña actual.'
+      });
+    }
+
     const salt = await bcrypt.genSalt(10);
     const nuevoHash = await bcrypt.hash(passwordNueva, salt);
 
