@@ -75,6 +75,14 @@ const clasesEstado: Record<EstadoCaso, string> = {
   Cerrado: 'bg-slate-600 text-white',
 };
 
+const claseBotonOpcion = (activo: boolean, claseActiva: string) => {
+  if (activo) {
+    return `${claseActiva} border-transparent hover:opacity-90`;
+  }
+
+  return 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700';
+};
+
 const esTipoCasoValido = (value: string): value is CasoEspecialTipo =>
   TIPOS_CASO_OPCIONES.some((opcion) => opcion.value === value);
 
@@ -391,7 +399,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         </div>
         {pacienteSeleccionado && (
           <Button
-            onClick={() => setEditando(!editando)}
+            onClick={() => setEditando(true)}
             className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto flex-shrink-0"
           >
             <Plus className="w-4 h-4 mr-2 stroke-2" />
@@ -507,136 +515,6 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Formulario nueva entrada */}
-              {editando && (
-                <Card className="border-teal-500/30 bg-slate-800/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="text-slate-100">Nueva Entrada de Bitácora</CardTitle>
-                    <CardDescription className="text-slate-400">
-                      Registra las observaciones de la sesión actual
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="diagnostico" className="text-slate-200">
-                        Diagnóstico
-                      </Label>
-                      <Input
-                        id="diagnostico"
-                        value={diagnostico}
-                        onChange={(e) => setDiagnostico(e.target.value)}
-                        className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="tratamiento" className="text-slate-200">
-                        Tratamiento
-                      </Label>
-                      <Input
-                        id="tratamiento"
-                        value={tratamiento}
-                        onChange={(e) => setTratamiento(e.target.value)}
-                        className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="notas" className="text-slate-200">
-                        Notas de la Sesión
-                      </Label>
-                      <Textarea
-                        id="notas"
-                        value={nuevaNota}
-                        onChange={(e) => setNuevaNota(e.target.value)}
-                        placeholder="Observaciones, técnicas aplicadas, temas tratados, tareas asignadas..."
-                        rows={6}
-                        className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
-                      />
-                    </div>
-
-                    <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
-                      <p className="text-sm text-slate-200">Caso especial (opcional)</p>
-                      <div className="flex flex-wrap gap-2">
-                        {TIPOS_CASO_OPCIONES.map((tipo) => {
-                          const activo = tiposCaso.includes(tipo.value);
-                          return (
-                            <Button
-                              key={tipo.value}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => toggleTipoCaso(tipo.value)}
-                              className={activo
-                                ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-                                : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
-                            >
-                              {tipo.label}
-                            </Button>
-                          );
-                        })}
-                      </div>
-
-                      {tiposCaso.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label className="text-slate-300">Severidad</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {SEVERIDAD_OPCIONES.map((nivel) => (
-                                <Button
-                                  key={nivel}
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setSeveridadCaso(nivel)}
-                                  className={severidadCaso === nivel
-                                    ? `${clasesSeveridad[nivel]} border-transparent hover:opacity-90`
-                                    : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
-                                >
-                                  {nivel}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="text-slate-300">Estado del caso</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {ESTADO_OPCIONES.map((estado) => (
-                                <Button
-                                  key={estado}
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setEstadoCaso(estado)}
-                                  className={estadoCaso === estado
-                                    ? `${clasesEstado[estado]} border-transparent hover:opacity-90`
-                                    : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
-                                >
-                                  {estado}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                      <Button onClick={handleGuardarNota} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
-                        <Save className="w-4 h-4 mr-2 stroke-2" />
-                        Guardar Entrada
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setEditando(false)}
-                        className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Historial de entradas */}
               <div className="space-y-4">
@@ -785,6 +663,131 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       </div>
 
       {/* Diálogo de edición */}
+      <Dialog open={editando} onOpenChange={setEditando}>
+        <DialogContent className="w-[calc(100%-1rem)] max-w-[720px] bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-slate-100">Nueva Entrada de Bitácora</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Registra las observaciones de la sesión actual
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 max-h-[70dvh] overflow-y-auto pr-1">
+            <div className="space-y-2">
+              <Label htmlFor="diagnostico" className="text-slate-200">
+                Diagnóstico
+              </Label>
+              <Input
+                id="diagnostico"
+                value={diagnostico}
+                onChange={(e) => setDiagnostico(e.target.value)}
+                className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tratamiento" className="text-slate-200">
+                Tratamiento
+              </Label>
+              <Input
+                id="tratamiento"
+                value={tratamiento}
+                onChange={(e) => setTratamiento(e.target.value)}
+                className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notas" className="text-slate-200">
+                Notas de la Sesión
+              </Label>
+              <Textarea
+                id="notas"
+                value={nuevaNota}
+                onChange={(e) => setNuevaNota(e.target.value)}
+                placeholder="Observaciones, técnicas aplicadas, temas tratados, tareas asignadas..."
+                rows={6}
+                className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+              <p className="text-sm text-slate-200">Caso especial (opcional)</p>
+              <div className="flex flex-wrap gap-2">
+                {TIPOS_CASO_OPCIONES.map((tipo) => {
+                  const activo = tiposCaso.includes(tipo.value);
+                  return (
+                    <Button
+                      key={tipo.value}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleTipoCaso(tipo.value)}
+                      className={claseBotonOpcion(activo, 'bg-teal-600 text-white')}
+                    >
+                      {tipo.label}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              {tiposCaso.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Severidad</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {SEVERIDAD_OPCIONES.map((nivel) => (
+                        <Button
+                          key={nivel}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSeveridadCaso(nivel)}
+                          className={claseBotonOpcion(severidadCaso === nivel, clasesSeveridad[nivel])}
+                        >
+                          {nivel}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Estado del caso</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {ESTADO_OPCIONES.map((estado) => (
+                        <Button
+                          key={estado}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEstadoCaso(estado)}
+                          className={claseBotonOpcion(estadoCaso === estado, clasesEstado[estado])}
+                        >
+                          {estado}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditando(false)}
+              className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleGuardarNota} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
+              <Save className="w-4 h-4 mr-2 stroke-2" />
+              Guardar Entrada
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de edición */}
       {editarEntrada !== null && (
         <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
           <DialogContent className="w-[calc(100%-1rem)] max-w-[600px] bg-slate-800 border-slate-700">
@@ -843,9 +846,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         size="sm"
                         variant="outline"
                         onClick={() => toggleTipoCasoEditar(tipo.value)}
-                        className={activo
-                          ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-                          : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                        className={claseBotonOpcion(activo, 'bg-teal-600 text-white')}
                       >
                         {tipo.label}
                       </Button>
@@ -865,9 +866,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => setSeveridadCasoEditar(nivel)}
-                            className={severidadCasoEditar === nivel
-                              ? `${clasesSeveridad[nivel]} border-transparent hover:opacity-90`
-                              : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                            className={claseBotonOpcion(severidadCasoEditar === nivel, clasesSeveridad[nivel])}
                           >
                             {nivel}
                           </Button>
@@ -885,9 +884,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => setEstadoCasoEditar(estado)}
-                            className={estadoCasoEditar === estado
-                              ? `${clasesEstado[estado]} border-transparent hover:opacity-90`
-                              : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                            className={claseBotonOpcion(estadoCasoEditar === estado, clasesEstado[estado])}
                           >
                             {estado}
                           </Button>
