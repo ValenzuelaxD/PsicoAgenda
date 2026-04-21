@@ -854,7 +854,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
       {/* Diálogo de edición */}
       <Dialog open={editando} onOpenChange={setEditando}>
-        <DialogContent className="w-[56rem] max-w-[95vw] h-[42rem] max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto]">
+        <DialogContent className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-slate-100">Nueva Entrada de Bitácora</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -862,7 +862,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 overflow-y-scroll pr-2 min-h-0">
+          <div className="space-y-4 flex-1 min-h-0 overflow-y-scroll pr-2">
             <div className="space-y-2">
               <Label htmlFor="diagnostico" className="text-slate-200">
                 Diagnóstico
@@ -1056,7 +1056,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
             </div>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0">
             <Button
               variant="outline"
               onClick={() => setEditando(false)}
@@ -1075,14 +1075,14 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       {/* Diálogo de edición */}
       {editarEntrada !== null && (
         <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
-          <DialogContent className="w-[56rem] max-w-[95vw] h-[42rem] max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto]">
+          <DialogContent className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
               <DialogDescription className="text-slate-400">
                 Actualiza las observaciones de la sesión
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 overflow-y-scroll pr-2 min-h-0">
+            <div className="space-y-4 flex-1 min-h-0 overflow-y-scroll pr-2">
               <div className="space-y-2">
                 <Label htmlFor="diagnostico-editar" className="text-slate-200">
                   Diagnóstico
@@ -1275,7 +1275,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 )}
               </div>
             </div>
-            <DialogFooter className="flex-col sm:flex-row gap-2">
+            <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0">
               <Button
                 variant="outline"
                 onClick={() => setEditarEntrada(null)}
