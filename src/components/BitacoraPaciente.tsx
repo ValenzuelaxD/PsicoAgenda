@@ -1052,26 +1052,22 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               {tiposCaso.includes('familiar') && (
                 <div className="space-y-2 rounded-lg border border-violet-700/40 bg-violet-900/10 p-3">
                   <Label className="text-violet-200">Relación del familiar o red de apoyo</Label>
-                  <ToggleGroup
-                    type="single"
-                    value={detalleCaso.relacionFamiliar || ''}
-                    onValueChange={(value) => {
-                      if (!value) return;
-                      setDetalleCaso((prev) => ({ ...prev, relacionFamiliar: value as RelacionFamiliarOpcion }));
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {RELACION_FAMILIAR_OPCIONES.map((valor) => (
-                      <ToggleGroupItem
+                      <Button
                         key={`relacion-${valor}`}
-                        value={valor}
-                        className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDetalleCaso((prev) => ({ ...prev, relacionFamiliar: valor }))}
+                        className={detalleCaso.relacionFamiliar === valor
+                          ? 'bg-violet-600 text-white border-transparent'
+                          : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                       >
                         {valor}
-                      </ToggleGroupItem>
+                      </Button>
                     ))}
-                  </ToggleGroup>
+                  </div>
 
                   {detalleCaso.relacionFamiliar === 'Otro' && (
                     <Input
@@ -1083,26 +1079,22 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   )}
 
                   <Label className="text-violet-200">Consentimiento informado</Label>
-                  <ToggleGroup
-                    type="single"
-                    value={detalleCaso.consentimientoFamiliar}
-                    onValueChange={(value) => {
-                      if (!value) return;
-                      setDetalleCaso((prev) => ({ ...prev, consentimientoFamiliar: value as 'Si' | 'No' }));
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <div className="grid grid-cols-2 gap-2">
                     {(['Si', 'No'] as const).map((valor) => (
-                      <ToggleGroupItem
+                      <Button
                         key={`consent-${valor}`}
-                        value={valor}
-                        className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDetalleCaso((prev) => ({ ...prev, consentimientoFamiliar: valor }))}
+                        className={detalleCaso.consentimientoFamiliar === valor
+                          ? 'bg-violet-600 text-white border-transparent'
+                          : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                       >
                         {valor}
-                      </ToggleGroupItem>
+                      </Button>
                     ))}
-                  </ToggleGroup>
+                  </div>
                 </div>
               )}
 
@@ -1275,26 +1267,22 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 {tiposCasoEditar.includes('familiar') && (
                   <div className="space-y-2 rounded-lg border border-violet-700/40 bg-violet-900/10 p-3">
                     <Label className="text-violet-200">Relación del familiar o red de apoyo</Label>
-                    <ToggleGroup
-                      type="single"
-                      value={detalleCasoEditar.relacionFamiliar || ''}
-                      onValueChange={(value) => {
-                        if (!value) return;
-                        setDetalleCasoEditar((prev) => ({ ...prev, relacionFamiliar: value as RelacionFamiliarOpcion }));
-                      }}
-                      variant="outline"
-                      className="w-full"
-                    >
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {RELACION_FAMILIAR_OPCIONES.map((valor) => (
-                        <ToggleGroupItem
+                        <Button
                           key={`relacion-edit-${valor}`}
-                          value={valor}
-                          className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDetalleCasoEditar((prev) => ({ ...prev, relacionFamiliar: valor }))}
+                          className={detalleCasoEditar.relacionFamiliar === valor
+                            ? 'bg-violet-600 text-white border-transparent'
+                            : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                         >
                           {valor}
-                        </ToggleGroupItem>
+                        </Button>
                       ))}
-                    </ToggleGroup>
+                    </div>
 
                     {detalleCasoEditar.relacionFamiliar === 'Otro' && (
                       <Input
@@ -1306,26 +1294,22 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                     )}
 
                     <Label className="text-violet-200">Consentimiento informado</Label>
-                    <ToggleGroup
-                      type="single"
-                      value={detalleCasoEditar.consentimientoFamiliar}
-                      onValueChange={(value) => {
-                        if (!value) return;
-                        setDetalleCasoEditar((prev) => ({ ...prev, consentimientoFamiliar: value as 'Si' | 'No' }));
-                      }}
-                      variant="outline"
-                      className="w-full"
-                    >
+                    <div className="grid grid-cols-2 gap-2">
                       {(['Si', 'No'] as const).map((valor) => (
-                        <ToggleGroupItem
+                        <Button
                           key={`consent-edit-${valor}`}
-                          value={valor}
-                          className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDetalleCasoEditar((prev) => ({ ...prev, consentimientoFamiliar: valor }))}
+                          className={detalleCasoEditar.consentimientoFamiliar === valor
+                            ? 'bg-violet-600 text-white border-transparent'
+                            : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                         >
                           {valor}
-                        </ToggleGroupItem>
+                        </Button>
                       ))}
-                    </ToggleGroup>
+                    </div>
                   </div>
                 )}
 
