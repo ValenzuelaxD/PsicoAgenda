@@ -2,7 +2,13 @@ const db = require('../db'); // Tu archivo de conexión
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { isEmailIntegrationEnabled, enviarCorreo } = require('../services/mailService');
-const { construirTemplateBienvenidaRegistro } = require('../services/emailTemplateService');
+const {
+  construirTemplateBienvenidaRegistro,
+  construirTemplateRecuperacionPassword,
+} = require('../services/emailTemplateService');
+
+const APP_WEB_URL = String(process.env.APP_WEB_URL || 'https://psicoagenda-489800.web.app').trim().replace(/\/+$/, '');
+const RESET_TOKEN_EXPIRES_MINUTES = 30;
 
 function dividirNombreCompleto(nombreCompleto = '') {
   const partes = String(nombreCompleto).trim().split(/\s+/).filter(Boolean);
@@ -301,5 +307,160 @@ const register = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  const correo = String(req.body?.correo || '').trim().toLowerCase();
 
-module.exports = { login, register };
+  if (!correo) {
+    return res.status(400).json({
+      success: false,
+      message: 'El correo es requerido.',
+    });
+  }
+
+  if (!isEmailIntegrationEnabled()) {
+    return res.status(503).json({
+      success: false,
+      message: 'La recuperacion de contrasena no esta disponible en este momento.',
+    });
+  }
+
+  try {
+    const result = await db.query(
+      'SELECT usuarioid, nombre, apellidopaterno, correo, contrasenahash FROM usuarios WHERE correo = $1 LIMIT 1',
+      [correo]
+    );
+
+    if (result.rows.length > 0) {
+      const usuario = result.rows[0];
+      const token = jwt.sign(
+        {
+          sub: usuario.usuarioid,
+          purpose: 'password-reset',
+          pwdv: String(usuario.contrasenahash || '').slice(-16),
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: `${RESET_TOKEN_EXPIRES_MINUTES}m` }
+      );
+
+      const resetUrl = `${APP_WEB_URL}?resetToken=${encodeURIComponent(token)}`;
+      const template = await construirTemplateRecuperacionPassword({
+        nombre: usuario.nombre,
+        apellidoPaterno: usuario.apellidopaterno,
+        resetUrl,
+        expiracionMinutos: RESET_TOKEN_EXPIRES_MINUTES,
+      });
+
+      await enviarCorreo({
+        to: usuario.correo,
+        subject: template.asunto,
+        text: template.texto,
+        html: template.html,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Si el correo existe en nuestra plataforma, recibiras instrucciones para restablecer tu contrasena.',
+    });
+  } catch (error) {
+    console.error('[auth.forgotPassword] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'No fue posible procesar la solicitud de recuperacion.',
+      error: error.message,
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const token = String(req.body?.token || '').trim();
+  const passwordNueva = String(req.body?.passwordNueva || '').trim();
+
+  if (!token || !passwordNueva) {
+    return res.status(400).json({
+      success: false,
+      message: 'El token y la nueva contrasena son requeridos.',
+    });
+  }
+
+  if (passwordNueva.length < 8) {
+    return res.status(400).json({
+      success: false,
+      message: 'La nueva contrasena debe tener al menos 8 caracteres.',
+    });
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (payload.purpose !== 'password-reset' || !payload.sub) {
+      return res.status(400).json({
+        success: false,
+        message: 'El token de recuperacion no es valido.',
+      });
+    }
+
+    const result = await db.query(
+      'SELECT usuarioid, contrasenahash FROM usuarios WHERE usuarioid = $1 LIMIT 1',
+      [payload.sub]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado.',
+      });
+    }
+
+    const usuario = result.rows[0];
+    const versionHashActual = String(usuario.contrasenahash || '').slice(-16);
+    if (versionHashActual !== payload.pwdv) {
+      return res.status(400).json({
+        success: false,
+        message: 'El token ya no es valido. Solicita un nuevo enlace.',
+      });
+    }
+
+    const passwordRepetida = await bcrypt.compare(passwordNueva, usuario.contrasenahash);
+    if (passwordRepetida) {
+      return res.status(400).json({
+        success: false,
+        message: 'La nueva contrasena no puede ser igual a la anterior.',
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const nuevoHash = await bcrypt.hash(passwordNueva, salt);
+
+    await db.query('UPDATE usuarios SET contrasenahash = $1 WHERE usuarioid = $2', [nuevoHash, usuario.usuarioid]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Contrasena restablecida correctamente.',
+    });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({
+        success: false,
+        message: 'El enlace de recuperacion ha expirado. Solicita uno nuevo.',
+      });
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(400).json({
+        success: false,
+        message: 'El token de recuperacion no es valido.',
+      });
+    }
+
+    console.error('[auth.resetPassword] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'No fue posible restablecer la contrasena.',
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = { login, register, forgotPassword, resetPassword };

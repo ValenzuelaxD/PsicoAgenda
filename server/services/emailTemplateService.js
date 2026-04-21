@@ -602,10 +602,66 @@ const construirTemplateCambioPassword = async ({
   };
 };
 
+const construirTemplateRecuperacionPassword = async ({
+  nombre,
+  apellidoPaterno,
+  resetUrl,
+  expiracionMinutos = 30,
+}) => {
+  const nombreCompleto = obtenerNombreCompleto(nombre, apellidoPaterno) || 'usuario';
+  const asunto = 'PsicoAgenda: recupera tu contrasena';
+
+  const html = await renderTransactionalHtml({
+    preview: 'Solicitud para restablecer tu contrasena',
+    statusLabel: 'Seguridad',
+    statusTone: 'success',
+    title: 'Recuperacion de contrasena',
+    greeting: `Hola ${limpiarTexto(nombreCompleto, 'usuario')},`,
+    intro: `Recibimos una solicitud para restablecer tu contrasena. Este enlace estara disponible por ${expiracionMinutos} minutos.`,
+    details: [
+      { label: 'Evento', value: 'Solicitud de recuperacion de contrasena' },
+      { label: 'Tiempo de validez', value: `${expiracionMinutos} minutos` },
+      { label: 'Plataforma', value: 'PsicoAgenda' },
+    ],
+    primaryAction: {
+      label: 'Restablecer contrasena',
+      href: resetUrl,
+    },
+    secondaryAction: {
+      label: 'Contactar soporte',
+      href: `mailto:${SUPPORT_EMAIL}`,
+    },
+    recommendations: [
+      'Si no solicitaste este cambio, ignora este correo.',
+      'No compartas este enlace con terceros.',
+      'Al finalizar, inicia sesion con tu nueva contrasena.',
+    ],
+    footerNote: 'Este correo de recuperacion fue generado automaticamente por PsicoAgenda.',
+  });
+
+  const texto = [
+    `Hola ${nombreCompleto},`,
+    '',
+    'Recibimos una solicitud para restablecer tu contrasena en PsicoAgenda.',
+    `Este enlace expira en ${expiracionMinutos} minutos:`,
+    resetUrl,
+    '',
+    'Si no solicitaste este cambio, ignora este correo y contacta a soporte.',
+    `Soporte: ${SUPPORT_EMAIL}`,
+  ].join('\n');
+
+  return {
+    asunto,
+    texto,
+    html,
+  };
+};
+
 module.exports = {
   construirTemplatesAccesoZoom,
   construirTemplatesCancelacionZoom,
   construirTemplateBienvenidaRegistro,
   construirTemplateCambioPassword,
+  construirTemplateRecuperacionPassword,
   renderTransactionalHtml,
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
@@ -43,6 +43,125 @@ export function Autenticar({ onLogin }: AutenticarProps) {
     correo: '',
     password: '',
   });
+  const [mostrarModalRecuperar, setMostrarModalRecuperar] = useState(false);
+  const [correoRecuperacion, setCorreoRecuperacion] = useState('');
+  const [enviandoRecuperacion, setEnviandoRecuperacion] = useState(false);
+  const [mostrarModalReset, setMostrarModalReset] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [resetPasswordNueva, setResetPasswordNueva] = useState('');
+  const [resetPasswordConfirmar, setResetPasswordConfirmar] = useState('');
+  const [enviandoReset, setEnviandoReset] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('resetToken');
+    if (token) {
+      setResetToken(token);
+      setMostrarModalReset(true);
+      setTabActivo('login');
+    }
+  }, []);
+
+  const limpiarResetTokenUrl = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('resetToken');
+    window.history.replaceState({}, '', url.toString());
+  };
+
+  const handleForgotPassword = async () => {
+    const validacionEmail = validarEmail(correoRecuperacion);
+    if (!validacionEmail.valido) {
+      toast.error('Correo invalido', { description: validacionEmail.error });
+      return;
+    }
+
+    try {
+      setEnviandoRecuperacion(true);
+      const response = await fetch(API_ENDPOINTS.FORGOT_PASSWORD, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          correo: correoRecuperacion,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'No se pudo solicitar recuperacion de contrasena.');
+      }
+
+      toast.success('Solicitud enviada', {
+        description: data.message || 'Revisa tu correo para continuar el restablecimiento.',
+      });
+      setMostrarModalRecuperar(false);
+      setCorreoRecuperacion('');
+    } catch (error: any) {
+      toast.error('Error de recuperacion', {
+        description: error.message || 'No se pudo procesar tu solicitud.',
+      });
+    } finally {
+      setEnviandoRecuperacion(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetToken) {
+      toast.error('Token de recuperacion no disponible');
+      return;
+    }
+
+    if (!resetPasswordNueva || !resetPasswordConfirmar) {
+      toast.error('Completa todos los campos de la nueva contrasena');
+      return;
+    }
+
+    if (resetPasswordNueva !== resetPasswordConfirmar) {
+      toast.error('Las contrasenas no coinciden');
+      return;
+    }
+
+    if (resetPasswordNueva.length < 8) {
+      toast.error('La nueva contrasena debe tener al menos 8 caracteres');
+      return;
+    }
+
+    try {
+      setEnviandoReset(true);
+      const response = await fetch(API_ENDPOINTS.RESET_PASSWORD, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: resetToken,
+          passwordNueva: resetPasswordNueva,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'No se pudo restablecer la contrasena.');
+      }
+
+      toast.success('Contrasena actualizada', {
+        description: 'Ya puedes iniciar sesion con tu nueva contrasena.',
+      });
+      setMostrarModalReset(false);
+      setResetPasswordNueva('');
+      setResetPasswordConfirmar('');
+      setResetToken('');
+      limpiarResetTokenUrl();
+    } catch (error: any) {
+      toast.error('Error al restablecer', {
+        description: error.message || 'No se pudo completar el cambio.',
+      });
+    } finally {
+      setEnviandoReset(false);
+    }
+  };
 
   const dividirNombreCompleto = (nombreCompleto: string) => {
     const partes = nombreCompleto.trim().split(/\s+/).filter(Boolean);
@@ -281,6 +400,18 @@ export function Autenticar({ onLogin }: AutenticarProps) {
                     <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
                       Iniciar Sesión
                     </Button>
+
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="w-full text-teal-300 hover:text-teal-200"
+                      onClick={() => {
+                        setCorreoRecuperacion(loginEmail);
+                        setMostrarModalRecuperar(true);
+                      }}
+                    >
+                      ¿Has olvidado tu contraseña?
+                    </Button>
                   </form>
                 </TabsContent>
 
@@ -412,6 +543,112 @@ export function Autenticar({ onLogin }: AutenticarProps) {
           <DialogFooter>
             <Button onClick={() => setMostrarModalCredenciales(false)} className="bg-teal-600 hover:bg-teal-700">
               Entendido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={mostrarModalRecuperar} onOpenChange={setMostrarModalRecuperar}>
+        <DialogContent className="border-slate-700 bg-slate-900 text-slate-100">
+          <DialogHeader>
+            <DialogTitle>Recuperar contraseña</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="forgot-email" className="text-slate-200">Correo Electrónico</Label>
+            <Input
+              id="forgot-email"
+              type="email"
+              placeholder="tu@email.com"
+              value={correoRecuperacion}
+              onChange={(e) => setCorreoRecuperacion(e.target.value)}
+              className="border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMostrarModalRecuperar(false)}
+              className="border-slate-600 text-slate-200 hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={enviandoRecuperacion}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              {enviandoRecuperacion ? 'Enviando...' : 'Enviar enlace'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={mostrarModalReset}
+        onOpenChange={(open) => {
+          setMostrarModalReset(open);
+          if (!open) {
+            limpiarResetTokenUrl();
+          }
+        }}
+      >
+        <DialogContent className="border-slate-700 bg-slate-900 text-slate-100">
+          <DialogHeader>
+            <DialogTitle>Restablecer contraseña</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Define una nueva contraseña para tu cuenta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="reset-password-nueva" className="text-slate-200">Nueva Contraseña</Label>
+              <Input
+                id="reset-password-nueva"
+                type="password"
+                placeholder="••••••••"
+                value={resetPasswordNueva}
+                onChange={(e) => setResetPasswordNueva(e.target.value)}
+                className="border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reset-password-confirmar" className="text-slate-200">Confirmar Contraseña</Label>
+              <Input
+                id="reset-password-confirmar"
+                type="password"
+                placeholder="••••••••"
+                value={resetPasswordConfirmar}
+                onChange={(e) => setResetPasswordConfirmar(e.target.value)}
+                className="border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMostrarModalReset(false)}
+              className="border-slate-600 text-slate-200 hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={enviandoReset}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              {enviandoReset ? 'Actualizando...' : 'Guardar nueva contraseña'}
             </Button>
           </DialogFooter>
         </DialogContent>

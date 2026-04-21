@@ -25,6 +25,8 @@ export const API_ENDPOINTS = {
   // Auth
   LOGIN: `${API_BASE_URL}/api/auth/login`,
   REGISTER: `${API_BASE_URL}/api/auth/register`,
+  FORGOT_PASSWORD: `${API_BASE_URL}/api/auth/forgot-password`,
+  RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password`,
   
   // Citas
   CITAS: `${API_BASE_URL}/api/citas`,

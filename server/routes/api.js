@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 
 // Importar controladores y middleware
-const { login, register } = require('../controllers/authController');
+const { login, register, forgotPassword, resetPassword } = require('../controllers/authController');
 const { getMisCitas, crearCita, actualizarCita, confirmarCita, cancelarCita, getMiDisponibilidad } = require('../controllers/citasController');
 const { getMisNotificaciones, marcarNotificacionComoLeida, eliminarNotificacion } = require('../controllers/notificacionesController');
 const { getPacienteDashboard, getPsicologoDashboard } = require('../controllers/dashboardController');
@@ -24,6 +24,8 @@ const { protegerRuta, autorizarRol } = require('../middleware/authMiddleware');
 // --- Rutas Públicas ---
 router.post('/auth/login', login);
 router.post('/auth/register', register); // Ruta de ejemplo para registrar
+router.post('/auth/forgot-password', forgotPassword);
+router.post('/auth/reset-password', resetPassword);
 
 // --- Rutas Protegidas (requieren token) ---
 router.post('/citas', protegerRuta, crearCita);
