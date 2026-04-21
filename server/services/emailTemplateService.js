@@ -487,8 +487,68 @@ const construirTemplatesCancelacionZoom = async ({ contexto, timezone }) => {
   };
 };
 
+const construirTemplateBienvenidaRegistro = async ({
+  nombre,
+  apellidoPaterno,
+  correo,
+  password,
+  estadoSolicitud = 'Pendiente',
+}) => {
+  const nombreCompleto = obtenerNombreCompleto(nombre, apellidoPaterno) || 'psicologa';
+  const asunto = 'Bienvenido a tu PsicoAgenda';
+
+  const html = await renderTransactionalHtml({
+    preview: 'Tus credenciales de acceso a PsicoAgenda',
+    statusLabel: 'Bienvenida',
+    statusTone: 'success',
+    title: 'Bienvenido a tu PsicoAgenda',
+    greeting: `Hola ${limpiarTexto(nombreCompleto, 'psicologa')},`,
+    intro: 'Tu solicitud de registro fue recibida. Te compartimos tus datos de acceso para que los tengas a la mano y puedas compartirlos con tus pacientes cuando lo necesites.',
+    details: [
+      { label: 'Correo', value: limpiarTexto(correo, 'no disponible') },
+      { label: 'Contrasena', value: limpiarTexto(password, 'no disponible') },
+      { label: 'Estado del registro', value: limpiarTexto(estadoSolicitud, 'Pendiente') },
+    ],
+    primaryAction: {
+      label: 'Abrir PsicoAgenda',
+      href: APP_WEB_URL,
+    },
+    secondaryAction: {
+      label: 'Contactar soporte',
+      href: `mailto:${SUPPORT_EMAIL}`,
+    },
+    recommendations: [
+      'Guarda este correo en un lugar seguro.',
+      'Evita compartir tus credenciales en canales publicos.',
+      'Cuando tu registro sea aprobado, podras iniciar sesion de inmediato.',
+    ],
+    footerNote: 'Si no reconoces esta solicitud, contacta soporte inmediatamente.',
+  });
+
+  const texto = [
+    `Hola ${nombreCompleto},`,
+    '',
+    'Bienvenido a tu PsicoAgenda.',
+    'Tu solicitud de registro fue recibida y esta en revision por un administrador.',
+    '',
+    `Correo: ${correo}`,
+    `Contrasena: ${password}`,
+    `Estado del registro: ${estadoSolicitud}`,
+    '',
+    `Accede a la plataforma: ${APP_WEB_URL}`,
+    `Soporte: ${SUPPORT_EMAIL}`,
+  ].join('\n');
+
+  return {
+    asunto,
+    texto,
+    html,
+  };
+};
+
 module.exports = {
   construirTemplatesAccesoZoom,
   construirTemplatesCancelacionZoom,
+  construirTemplateBienvenidaRegistro,
   renderTransactionalHtml,
 };

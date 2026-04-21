@@ -10,6 +10,14 @@ import logo from '../assets/8073927aac7f277f9a509202fa2f1e9e38c58702.png';
 import { LoadingSplash } from './LoadingSplash';
 import { validarEmail, validarCedulaProfesional } from '../utils/validators';
 import { API_ENDPOINTS } from '../utils/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 interface AutenticarProps {
   onLogin: (name: string, type: 'psicologo' | 'paciente' | 'admin') => void;
@@ -29,6 +37,12 @@ export function Autenticar({ onLogin }: AutenticarProps) {
 
   // Estado para controlar el tab activo
   const [tabActivo, setTabActivo] = useState('login');
+
+  const [mostrarModalCredenciales, setMostrarModalCredenciales] = useState(false);
+  const [credencialesRegistro, setCredencialesRegistro] = useState({
+    correo: '',
+    password: '',
+  });
 
   const dividirNombreCompleto = (nombreCompleto: string) => {
     const partes = nombreCompleto.trim().split(/\s+/).filter(Boolean);
@@ -176,6 +190,12 @@ export function Autenticar({ onLogin }: AutenticarProps) {
       toast.success('¡Registro exitoso!', { 
         description: 'Tu solicitud fue enviada. Un administrador revisará tu registro antes de habilitar el acceso.' 
       });
+
+      setCredencialesRegistro({
+        correo: registerEmail,
+        password: registerPassword,
+      });
+      setMostrarModalCredenciales(true);
       
       // Resetear el formulario de registro
       setRegisterName('');
@@ -368,6 +388,34 @@ export function Autenticar({ onLogin }: AutenticarProps) {
       {mostrarLoginSplash && (
         <LoadingSplash message="Iniciando sesión..." />
       )}
+
+      <Dialog open={mostrarModalCredenciales} onOpenChange={setMostrarModalCredenciales}>
+        <DialogContent className="border-slate-700 bg-slate-900 text-slate-100">
+          <DialogHeader>
+            <DialogTitle>Bienvenido a tu PsicoAgenda</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Comparte estos datos con tus pacientes y guardalos en un lugar seguro.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-800 p-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-400">Correo</p>
+              <p className="text-sm font-medium text-slate-100 break-all">{credencialesRegistro.correo}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-400">Contrasena</p>
+              <p className="text-sm font-medium text-slate-100 break-all">{credencialesRegistro.password}</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setMostrarModalCredenciales(false)} className="bg-teal-600 hover:bg-teal-700">
+              Entendido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

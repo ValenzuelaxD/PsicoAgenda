@@ -1,6 +1,8 @@
 const db = require('../db'); // Tu archivo de conexión
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { isEmailIntegrationEnabled, enviarCorreo } = require('../services/mailService');
+const { construirTemplateBienvenidaRegistro } = require('../services/emailTemplateService');
 
 function dividirNombreCompleto(nombreCompleto = '') {
   const partes = String(nombreCompleto).trim().split(/\s+/).filter(Boolean);
@@ -144,8 +146,10 @@ const register = async (req, res) => {
     client = await db.getClient();
     await client.query('BEGIN');
 
+    const correoNormalizado = correo.toLowerCase();
+
     // Verificar si el correo ya existe en usuarios.
-    const existingUser = await client.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correo.toLowerCase()]);
+    const existingUser = await client.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correoNormalizado]);
     if (existingUser.rows.length > 0) {
       await client.query('ROLLBACK');
       return res.status(409).json({ 
@@ -173,7 +177,7 @@ const register = async (req, res) => {
         AND (correo = $1 OR cedulaprofesional = $2)
       LIMIT 1
       `,
-      [correo.toLowerCase(), cedulaProfesional]
+      [correoNormalizado, cedulaProfesional]
     );
     if (existingPending.rows.length > 0) {
       await client.query('ROLLBACK');
@@ -199,7 +203,7 @@ const register = async (req, res) => {
         nombre,
         apellidoPaterno,
         apellidoMaterno || null,
-        correo.toLowerCase(),
+        correoNormalizado,
         contrasenaHash,
         telefono || null,
         cedulaProfesional,
@@ -208,6 +212,29 @@ const register = async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    if (isEmailIntegrationEnabled()) {
+      Promise.resolve()
+        .then(async () => {
+          const templateBienvenida = await construirTemplateBienvenidaRegistro({
+            nombre,
+            apellidoPaterno,
+            correo: correoNormalizado,
+            password,
+            estadoSolicitud: solicitudResult.rows[0]?.estadosolicitud || 'Pendiente',
+          });
+
+          await enviarCorreo({
+            to: correoNormalizado,
+            subject: templateBienvenida.asunto,
+            text: templateBienvenida.texto,
+            html: templateBienvenida.html,
+          });
+        })
+        .catch((emailError) => {
+          console.error('[auth.register] Error enviando correo de bienvenida:', emailError.message);
+        });
+    }
     
     return res.status(201).json({ 
       success: true,
