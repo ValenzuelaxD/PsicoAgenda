@@ -330,37 +330,42 @@ const forgotPassword = async (req, res) => {
       [correo]
     );
 
-    if (result.rows.length > 0) {
-      const usuario = result.rows[0];
-      const token = jwt.sign(
-        {
-          sub: usuario.usuarioid,
-          purpose: 'password-reset',
-          pwdv: String(usuario.contrasenahash || '').slice(-16),
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: `${RESET_TOKEN_EXPIRES_MINUTES}m` }
-      );
-
-      const resetUrl = `${APP_WEB_URL}?resetToken=${encodeURIComponent(token)}`;
-      const template = await construirTemplateRecuperacionPassword({
-        nombre: usuario.nombre,
-        apellidoPaterno: usuario.apellidopaterno,
-        resetUrl,
-        expiracionMinutos: RESET_TOKEN_EXPIRES_MINUTES,
-      });
-
-      await enviarCorreo({
-        to: usuario.correo,
-        subject: template.asunto,
-        text: template.texto,
-        html: template.html,
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'El correo no esta registrado en PsicoAgenda.',
       });
     }
 
+    const usuario = result.rows[0];
+    const token = jwt.sign(
+      {
+        sub: usuario.usuarioid,
+        purpose: 'password-reset',
+        pwdv: String(usuario.contrasenahash || '').slice(-16),
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: `${RESET_TOKEN_EXPIRES_MINUTES}m` }
+    );
+
+    const resetUrl = `${APP_WEB_URL}?resetToken=${encodeURIComponent(token)}`;
+    const template = await construirTemplateRecuperacionPassword({
+      nombre: usuario.nombre,
+      apellidoPaterno: usuario.apellidopaterno,
+      resetUrl,
+      expiracionMinutos: RESET_TOKEN_EXPIRES_MINUTES,
+    });
+
+    await enviarCorreo({
+      to: usuario.correo,
+      subject: template.asunto,
+      text: template.texto,
+      html: template.html,
+    });
+
     return res.status(200).json({
       success: true,
-      message: 'Si el correo existe en nuestra plataforma, recibiras instrucciones para restablecer tu contrasena.',
+      message: 'Te enviamos un correo con instrucciones para restablecer tu contrasena.',
     });
   } catch (error) {
     console.error('[auth.forgotPassword] Error:', error);
