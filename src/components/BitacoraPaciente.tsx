@@ -6,7 +6,6 @@ import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { Calendar, Edit, Save, Plus, Check, User, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -98,32 +97,34 @@ const claseBotonOpcion = (activo: boolean, claseActiva: string) => {
 const claseSeveridadActiva = (nivel: SeveridadCaso) => {
   switch (nivel) {
     case 'Baja':
-      return 'bg-emerald-600 text-white border-transparent hover:opacity-90';
+      return '!bg-emerald-600 !text-white !border-transparent hover:opacity-90';
     case 'Media':
-      return 'bg-amber-500 text-slate-900 border-transparent hover:opacity-90';
+      return '!bg-amber-500 !text-slate-900 !border-transparent hover:opacity-90';
     case 'Alta':
-      return 'bg-orange-500 text-white border-transparent hover:opacity-90';
+      return '!bg-orange-500 !text-white !border-transparent hover:opacity-90';
     case 'Critica':
-      return 'bg-rose-600 text-white border-transparent hover:opacity-90';
+      return '!bg-rose-600 !text-white !border-transparent hover:opacity-90';
     default:
-      return 'bg-teal-600 text-white border-transparent hover:opacity-90';
+      return '!bg-teal-600 !text-white !border-transparent hover:opacity-90';
   }
 };
 
 const claseEstadoActiva = (estado: EstadoCaso) => {
   switch (estado) {
     case 'Abierto':
-      return 'bg-sky-600 text-white border-transparent hover:opacity-90';
+      return '!bg-sky-600 !text-white !border-transparent hover:opacity-90';
     case 'Seguimiento':
-      return 'bg-violet-600 text-white border-transparent hover:opacity-90';
+      return '!bg-violet-600 !text-white !border-transparent hover:opacity-90';
     case 'Escalado':
-      return 'bg-fuchsia-600 text-white border-transparent hover:opacity-90';
+      return '!bg-fuchsia-600 !text-white !border-transparent hover:opacity-90';
     case 'Cerrado':
-      return 'bg-slate-600 text-white border-transparent hover:opacity-90';
+      return '!bg-slate-600 !text-white !border-transparent hover:opacity-90';
     default:
-      return 'bg-teal-600 text-white border-transparent hover:opacity-90';
+      return '!bg-teal-600 !text-white !border-transparent hover:opacity-90';
   }
 };
+
+const claseInactivaSegmento = '!border-slate-600 !bg-slate-800 !text-slate-200 hover:!bg-slate-700';
 
 const esTipoCasoValido = (value: string): value is CasoEspecialTipo =>
   TIPOS_CASO_OPCIONES.some((opcion) => opcion.value === value);
@@ -703,92 +704,83 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
                       <div className="space-y-1">
                         <Label className="text-xs text-slate-400">Tipo</Label>
-                        <ToggleGroup
-                          type="single"
-                          value={filtroTipo}
-                          onValueChange={(value) => {
-                            if (!value) return;
-                            setFiltroTipo(value as 'todos' | CasoEspecialTipo);
-                          }}
-                          variant="outline"
-                          className="w-full flex-wrap"
-                        >
-                          <ToggleGroupItem
-                            value="todos"
-                            className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-teal-600 data-[state=on]:text-white"
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setFiltroTipo('todos')}
+                            className={filtroTipo === 'todos' ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
                           >
                             Todos
-                          </ToggleGroupItem>
+                          </Button>
                           {TIPOS_CASO_OPCIONES.map((tipo) => (
-                            <ToggleGroupItem
+                            <Button
                               key={`filtro-tipo-${tipo.value}`}
-                              value={tipo.value}
-                              className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-teal-600 data-[state=on]:text-white"
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setFiltroTipo(tipo.value)}
+                              className={filtroTipo === tipo.value ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
                             >
                               {tipo.label}
-                            </ToggleGroupItem>
+                            </Button>
                           ))}
-                        </ToggleGroup>
+                        </div>
                       </div>
 
                       <div className="space-y-1">
                         <Label className="text-xs text-slate-400">Severidad</Label>
-                        <ToggleGroup
-                          type="single"
-                          value={filtroSeveridad}
-                          onValueChange={(value) => {
-                            if (!value) return;
-                            setFiltroSeveridad(value as 'todas' | SeveridadCaso);
-                          }}
-                          variant="outline"
-                          className="w-full flex-wrap"
-                        >
-                          <ToggleGroupItem
-                            value="todas"
-                            className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setFiltroSeveridad('todas')}
+                            className={filtroSeveridad === 'todas' ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
                           >
                             Todas
-                          </ToggleGroupItem>
+                          </Button>
                           {SEVERIDAD_OPCIONES.map((nivel) => (
-                            <ToggleGroupItem
+                            <Button
                               key={`filtro-sev-${nivel}`}
-                              value={nivel}
-                              className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setFiltroSeveridad(nivel)}
+                              className={filtroSeveridad === nivel ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
                             >
                               {nivel}
-                            </ToggleGroupItem>
+                            </Button>
                           ))}
-                        </ToggleGroup>
+                        </div>
                       </div>
 
                       <div className="space-y-1">
                         <Label className="text-xs text-slate-400">Estado</Label>
-                        <ToggleGroup
-                          type="single"
-                          value={filtroEstado}
-                          onValueChange={(value) => {
-                            if (!value) return;
-                            setFiltroEstado(value as 'todos' | EstadoCaso);
-                          }}
-                          variant="outline"
-                          className="w-full flex-wrap"
-                        >
-                          <ToggleGroupItem
-                            value="todos"
-                            className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setFiltroEstado('todos')}
+                            className={filtroEstado === 'todos' ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
                           >
                             Todos
-                          </ToggleGroupItem>
+                          </Button>
                           {ESTADO_OPCIONES.map((estado) => (
-                            <ToggleGroupItem
+                            <Button
                               key={`filtro-estado-${estado}`}
-                              value={estado}
-                              className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setFiltroEstado(estado)}
+                              className={filtroEstado === estado ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
                             >
                               {estado}
-                            </ToggleGroupItem>
+                            </Button>
                           ))}
-                        </ToggleGroup>
+                        </div>
                       </div>
 
                       <div>
@@ -1002,7 +994,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                           size="sm"
                           variant="outline"
                           onClick={() => setSeveridadCaso(nivel)}
-                          className={severidadCaso === nivel ? claseSeveridadActiva(nivel) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                          className={severidadCaso === nivel ? claseSeveridadActiva(nivel) : claseInactivaSegmento}
                         >
                           {nivel}
                         </Button>
@@ -1020,7 +1012,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                           size="sm"
                           variant="outline"
                           onClick={() => setEstadoCaso(estado)}
-                          className={estadoCaso === estado ? claseEstadoActiva(estado) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                          className={estadoCaso === estado ? claseEstadoActiva(estado) : claseInactivaSegmento}
                         >
                           {estado}
                         </Button>
@@ -1217,7 +1209,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => setSeveridadCasoEditar(nivel)}
-                            className={severidadCasoEditar === nivel ? claseSeveridadActiva(nivel) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                            className={severidadCasoEditar === nivel ? claseSeveridadActiva(nivel) : claseInactivaSegmento}
                           >
                             {nivel}
                           </Button>
@@ -1235,7 +1227,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => setEstadoCasoEditar(estado)}
-                            className={estadoCasoEditar === estado ? claseEstadoActiva(estado) : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                            className={estadoCasoEditar === estado ? claseEstadoActiva(estado) : claseInactivaSegmento}
                           >
                             {estado}
                           </Button>
