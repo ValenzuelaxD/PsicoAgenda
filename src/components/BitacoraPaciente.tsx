@@ -688,7 +688,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   </div>
                   <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3">
                     <p className="text-sm text-slate-300">Filtros de casos especiales</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    <div className="space-y-3">
                       <Button
                         type="button"
                         size="sm"
@@ -696,49 +696,117 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         onClick={() => setFiltroCasoEspecial(filtroCasoEspecial === 'solo' ? 'todos' : 'solo')}
                         className={filtroCasoEspecial === 'solo'
                           ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-                          : 'border-slate-600 text-slate-200 hover:bg-slate-700'}
+                          : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
                       >
                         {filtroCasoEspecial === 'solo' ? 'Solo casos especiales' : 'Todos los registros'}
                       </Button>
 
-                      <select
-                        value={filtroTipo}
-                        onChange={(e) => setFiltroTipo(e.target.value as 'todos' | CasoEspecialTipo)}
-                        className="h-9 rounded-md border border-slate-600 bg-slate-800 px-3 text-sm text-slate-100"
-                      >
-                        <option value="todos">Tipo: todos</option>
-                        {TIPOS_CASO_OPCIONES.map((tipo) => (
-                          <option key={tipo.value} value={tipo.value}>
-                            {tipo.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-400">Tipo</Label>
+                        <ToggleGroup
+                          type="single"
+                          value={filtroTipo}
+                          onValueChange={(value) => {
+                            if (!value) return;
+                            setFiltroTipo(value as 'todos' | CasoEspecialTipo);
+                          }}
+                          variant="outline"
+                          className="w-full flex-wrap"
+                        >
+                          <ToggleGroupItem
+                            value="todos"
+                            className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-teal-600 data-[state=on]:text-white"
+                          >
+                            Todos
+                          </ToggleGroupItem>
+                          {TIPOS_CASO_OPCIONES.map((tipo) => (
+                            <ToggleGroupItem
+                              key={`filtro-tipo-${tipo.value}`}
+                              value={tipo.value}
+                              className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-teal-600 data-[state=on]:text-white"
+                            >
+                              {tipo.label}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
+                      </div>
 
-                      <select
-                        value={filtroSeveridad}
-                        onChange={(e) => setFiltroSeveridad(e.target.value as 'todas' | SeveridadCaso)}
-                        className="h-9 rounded-md border border-slate-600 bg-slate-800 px-3 text-sm text-slate-100"
-                      >
-                        <option value="todas">Severidad: todas</option>
-                        {SEVERIDAD_OPCIONES.map((nivel) => (
-                          <option key={nivel} value={nivel}>
-                            {nivel}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-400">Severidad</Label>
+                        <ToggleGroup
+                          type="single"
+                          value={filtroSeveridad}
+                          onValueChange={(value) => {
+                            if (!value) return;
+                            setFiltroSeveridad(value as 'todas' | SeveridadCaso);
+                          }}
+                          variant="outline"
+                          className="w-full flex-wrap"
+                        >
+                          <ToggleGroupItem
+                            value="todas"
+                            className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                          >
+                            Todas
+                          </ToggleGroupItem>
+                          {SEVERIDAD_OPCIONES.map((nivel) => (
+                            <ToggleGroupItem
+                              key={`filtro-sev-${nivel}`}
+                              value={nivel}
+                              className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-violet-600 data-[state=on]:text-white"
+                            >
+                              {nivel}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
+                      </div>
 
-                      <select
-                        value={filtroEstado}
-                        onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoCaso)}
-                        className="h-9 rounded-md border border-slate-600 bg-slate-800 px-3 text-sm text-slate-100"
-                      >
-                        <option value="todos">Estado: todos</option>
-                        {ESTADO_OPCIONES.map((estado) => (
-                          <option key={estado} value={estado}>
-                            {estado}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-400">Estado</Label>
+                        <ToggleGroup
+                          type="single"
+                          value={filtroEstado}
+                          onValueChange={(value) => {
+                            if (!value) return;
+                            setFiltroEstado(value as 'todos' | EstadoCaso);
+                          }}
+                          variant="outline"
+                          className="w-full flex-wrap"
+                        >
+                          <ToggleGroupItem
+                            value="todos"
+                            className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
+                          >
+                            Todos
+                          </ToggleGroupItem>
+                          {ESTADO_OPCIONES.map((estado) => (
+                            <ToggleGroupItem
+                              key={`filtro-estado-${estado}`}
+                              value={estado}
+                              className="border-slate-600 bg-slate-800 text-slate-200 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
+                            >
+                              {estado}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
+                      </div>
+
+                      <div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setFiltroCasoEspecial('todos');
+                            setFiltroTipo('todos');
+                            setFiltroSeveridad('todas');
+                            setFiltroEstado('todos');
+                          }}
+                          className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                        >
+                          Limpiar filtros
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -854,7 +922,10 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
       {/* Diálogo de edición */}
       <Dialog open={editando} onOpenChange={setEditando}>
-        <DialogContent className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col">
+        <DialogContent
+          className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col"
+          style={{ height: '42rem', maxHeight: '42rem' }}
+        >
           <DialogHeader>
             <DialogTitle className="text-slate-100">Nueva Entrada de Bitácora</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -1075,7 +1146,10 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       {/* Diálogo de edición */}
       {editarEntrada !== null && (
         <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
-          <DialogContent className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col">
+          <DialogContent
+            className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col"
+            style={{ height: '42rem', maxHeight: '42rem' }}
+          >
             <DialogHeader>
               <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
               <DialogDescription className="text-slate-400">
