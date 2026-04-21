@@ -1,5 +1,10 @@
 const db = require('../db');
 const crypto = require('crypto');
+const {
+  sincronizarCitaVirtualCreada,
+  sincronizarCitaVirtualActualizada,
+  sincronizarCitaVirtualCancelada,
+} = require('../services/virtualAppointmentsService');
 
 let sharp = null;
 try {
@@ -327,8 +332,10 @@ const getContextoCita = async (citaId) => {
         ps.usuarioid AS psicologa_usuarioid,
         up.nombre AS paciente_nombre,
         up.apellidopaterno AS paciente_apellido,
+        up.correo AS paciente_correo,
         us.nombre AS psicologa_nombre,
         us.apellidopaterno AS psicologa_apellido,
+        us.correo AS psicologa_correo,
         ps.consultorio
       FROM citas c
       JOIN pacientes p ON c.pacienteid = p.pacienteid
@@ -395,6 +402,10 @@ const getMisCitas = async (req, res) => {
       query = `
         SELECT
           c.*,
+          cv.zoom_meeting_id,
+          cv.zoom_join_url,
+          cv.zoom_start_url,
+          cv.zoom_status,
           c.notaspaciente AS notas,
           COALESCE(h.observaciones, h.tratamiento, h.diagnostico, c.notaspaciente) AS notasresumen,
           u.nombre AS psicologa_nombre,
@@ -404,6 +415,7 @@ const getMisCitas = async (req, res) => {
         FROM citas c
         JOIN psicologas ps ON c.psicologaid = ps.psicologaid
         JOIN usuarios u ON ps.usuarioid = u.usuarioid
+        LEFT JOIN citas_virtuales cv ON cv.citaid = c.citaid
         LEFT JOIN LATERAL (
           SELECT observaciones, tratamiento, diagnostico
           FROM historialclinico h
@@ -425,6 +437,10 @@ const getMisCitas = async (req, res) => {
       query = `
         SELECT
           c.*,
+          cv.zoom_meeting_id,
+          cv.zoom_join_url,
+          cv.zoom_start_url,
+          cv.zoom_status,
           COALESCE(c.notaspsicologa, c.notaspaciente) AS notas,
           COALESCE(h.observaciones, h.tratamiento, h.diagnostico, c.notaspsicologa, c.notaspaciente) AS notasresumen,
           u.nombre AS paciente_nombre,
@@ -435,6 +451,7 @@ const getMisCitas = async (req, res) => {
         JOIN pacientes p ON c.pacienteid = p.pacienteid
         JOIN usuarios u ON p.usuarioid = u.usuarioid
         JOIN psicologas ps ON c.psicologaid = ps.psicologaid
+        LEFT JOIN citas_virtuales cv ON cv.citaid = c.citaid
         LEFT JOIN LATERAL (
           SELECT observaciones, tratamiento, diagnostico
           FROM historialclinico h
@@ -631,6 +648,12 @@ const crearCita = async (req, res) => {
       psicologaUsuarioId: contexto?.psicologa_usuarioid,
     });
 
+    if (contexto) {
+      sincronizarCitaVirtualCreada(contexto).catch((integrationError) => {
+        console.error('[citasController] Error en integracion virtual (crear):', integrationError.message);
+      });
+    }
+
     res.status(201).json({ citaId: result.rows[0].citaid });
   } catch (error) {
     console.error('Error al crear la cita:', error);
@@ -746,6 +769,15 @@ const actualizarCita = async (req, res) => {
       psicologaUsuarioId: contextoActualizado?.psicologa_usuarioid,
     });
 
+    if (contextoActualizado) {
+      sincronizarCitaVirtualActualizada({
+        contextoAnterior: contexto,
+        contextoActualizado,
+      }).catch((integrationError) => {
+        console.error('[citasController] Error en integracion virtual (actualizar):', integrationError.message);
+      });
+    }
+
     res.json({
       ...result.rows[0],
       notas: req.user.rol === 'psicologa' ? (notaspsicologa || '') : (notaspaciente || ''),
@@ -808,6 +840,15 @@ const confirmarCita = async (req, res) => {
       psicologaUsuarioId: contextoActualizado?.psicologa_usuarioid,
     });
 
+    if (contextoActualizado) {
+      sincronizarCitaVirtualActualizada({
+        contextoAnterior: contexto,
+        contextoActualizado,
+      }).catch((integrationError) => {
+        console.error('[citasController] Error en integracion virtual (confirmar):', integrationError.message);
+      });
+    }
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error al confirmar la cita:', error);
@@ -861,6 +902,12 @@ const cancelarCita = async (req, res) => {
       pacienteUsuarioId: contextoActualizado?.paciente_usuarioid,
       psicologaUsuarioId: contextoActualizado?.psicologa_usuarioid,
     });
+
+    if (contextoActualizado) {
+      sincronizarCitaVirtualCancelada(contextoActualizado).catch((integrationError) => {
+        console.error('[citasController] Error en integracion virtual (cancelar):', integrationError.message);
+      });
+    }
 
     res.json(result.rows[0]);
   } catch (error) {

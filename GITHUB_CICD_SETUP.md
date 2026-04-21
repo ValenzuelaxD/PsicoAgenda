@@ -47,6 +47,10 @@ gcloud projects add-iam-policy-binding psicoagenda-489800 \
 gcloud projects add-iam-policy-binding psicoagenda-489800 \
   --member="serviceAccount:github-actions-ci@psicoagenda-489800.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountUser"
+
+gcloud projects add-iam-policy-binding psicoagenda-489800 \
+  --member="serviceAccount:github-actions-ci@psicoagenda-489800.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
 ```
 
 ## 4) Configurar Workload Identity Federation
@@ -87,7 +91,58 @@ Construye el valor final de provider:
 projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider
 ```
 
-## 5) Configurar Secrets y Variables en GitHub
+## 5) Crear/actualizar secretos de runtime en Secret Manager
+
+Estos secretos NO van al repo ni a GitHub, se guardan en GCP:
+
+- psicoagenda-db-password
+- psicoagenda-jwt-secret
+- psicoagenda-zoom-client-secret
+- psicoagenda-smtp-pass
+
+Primera vez (crear secreto):
+
+```bash
+gcloud secrets create psicoagenda-db-password --replication-policy="automatic"
+gcloud secrets create psicoagenda-jwt-secret --replication-policy="automatic"
+gcloud secrets create psicoagenda-zoom-client-secret --replication-policy="automatic"
+gcloud secrets create psicoagenda-smtp-pass --replication-policy="automatic"
+```
+
+Subir valor nuevo (nueva version):
+
+```bash
+echo -n "NUEVO_VALOR" | gcloud secrets versions add psicoagenda-db-password --data-file=-
+echo -n "NUEVO_VALOR" | gcloud secrets versions add psicoagenda-jwt-secret --data-file=-
+echo -n "NUEVO_VALOR" | gcloud secrets versions add psicoagenda-zoom-client-secret --data-file=-
+echo -n "NUEVO_VALOR" | gcloud secrets versions add psicoagenda-smtp-pass --data-file=-
+```
+
+En PowerShell (Windows), usa archivo temporal para evitar problemas con `echo -n`:
+
+```powershell
+$tmp = [System.IO.Path]::GetTempFileName()
+Set-Content -Path $tmp -Value "NUEVO_VALOR" -NoNewline -Encoding UTF8
+gcloud secrets versions add psicoagenda-db-password --data-file=$tmp
+Remove-Item $tmp -Force
+```
+
+Repite el mismo patron para cada secreto.
+
+Permitir que Cloud Run lea esos secretos (runtime SA):
+
+```bash
+PROJECT_NUMBER=$(gcloud projects describe psicoagenda-489800 --format="value(projectNumber)")
+RUNTIME_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+for SECRET in psicoagenda-db-password psicoagenda-jwt-secret psicoagenda-zoom-client-secret psicoagenda-smtp-pass; do
+  gcloud secrets add-iam-policy-binding "$SECRET" \
+    --member="serviceAccount:${RUNTIME_SA}" \
+    --role="roles/secretmanager.secretAccessor"
+done
+```
+
+## 6) Configurar Secrets y Variables en GitHub
 
 En Settings > Secrets and variables > Actions:
 
@@ -98,15 +153,32 @@ Secrets requeridos:
 - DB_USER
 - DB_HOST
 - DB_DATABASE
-- DB_PASSWORD
 - DB_PORT
-- JWT_SECRET
 
 Variables requeridas:
 
 - VITE_API_URL = https://psicoagenda-api-315439788368.us-central1.run.app
+- ENABLE_ZOOM_INTEGRATION = true
+- ZOOM_ACCOUNT_ID = LsvohpCcR9i8-Ywlgmc--Q
+- ZOOM_CLIENT_ID = URHcIvNETIC8FBP3sLsyQQ
+- ZOOM_USER_ID = virtual@psicoagenda.online
+- ZOOM_HTTP_TIMEOUT_MS = 12000
+- ENABLE_EMAIL_INTEGRATION = true
+- SMTP_HOST = smtp.hostinger.com
+- SMTP_PORT = 465
+- SMTP_SECURE = true
+- SMTP_USER = info@psicoagenda.online
+- SMTP_TLS_REJECT_UNAUTHORIZED = true
+- MAIL_FROM_NAME = PsicoAgenda
+- MAIL_FROM_ADDRESS = virtual@psicoagenda.online
+- APP_TIMEZONE = America/Mexico_City
 
-## 6) Proteger rama main
+Importante:
+
+- DB_PASSWORD, JWT_SECRET, ZOOM_CLIENT_SECRET y SMTP_PASS se leen desde Secret Manager en el deploy del backend.
+- Si actualizas una credencial en Secret Manager, no necesitas tocar el repo.
+
+## 7) Proteger rama main
 
 En GitHub > Branch protection:
 
@@ -114,7 +186,7 @@ En GitHub > Branch protection:
 - Require status checks to pass
 - Restrict who can push to main
 
-## 7) Validar despliegue automatico
+## 8) Validar despliegue automatico
 
 1. Haz commit y push de estos cambios a una rama feature.
 2. Abre PR a main y merge.
@@ -122,7 +194,7 @@ En GitHub > Branch protection:
 4. Frontend: abre tu URL de Hosting y revisa cambios.
 5. Backend: valida endpoint de salud /test-db.
 
-## 8) Notas importantes
+## 9) Notas importantes
 
 - El repo ahora ignora build/ para evitar subir artefactos compilados.
 - Si ya estabas versionando build/, se eliminara del repositorio en el siguiente commit.

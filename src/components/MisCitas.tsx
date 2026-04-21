@@ -235,6 +235,26 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     };
   };
   const esModalidadEnLinea = (modalidad: string) => modalidad?.toLowerCase() === MODALIDAD_CITA.EN_LINEA.toLowerCase() || modalidad?.toLowerCase() === 'virtual';
+  const obtenerUrlVideollamada = (cita: Cita) => {
+    if (userType === 'psicologo') {
+      return String(cita.zoom_start_url || cita.zoom_join_url || '').trim();
+    }
+
+    return String(cita.zoom_join_url || '').trim();
+  };
+
+  const puedeUnirseVideollamada = (cita: Cita) => {
+    if (!esModalidadEnLinea(cita.modalidad)) {
+      return false;
+    }
+
+    if (esEstado(cita.estado, ESTADO_CITA.CANCELADA) || esEstado(cita.estado, ESTADO_CITA.PENDIENTE)) {
+      return false;
+    }
+
+    return Boolean(obtenerUrlVideollamada(cita));
+  };
+
   const obtenerUbicacion = (cita: Cita & { ubicacion?: string }) => {
     if (cita.ubicacion) {
       return cita.ubicacion;
@@ -631,11 +651,21 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
     }
   };
 
-  const handleUnirseVideollamada = () => {
-    toast.info('Iniciando videollamada...');
-    setTimeout(() => {
-      toast.success('Redirigiendo a la videollamada...');
-    }, 1500);
+  const handleUnirseVideollamada = (cita: Cita) => {
+    const url = obtenerUrlVideollamada(cita);
+
+    if (!url) {
+      toast.error('La videollamada aun no esta disponible para esta cita.');
+      return;
+    }
+
+    const popup = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!popup) {
+      toast.error('El navegador bloqueo la ventana emergente. Habilita popups e intenta de nuevo.');
+      return;
+    }
+
+    toast.success('Abriendo videollamada...');
   };
 
   const handleVerNotas = (citaId: number) => {
@@ -854,8 +884,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 w-full lg:w-auto">
-                    {esModalidadEnLinea(cita.modalidad) && (
-                      <Button size="sm" onClick={handleUnirseVideollamada} className="bg-teal-600 hover:bg-teal-700 w-full lg:w-auto">Unirse a Videollamada</Button>
+                    {puedeUnirseVideollamada(cita) && (
+                      <Button size="sm" onClick={() => handleUnirseVideollamada(cita)} className="bg-teal-600 hover:bg-teal-700 w-full lg:w-auto">Unirse a Videollamada</Button>
                     )}
                     {esEstado(cita.estado, ESTADO_CITA.PENDIENTE) && userType === 'psicologo' && (
                       <Button size="sm" variant="outline" onClick={() => handleConfirmarCita(cita.citaid)} className="border-green-600 text-green-400 hover:bg-green-600/20 w-full lg:w-auto">
@@ -1258,8 +1288,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                           
                           {/* Acciones rápidas */}
                           <div className="flex flex-col gap-2">
-                            {esModalidadEnLinea(cita.modalidad) && (
-                              <Button size="sm" onClick={(e) => { e.stopPropagation(); handleUnirseVideollamada(); }} className="bg-teal-600 hover:bg-teal-700">
+                            {puedeUnirseVideollamada(cita) && (
+                              <Button size="sm" onClick={(e) => { e.stopPropagation(); handleUnirseVideollamada(cita); }} className="bg-teal-600 hover:bg-teal-700">
                                 <Video className="w-4 h-4 mr-2" />
                                 Unirse
                               </Button>
@@ -1495,8 +1525,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                           
                           {/* Acciones rápidas */}
                           <div className="flex flex-col gap-2">
-                            {esModalidadEnLinea(cita.modalidad) && (
-                              <Button size="sm" onClick={() => handleUnirseVideollamada()} className="bg-teal-600 hover:bg-teal-700">
+                            {puedeUnirseVideollamada(cita) && (
+                              <Button size="sm" onClick={() => handleUnirseVideollamada(cita)} className="bg-teal-600 hover:bg-teal-700">
                                 <Video className="w-4 h-4 mr-2" />
                                 Unirse
                               </Button>

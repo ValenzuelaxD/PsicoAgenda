@@ -95,6 +95,10 @@ export interface Cita {
   notas?: string;
   notasresumen?: string;
   ubicacion?: string;
+  zoom_meeting_id?: string;
+  zoom_join_url?: string;
+  zoom_start_url?: string;
+  zoom_status?: string;
 }
 
 export interface ReporteCitasResumen {
