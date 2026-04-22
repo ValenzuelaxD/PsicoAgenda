@@ -31,65 +31,40 @@ const obtenerNombreCompleto = (nombre, apellido) => {
   return `${String(nombre || '').trim()} ${String(apellido || '').trim()}`.trim();
 };
 
-const parsearFechaHoraSinZona = (value) => {
-  if (typeof value !== 'string') return null;
-
-  const input = value.trim();
-  const match = input.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/);
-  if (!match) return null;
-
-  const [, y, m, d, hh, mm, ss = '00'] = match;
-  const year = Number(y);
-  const month = Number(m);
-  const day = Number(d);
-  const hour = Number(hh);
-  const minute = Number(mm);
-  const second = Number(ss);
-
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day) ||
-    !Number.isInteger(hour) ||
-    !Number.isInteger(minute) ||
-    !Number.isInteger(second)
-  ) {
-    return null;
+const construirFechaHoraLocal = (fecha) => {
+  if (fecha instanceof Date && !Number.isNaN(fecha.getTime())) {
+    return new Date(fecha.getTime());
   }
 
-  const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const formatearFechaHora = (fecha, timezone) => {
   if (typeof fecha === 'string') {
     const input = fecha.trim();
-    const contieneZona = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(input);
+    const match = input.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
 
-    if (!contieneZona) {
-      const fechaSinZona = parsearFechaHoraSinZona(input);
-      if (fechaSinZona) {
-        return fechaSinZona.toLocaleString('es-MX', {
-          timeZone: 'UTC',
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        });
+    if (match) {
+      const [, y, m, d, hh, mm, ss = '00'] = match;
+      const date = new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss));
+      if (!Number.isNaN(date.getTime())) {
+        return date;
       }
+    }
+
+    const parsed = new Date(input);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
     }
   }
 
-  const date = new Date(fecha);
-  if (Number.isNaN(date.getTime())) {
+  return null;
+};
+
+const formatearFechaHora = (fecha, timezone) => {
+  const date = construirFechaHoraLocal(fecha);
+  if (!date) {
     return 'fecha no disponible';
   }
 
+  // Se alinea con el flujo de agendar/reagendar: hora local sin forzar conversion por zona.
   return date.toLocaleString('es-MX', {
-    timeZone: timezone,
     weekday: 'long',
     year: 'numeric',
     month: 'long',
