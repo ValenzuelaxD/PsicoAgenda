@@ -48,7 +48,7 @@ Comentario: integra cambios remotos y reintenta push.
 
 ## 5) URLs de verificacion
 
-- Frontend: https://psicoagenda-489800.web.app
+- Frontend: https://psicoagenda.online
 - Backend (salud): https://psicoagenda-api-315439788368.us-central1.run.app/test-db
 
 Comentario: backend debe responder success=true.

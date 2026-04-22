@@ -1,4 +1,4 @@
-const APP_WEB_URL = String(process.env.APP_WEB_URL || 'https://psicoagenda-489800.web.app')
+const APP_WEB_URL = String(process.env.APP_WEB_URL || 'https://psicoagenda.online')
   .trim()
   .replace(/\/+$/, '');
 
