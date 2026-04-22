@@ -540,6 +540,7 @@ export function buildThemeShellStyle(theme: ThemePreferences): CSSProperties {
   const accent = theme.primaryColor || DEFAULT_THEME_PREFERENCES.primaryColor;
   const secondaryAccent = theme.accentColor || DEFAULT_THEME_PREFERENCES.accentColor;
   const readabilityConfig = READABILITY_CSS_VARS[theme.mode][theme.readabilityIntensity || DEFAULT_THEME_PREFERENCES.readabilityIntensity];
+  const isLight = theme.mode === 'light';
 
   const backgroundLayer = theme.backgroundImage
     ? `linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.48)), url("${theme.backgroundImage}")`
@@ -569,6 +570,10 @@ export function buildThemeShellStyle(theme: ThemePreferences): CSSProperties {
     ['--theme-overlay-rgb' as any]: readabilityConfig.overlayRgb,
     ['--theme-overlay-top-alpha' as any]: readabilityConfig.overlayTopAlpha,
     ['--theme-overlay-bottom-alpha' as any]: readabilityConfig.overlayBottomAlpha,
+    ['--theme-control-bg' as any]: isLight ? 'rgba(226, 238, 248, 0.94)' : 'rgba(30, 41, 59, 0.86)',
+    ['--theme-control-text' as any]: isLight ? '#0f172a' : '#f8fafc',
+    ['--theme-control-placeholder' as any]: isLight ? '#475569' : '#94a3b8',
+    ['--theme-control-border' as any]: isLight ? 'rgba(100, 116, 139, 0.55)' : 'rgba(100, 116, 139, 0.78)',
   };
 }
 

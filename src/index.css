@@ -109,51 +109,108 @@
 
 /* Capa de legibilidad para contenido sobre fondos personalizados */
 .theme-readable .text-slate-500 {
-  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-500-alpha, 62%), transparent);
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-500-alpha, 62%), transparent) !important;
 }
 
 .theme-readable .text-slate-400 {
-  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-400-alpha, 74%), transparent);
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-400-alpha, 74%), transparent) !important;
 }
 
 .theme-readable .text-slate-300 {
-  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-300-alpha, 86%), transparent);
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-300-alpha, 86%), transparent) !important;
 }
 
 .theme-readable .text-slate-200 {
-  color: color-mix(in srgb, var(--theme-text, #f8fafc) 92%, transparent);
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) 92%, transparent) !important;
 }
 
 .theme-readable .text-slate-100,
 .theme-readable .text-white {
-  color: color-mix(in srgb, var(--theme-text, #f8fafc) 98%, transparent);
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) 98%, transparent) !important;
 }
 
 .theme-readable .text-slate-600 {
-  color: color-mix(in srgb, var(--theme-text, #f8fafc) 78%, transparent);
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) 78%, transparent) !important;
 }
 
 .theme-readable .bg-slate-900\/30 {
-  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 72%, transparent);
+  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 72%, transparent) !important;
 }
 
 .theme-readable .bg-slate-800\/30 {
-  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 66%, transparent);
+  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 66%, transparent) !important;
 }
 
 .theme-readable .bg-slate-700\/30 {
-  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 60%, transparent);
+  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 60%, transparent) !important;
 }
 
 .theme-readable .bg-slate-800\/50,
 .theme-readable .bg-slate-800\/72,
 .theme-readable .bg-slate-800\/70 {
-  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 88%, transparent);
+  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 88%, transparent) !important;
+}
+
+.theme-readable .bg-slate-800\/40,
+.theme-readable .bg-slate-900\/40,
+.theme-readable .bg-slate-900\/50,
+.theme-readable .bg-slate-950\/30 {
+  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 82%, transparent) !important;
+}
+
+.theme-readable .bg-slate-700,
+.theme-readable .bg-slate-700\/50,
+.theme-readable .bg-slate-700\/40,
+.theme-readable .bg-slate-800,
+.theme-readable .bg-slate-900 {
+  background-color: var(--theme-control-bg, rgba(30, 41, 59, 0.86)) !important;
+}
+
+.theme-readable .text-slate-700,
+.theme-readable .text-slate-800,
+.theme-readable .text-slate-900 {
+  color: var(--theme-control-text, #f8fafc) !important;
+}
+
+.theme-readable input,
+.theme-readable textarea,
+.theme-readable [data-slot="input"],
+.theme-readable [data-slot="textarea"],
+.theme-readable [data-slot="select-trigger"],
+.theme-readable [role="combobox"] {
+  background-color: var(--theme-control-bg, rgba(30, 41, 59, 0.86)) !important;
+  color: var(--theme-control-text, #f8fafc) !important;
+  border-color: var(--theme-control-border, rgba(100, 116, 139, 0.78)) !important;
+}
+
+.theme-readable input::placeholder,
+.theme-readable textarea::placeholder {
+  color: var(--theme-control-placeholder, #94a3b8) !important;
+}
+
+.theme-readable button.border-slate-600,
+.theme-readable .border-slate-600.bg-slate-800,
+.theme-readable .border-slate-600.bg-slate-700 {
+  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 82%, transparent) !important;
+  color: var(--theme-control-text, #f8fafc) !important;
+  border-color: var(--theme-control-border, rgba(100, 116, 139, 0.78)) !important;
+}
+
+.theme-readable button.border-slate-600:hover,
+.theme-readable .hover\:bg-slate-700:hover,
+.theme-readable .hover\:bg-slate-800:hover {
+  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 90%, transparent) !important;
+}
+
+.theme-readable .bg-slate-700.text-slate-200,
+.theme-readable .bg-slate-700.text-slate-100,
+.theme-readable .bg-slate-600.text-slate-300 {
+  color: var(--theme-control-text, #f8fafc) !important;
 }
 
 .theme-readable .border-slate-600,
 .theme-readable .border-slate-700 {
-  border-color: color-mix(in srgb, var(--theme-border, #334155) 82%, rgba(255, 255, 255, 0.14));
+  border-color: color-mix(in srgb, var(--theme-border, #334155) 82%, rgba(255, 255, 255, 0.14)) !important;
 }
 
 @layer theme {

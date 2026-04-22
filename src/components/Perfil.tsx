@@ -56,8 +56,6 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
   const [passwordConfirmar, setPasswordConfirmar] = useState('');
   const archivoFotoInputRef = useRef<HTMLInputElement | null>(null);
   const [themeDraft, setThemeDraft] = useState(themePreferences);
-  const [mostrarPreviewIntensidad, setMostrarPreviewIntensidad] = useState(false);
-  const [intensidadPendiente, setIntensidadPendiente] = useState<ThemePreferences['readabilityIntensity']>(themePreferences.readabilityIntensity);
 
   const readabilityVisuals: Record<'suave' | 'media' | 'alta', { panelBg: string; textColor: string; borderColor: string }> = {
     suave: {
@@ -79,7 +77,6 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
 
   useEffect(() => {
     setThemeDraft(themePreferences);
-    setIntensidadPendiente(themePreferences.readabilityIntensity);
   }, [themePreferences]);
 
   // Estado para valores originales (para cancelar)
@@ -360,19 +357,13 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
     onThemeUpdated(nextTheme);
   };
 
-  const abrirPreviewIntensidad = (value: ThemePreferences['readabilityIntensity']) => {
-    setIntensidadPendiente(value);
-    setMostrarPreviewIntensidad(true);
-  };
-
-  const confirmarIntensidad = () => {
-    const nextTheme = normalizeThemePreferences({ ...themeDraft, readabilityIntensity: intensidadPendiente });
+  const aplicarIntensidadDirecta = (value: ThemePreferences['readabilityIntensity']) => {
+    const nextTheme = normalizeThemePreferences({ ...themeDraft, readabilityIntensity: value });
     setThemeDraft(nextTheme);
     saveThemePreferences(nextTheme);
     onThemeUpdated(nextTheme);
-    setMostrarPreviewIntensidad(false);
     toast.success('Intensidad aplicada', {
-      description: `Se guardó el nivel ${READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === intensidadPendiente)?.label || 'Media'} para tu sesión.`,
+      description: `Se guardó el nivel ${READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === value)?.label || 'Media'} para tu sesión.`,
     });
   };
 
@@ -728,7 +719,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => abrirPreviewIntensidad(option.value)}
+                      onClick={() => aplicarIntensidadDirecta(option.value)}
                       className={`rounded-lg border px-3 py-3 text-left transition-colors ${
                         isSelected
                           ? 'border-teal-400 bg-teal-500/20 text-teal-100 shadow-[0_0_0_1px_rgba(45,212,191,0.45)]'
@@ -864,51 +855,6 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
           </Button>
         </div>
       </form>
-
-      <Dialog open={mostrarPreviewIntensidad} onOpenChange={setMostrarPreviewIntensidad}>
-        <DialogContent className="sm:max-w-[520px] bg-slate-800 border-slate-700">
-          <DialogHeader>
-            <DialogTitle className="text-slate-100">Vista previa de intensidad</DialogTitle>
-            <DialogDescription className="text-slate-300">
-              Revisa cómo se verán textos, íconos y marcos antes de confirmar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-xl border border-slate-600 p-4" style={{ backgroundColor: readabilityVisuals[intensidadPendiente].panelBg }}>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold" style={{ color: readabilityVisuals[intensidadPendiente].textColor }}>
-                  {READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === intensidadPendiente)?.label || 'Media'}
-                </p>
-                <span className="text-xs" style={{ color: readabilityVisuals[intensidadPendiente].textColor }}>
-                  Muestra simulada
-                </span>
-              </div>
-              <div className="mt-3 rounded-lg border px-3 py-2" style={{ borderColor: readabilityVisuals[intensidadPendiente].borderColor }}>
-                <p className="text-sm font-medium" style={{ color: readabilityVisuals[intensidadPendiente].textColor }}>
-                  Texto e iconos de ejemplo
-                </p>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              className="border-slate-600 text-slate-200 hover:bg-slate-700"
-              onClick={() => setMostrarPreviewIntensidad(false)}
-            >
-              No aplicar
-            </Button>
-            <Button
-              type="button"
-              className="bg-teal-600 hover:bg-teal-700"
-              onClick={confirmarIntensidad}
-            >
-              Aplicar intensidad
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Modal Cambiar Contraseña */}
       <Dialog open={mostrarCambiarPassword} onOpenChange={setMostrarCambiarPassword}>
