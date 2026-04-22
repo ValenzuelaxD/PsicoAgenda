@@ -316,7 +316,19 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout, on
   );
 
   const profileMenuContent = (
-    <DropdownMenuContent align="end" className="w-56 bg-slate-900 border-slate-700 text-slate-100">
+    <DropdownMenuContent align="end" className={`w-56 bg-slate-900 border-slate-700 text-slate-100 ${isMobile ? 'p-2' : ''}`}>
+      {isMobile && (
+        <div className="px-3 pb-2 mb-2 border-b border-slate-700 flex flex-col items-center text-center">
+          <Avatar className="size-10 mb-2">
+            <AvatarImage src={userPhoto || undefined} alt={userName} />
+            <AvatarFallback className="bg-slate-700 text-slate-200 text-[11px] font-semibold">
+              {getInitialesUsuario(userName)}
+            </AvatarFallback>
+          </Avatar>
+          <p className="text-[11px] uppercase tracking-wide text-slate-400">{getEtiquetaRol()}</p>
+          <p className="text-sm text-slate-100 font-medium truncate max-w-[180px]">{userName}</p>
+        </div>
+      )}
       <DropdownMenuItem
         onClick={onGoToProfile}
         className="cursor-pointer"
@@ -341,37 +353,33 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout, on
       <div className="flex items-center gap-3 shrink-0">
         {isMobile ? (
           <>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   {avatarTriggerButton}
                 </DropdownMenuTrigger>
                 {profileMenuContent}
               </DropdownMenu>
-              <div className="text-center">
-                <p className="text-[11px] uppercase tracking-wide text-slate-400 truncate w-[120px]">{getEtiquetaRol()}</p>
-                <p className="text-sm text-slate-100 font-medium truncate w-[120px]">{userName}</p>
-              </div>
-            </div>
 
-            <motion.button
-              onClick={() => setMostrarPanel(!mostrarPanel)}
-              className="relative p-2 rounded-lg hover:bg-slate-700 transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Abrir notificaciones"
-            >
-              <Bell className="w-6 h-6 stroke-2 text-slate-300" />
-              {notificacionesNoLeidas > 0 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                >
-                  {notificacionesNoLeidas}
-                </motion.div>
-              )}
-            </motion.button>
+              <motion.button
+                onClick={() => setMostrarPanel(!mostrarPanel)}
+                className="relative p-2 rounded-lg hover:bg-slate-700 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Abrir notificaciones"
+              >
+                <Bell className="w-6 h-6 stroke-2 text-slate-300" />
+                {notificacionesNoLeidas > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                  >
+                    {notificacionesNoLeidas}
+                  </motion.div>
+                )}
+              </motion.button>
+            </div>
           </>
         ) : (
           <>
