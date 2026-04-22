@@ -2,6 +2,7 @@ import { Calendar, Clock, FileText, TrendingUp, User, CheckCircle2 } from 'lucid
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
+import { FrecuenciaRecomendadaCitas } from './FrecuenciaRecomendadaCitas';
 import { ViewType } from './Dashboard';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -366,6 +367,8 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
             </div>
           </CardContent>
         </Card>
+
+        <FrecuenciaRecomendadaCitas modo="paciente" />
 
         {/* Recursos Rápidos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

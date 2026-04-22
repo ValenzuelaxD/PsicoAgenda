@@ -15,6 +15,11 @@ const { getMiPerfil, actualizarMiPerfil, cambiarMiPassword, actualizarImagenTema
 const { getReporteCitas } = require('../controllers/reportesController');
 const { getMiAgenda, crearAgenda, actualizarAgenda, eliminarAgenda } = require('../controllers/agendasController');
 const {
+  getFrecuenciaPorPacienteParaPsicologa,
+  upsertFrecuenciaPorPacienteParaPsicologa,
+  getMiFrecuenciaRecomendada,
+} = require('../controllers/frecuenciaCitasController');
+const {
   getSolicitudesPsicologas,
   aprobarSolicitudPsicologa,
   rechazarSolicitudPsicologa,
@@ -75,6 +80,9 @@ router.get('/perfil', protegerRuta, getMiPerfil);
 router.put('/perfil', protegerRuta, actualizarMiPerfil);
 router.put('/perfil/password', protegerRuta, cambiarMiPassword);
 router.put('/perfil/tema-imagen', protegerRuta, actualizarImagenTema);
+router.get('/frecuencia-citas/mi', protegerRuta, getMiFrecuenciaRecomendada);
+router.get('/frecuencia-citas/paciente/:pacienteId', protegerRuta, getFrecuenciaPorPacienteParaPsicologa);
+router.put('/frecuencia-citas/paciente/:pacienteId', protegerRuta, upsertFrecuenciaPorPacienteParaPsicologa);
 router.get('/reportes/citas', protegerRuta, getReporteCitas);
 router.get('/admin/solicitudes-psicologas', protegerRuta, autorizarRol('admin'), getSolicitudesPsicologas);
 router.put('/admin/solicitudes-psicologas/:id/aprobar', protegerRuta, autorizarRol('admin'), aprobarSolicitudPsicologa);

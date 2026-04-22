@@ -183,6 +183,20 @@ export interface HistorialClinico {
   esconfidencial: boolean;
 }
 
+export interface FrecuenciaRecomendadaCita {
+  frecuenciaId: number;
+  pacienteId: number;
+  psicologaId: number;
+  cadaCantidad: number;
+  unidad: 'dias' | 'semanas' | 'meses';
+  nota?: string;
+  recomendacionTexto: string;
+  fechaCreacion?: string;
+  fechaModificacion?: string;
+  psicologaNombre?: string;
+  psicologaApellido?: string;
+}
+
 // ============================================
 // SOLICITUDES DE REAGENDA
 // ============================================

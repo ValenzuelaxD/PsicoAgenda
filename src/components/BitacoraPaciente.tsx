@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { FrecuenciaRecomendadaCitas } from './FrecuenciaRecomendadaCitas';
 import { Paciente, HistorialClinico } from '../utils/types';
 import { API_ENDPOINTS, apiFetch } from '../utils/api';
 
@@ -658,6 +659,11 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   </div>
                 </CardContent>
               </Card>
+
+              <FrecuenciaRecomendadaCitas
+                modo="psicologo"
+                pacienteId={pacienteSeleccionado.pacienteid}
+              />
 
               {/* Historial de entradas */}
               <div className="space-y-4">

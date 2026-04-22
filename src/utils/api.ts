@@ -54,6 +54,10 @@ export const API_ENDPOINTS = {
   // Historial Clínico
   HISTORIAL_CLINICO: `${API_BASE_URL}/api/historialclinico`,
   MI_HISTORIAL: `${API_BASE_URL}/api/historialclinico`,
+
+  // Frecuencia recomendada de citas
+  FRECUENCIA_CITAS_MI: `${API_BASE_URL}/api/frecuencia-citas/mi`,
+  FRECUENCIA_CITAS_PACIENTE: (pacienteId: number) => `${API_BASE_URL}/api/frecuencia-citas/paciente/${pacienteId}`,
   
   // Notificaciones
   NOTIFICACIONES: `${API_BASE_URL}/api/notificaciones`,
