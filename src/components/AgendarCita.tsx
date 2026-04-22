@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { motion, AnimatePresence } from 'motion/react';
 import { apiFetch, API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
+import { formatHourLabel, loadHourFormatPreference } from '../utils/timeFormat';
 
 interface AgendarCitaProps {
   onNavigate: (view: ViewType) => void;
@@ -48,6 +49,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const [mesCalendario, setMesCalendario] = useState<Date>(new Date());
   const [proximosHorarios, setProximosHorarios] = useState<Array<{ fecha: string; etiqueta: string; horarios: string[] }>>([]);
   const [fechasConDisponibilidad, setFechasConDisponibilidad] = useState<string[]>([]);
+  const [hourFormatPreference] = useState(() => loadHourFormatPreference());
 
   const fechasConDisponibilidadSet = useMemo(() => new Set(fechasConDisponibilidad), [fechasConDisponibilidad]);
   const psicologoSeleccionado = useMemo(
@@ -469,7 +471,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                         )}
                                         {horarios.map((h) => (
                                           <SelectItem key={h} value={h}>
-                                            {h}
+                                            {formatHourLabel(h, hourFormatPreference)}
                                           </SelectItem>
                                         ))}
                                       </SelectContent>
@@ -623,7 +625,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
                                       })}
                                     </p>
                                     <p className="text-slate-200">
-                                      <span className="font-medium text-violet-300">Hora:</span> {hora}
+                                      <span className="font-medium text-violet-300">Hora:</span> {formatHourLabel(hora, hourFormatPreference)}
                                     </p>
                                   </CardContent>
                                 </Card>

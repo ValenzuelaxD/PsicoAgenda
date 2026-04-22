@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PacienteDashboardData, PsicologaDashboardData } from '../utils/types';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
+import { formatHourLabel, loadHourFormatPreference } from '../utils/timeFormat';
 
 const DASHBOARD_CACHE_PREFIX = 'dashboard_cache_v1';
 const DASHBOARD_CACHE_TTL_MS = 60 * 1000;
@@ -24,6 +25,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmandoCitaId, setConfirmandoCitaId] = useState<number | null>(null);
+  const [hourFormatPreference] = useState(() => loadHourFormatPreference());
 
   const construirClaveCacheDashboard = (endpoint: string) => `${DASHBOARD_CACHE_PREFIX}:${userType}:${endpoint}`;
 
@@ -88,16 +90,6 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
     return { fecha: '', hora: '' };
   };
 
-  const formatearHora12 = (hora: string) => {
-    const [hourRaw, minuteRaw] = hora.split(':').map(Number);
-    if (Number.isNaN(hourRaw) || Number.isNaN(minuteRaw)) {
-      return hora;
-    }
-
-    const sufijo = hourRaw >= 12 ? 'p.m.' : 'a.m.';
-    return `${String(hourRaw).padStart(2, '0')}:${String(minuteRaw).padStart(2, '0')} ${sufijo}`;
-  };
-
   const formatearFechaVisual = (fechaHora?: string) => {
     const { fecha } = extraerFechaHoraLocal(fechaHora);
     if (!fecha) {
@@ -112,7 +104,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
     if (!fecha || !hora) {
       return 'Sin fecha';
     }
-    return `${formatearFechaVisual(fechaHora)}, ${formatearHora12(hora)}`;
+    return `${formatearFechaVisual(fechaHora)}, ${formatHourLabel(hora, hourFormatPreference)}`;
   };
 
   const formatearResumenProximaCita = (fechaHora?: string) => {
@@ -128,7 +120,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
       month: 'short',
     });
 
-    return `${encabezado}, ${hora}`;
+    return `${encabezado}, ${formatHourLabel(hora, hourFormatPreference)}`;
   };
 
   const obtenerFechaLocalISO = () => {

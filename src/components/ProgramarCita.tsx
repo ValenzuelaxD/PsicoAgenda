@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ViewType } from './Dashboard';
 import { apiFetch, API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import { MODALIDAD_CITA, Paciente } from '../utils/types';
+import { formatHourLabel, loadHourFormatPreference } from '../utils/timeFormat';
 
 interface ProgramarCitaProps {
   onNavigate: (view: ViewType) => void;
@@ -45,6 +46,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   const [mesCalendario, setMesCalendario] = useState<Date>(new Date());
   const [guardando, setGuardando] = useState(false);
   const [disponibilidadPorFecha, setDisponibilidadPorFecha] = useState<Record<string, number>>({});
+  const [hourFormatPreference] = useState(() => loadHourFormatPreference());
 
   const clampMonth = (monthDate: Date) => {
     const normalizado = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
@@ -330,7 +332,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                         <SelectItem key={item} value={item}>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            {item}
+                            {formatHourLabel(item, hourFormatPreference)}
                           </div>
                         </SelectItem>
                       ))}
@@ -464,7 +466,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                   </div>
                   <p><span className="font-medium text-teal-300">Paciente:</span> {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellidopaterno}` : 'Pendiente'}</p>
                   <p><span className="font-medium text-violet-300">Fecha:</span> {date.toLocaleDateString('es-ES')}</p>
-                  <p><span className="font-medium text-teal-300">Hora:</span> {hora || 'Pendiente'}</p>
+                  <p><span className="font-medium text-teal-300">Hora:</span> {hora ? formatHourLabel(hora, hourFormatPreference) : 'Pendiente'}</p>
                   <p><span className="font-medium text-violet-300">Duración:</span> {DURACION_CITA_MIN} min</p>
                   <p><span className="font-medium text-teal-300">Modalidad:</span> {modalidad}</p>
                   <p><span className="font-medium text-violet-300">Horarios libres:</span> {loadingHorarios ? 'Consultando...' : horariosDisponibles.length}</p>

@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import { API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import useIsMobile from '../hooks/useIsMobile';
+import { formatHourLabel, loadHourFormatPreference } from '../utils/timeFormat';
 
 interface Notification {
   notificacionid: string;
@@ -42,6 +43,7 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout, on
   const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hourFormatPreference] = useState(() => loadHourFormatPreference());
   const lastUnreadCountRef = useRef(0);
   const lastToastAtRef = useRef(0);
 
@@ -278,10 +280,7 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout, on
     const matchLocal = fechaRaw.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2})(?::\d{2})?$/);
     if (matchLocal) {
       const [, year, month, day, hour, minute] = matchLocal;
-      const hourNum = Number(hour);
-      const sufijo = hourNum >= 12 ? 'p.m.' : 'a.m.';
-      const hour12 = ((hourNum + 11) % 12) + 1;
-      return `${day}/${month}/${year}, ${hour12.toString().padStart(2, '0')}:${minute} ${sufijo}`;
+      return `${day}/${month}/${year}, ${formatHourLabel(`${hour}:${minute}`, hourFormatPreference)}`;
     }
 
     const fecha = new Date(fechaRaw);
@@ -293,7 +292,7 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout, on
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true,
+      hour12: hourFormatPreference === '12h',
     });
   };
 

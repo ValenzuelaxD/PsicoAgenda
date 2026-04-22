@@ -32,6 +32,7 @@ import { Label } from './ui/label';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Cita, ESTADO_CITA, MODALIDAD_CITA } from '../utils/types';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
+import { formatHourLabel, loadHourFormatPreference } from '../utils/timeFormat';
 
 const MIS_CITAS_CACHE_PREFIX = 'mis_citas_cache_v1';
 const MIS_CITAS_CACHE_TTL_MS = 45 * 1000;
@@ -59,6 +60,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const [loadingDiasEdicion, setLoadingDiasEdicion] = useState(false);
   const [mesCalendarioReagenda, setMesCalendarioReagenda] = useState(new Date());
   const [mesCalendarioEdicion, setMesCalendarioEdicion] = useState(new Date());
+  const [hourFormatPreference] = useState(() => loadHourFormatPreference());
 
   const construirClaveCacheCitas = () => {
     try {
@@ -303,14 +305,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
       return '--:--';
     }
 
-    const [hourRaw, minuteRaw] = hora.split(':').map(Number);
-    if (Number.isNaN(hourRaw) || Number.isNaN(minuteRaw)) {
-      return hora;
-    }
-
-    const sufijo = hourRaw >= 12 ? 'p.m.' : 'a.m.';
-    const hour12 = ((hourRaw + 11) % 12) + 1;
-    return `${hour12}:${String(minuteRaw).padStart(2, '0')}:00 ${sufijo}`;
+    return formatHourLabel(hora, hourFormatPreference);
   };
 
   const obtenerFechaMinimaReagenda = () => {
@@ -1771,7 +1766,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         <SelectItem value="__sin_horas_reagenda" disabled>No hay horarios disponibles</SelectItem>
                       )}
                       {!loadingHorasReagenda && horasDisponiblesReagenda.map((horaDisponible) => (
-                        <SelectItem key={horaDisponible} value={horaDisponible}>{horaDisponible}</SelectItem>
+                        <SelectItem key={horaDisponible} value={horaDisponible}>{formatHourLabel(horaDisponible, hourFormatPreference)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1912,7 +1907,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                         <SelectItem value="__sin_horas_edicion" disabled>No hay horarios disponibles</SelectItem>
                       )}
                       {!loadingHorasEdicion && horasDisponiblesEdicion.map((horaDisponible) => (
-                        <SelectItem key={horaDisponible} value={horaDisponible}>{horaDisponible}</SelectItem>
+                        <SelectItem key={horaDisponible} value={horaDisponible}>{formatHourLabel(horaDisponible, hourFormatPreference)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

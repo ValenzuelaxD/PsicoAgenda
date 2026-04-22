@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import { API_ENDPOINTS, uploadImagenTema } from '../utils/api';
 import { ThemePreferences, THEME_PRESET_OPTIONS, READABILITY_INTENSITY_OPTIONS, normalizeThemePreferences, saveThemePreferences } from '../utils/theme';
+import { HourFormatPreference, loadHourFormatPreference, saveHourFormatPreference } from '../utils/timeFormat';
 
 interface PerfilProps {
   userName: string;
@@ -56,6 +57,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
   const [passwordConfirmar, setPasswordConfirmar] = useState('');
   const archivoFotoInputRef = useRef<HTMLInputElement | null>(null);
   const [themeDraft, setThemeDraft] = useState(themePreferences);
+  const [hourFormatPreference, setHourFormatPreference] = useState<HourFormatPreference>(() => loadHourFormatPreference());
 
   const readabilityVisuals: Record<'suave' | 'media' | 'alta', { panelBg: string; textColor: string; borderColor: string }> = {
     suave: {
@@ -78,6 +80,10 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
   useEffect(() => {
     setThemeDraft(themePreferences);
   }, [themePreferences]);
+
+  useEffect(() => {
+    setHourFormatPreference(loadHourFormatPreference());
+  }, []);
 
   // Estado para valores originales (para cancelar)
   const [valoresOriginales, setValoresOriginales] = useState({
@@ -364,6 +370,18 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
     onThemeUpdated(nextTheme);
     toast.success('Intensidad aplicada', {
       description: `Se guardó el nivel ${READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === value)?.label || 'Media'} para tu sesión.`,
+    });
+  };
+
+  const handleHourFormatChange = (value: string) => {
+    const nextValue: HourFormatPreference = value === '12h' ? '12h' : '24h';
+    setHourFormatPreference(nextValue);
+    saveHourFormatPreference(nextValue);
+
+    toast.success('Formato de hora actualizado', {
+      description: nextValue === '12h'
+        ? 'Ahora veras las horas en formato de 12 horas (a.m./p.m.).'
+        : 'Ahora veras las horas en formato de 24 horas.',
     });
   };
 
@@ -816,6 +834,21 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                   <span>Oscuro</span>
                   {themeDraft.mode === 'dark' && <span className="ml-auto">✓</span>}
                 </button>
+              </div>
+            </div>
+
+            <div className="space-y-3 border-t border-slate-700 pt-4">
+              <p className="text-slate-100 text-sm font-medium">Formato de hora</p>
+              <div className="max-w-xs">
+                <Select value={hourFormatPreference} onValueChange={handleHourFormatChange}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
+                    <SelectValue placeholder="Selecciona formato" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="24h">24 horas (00:00 - 23:59)</SelectItem>
+                    <SelectItem value="12h">12 horas (a.m./p.m.)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
