@@ -180,7 +180,13 @@ export function Dashboard({
                 <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--theme-muted)' }}>Sistema de gestion psicologica profesional</p>
               </div>
             </div>
-            <NotificationCenter userType={userType} userName={userName} userPhoto={userPhoto} onLogout={onLogout} />
+            <NotificationCenter
+              userType={userType}
+              userName={userName}
+              userPhoto={userPhoto}
+              onLogout={onLogout}
+              onGoToProfile={() => handleNavigate('perfil')}
+            />
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { Bell, X, Check, Calendar, Clock, AlertCircle, Info, LogOut } from 'lucide-react';
+import { Bell, X, Check, Calendar, Clock, AlertCircle, Info, LogOut, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -11,7 +11,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
@@ -34,9 +33,10 @@ interface NotificationCenterProps {
   userName: string;
   userPhoto: string;
   onLogout: () => void;
+  onGoToProfile: () => void;
 }
 
-export function NotificationCenter({ userType, userName, userPhoto, onLogout }: NotificationCenterProps) {
+export function NotificationCenter({ userType, userName, userPhoto, onLogout, onGoToProfile }: NotificationCenterProps) {
   const isMobile = useIsMobile();
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
@@ -304,7 +304,12 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout }: 
   return (
     <>
       {/* Botón de notificaciones */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-col items-end min-w-0 max-w-[170px] sm:max-w-[220px]">
+          <p className="text-[11px] uppercase tracking-wide text-slate-400 truncate w-full text-right">{getEtiquetaRol()}</p>
+          <p className="text-sm text-slate-100 font-medium truncate w-full text-right">{userName}</p>
+        </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -320,11 +325,14 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout }: 
               </Avatar>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64 bg-slate-900 border-slate-700 text-slate-100">
-            <DropdownMenuLabel className="space-y-1">
-              <p className="text-sm font-semibold break-words">{userName}</p>
-              <p className="text-xs text-slate-400">{getEtiquetaRol()}</p>
-            </DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-56 bg-slate-900 border-slate-700 text-slate-100">
+            <DropdownMenuItem
+              onClick={onGoToProfile}
+              className="cursor-pointer"
+            >
+              <User className="w-4 h-4" />
+              Mi perfil
+            </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-slate-700" />
             <DropdownMenuItem
               onClick={onLogout}
