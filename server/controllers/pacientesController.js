@@ -178,6 +178,44 @@ const getPacientes = async (req, res) => {
   }
 };
 
+const getPacientesSelector = async (req, res) => {
+  try {
+    if (!req.user || !['psicologa', 'admin'].includes(req.user.rol)) {
+      return res.status(403).json({ message: 'No tienes permisos para consultar pacientes.' });
+    }
+
+    const result = await db.query(
+      `
+        SELECT
+          p.pacienteid,
+          u.nombre,
+          u.apellidopaterno,
+          u.apellidomaterno,
+          u.fotoperfil_mime,
+          u.fotoperfil_data
+        FROM pacientes p
+        JOIN usuarios u ON u.usuarioid = p.usuarioid
+        WHERE u.rol = 'paciente'
+          AND u.activo = true
+        ORDER BY u.nombre ASC, u.apellidopaterno ASC, u.apellidomaterno ASC
+      `
+    );
+
+    const pacientes = result.rows.map((p) => ({
+      pacienteid: p.pacienteid,
+      nombre: p.nombre,
+      apellidopaterno: p.apellidopaterno,
+      apellidomaterno: p.apellidomaterno,
+      fotoperfil: construirFotoDesdeBd(p.fotoperfil_mime, p.fotoperfil_data),
+    }));
+
+    res.json(pacientes);
+  } catch (error) {
+    console.error('Error al obtener pacientes para selector:', error);
+    res.status(500).json({ message: 'Error interno del servidor.' });
+  }
+};
+
 const crearPaciente = async (req, res) => {
   let { nombre, apellidoPaterno, apellidoMaterno, correo, telefono, fechaNacimiento, genero, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia, password } = req.body;
 
@@ -302,4 +340,4 @@ const eliminarPaciente = async (req, res) => {
   }
 };
 
-module.exports = { getPacientes, crearPaciente, actualizarPaciente, eliminarPaciente };
+module.exports = { getPacientes, getPacientesSelector, crearPaciente, actualizarPaciente, eliminarPaciente };

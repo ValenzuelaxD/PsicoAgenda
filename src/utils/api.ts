@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   
   // Pacientes
   PACIENTES: `${API_BASE_URL}/api/pacientes`,
+  PACIENTES_SELECTOR: `${API_BASE_URL}/api/pacientes/selector`,
   PACIENTES_ID: (id: number) => `${API_BASE_URL}/api/pacientes/${id}`,
   
   // Psicologas

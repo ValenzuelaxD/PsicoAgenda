@@ -105,7 +105,7 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
   useEffect(() => {
     const fetchPacientes = async () => {
       try {
-        const response = await apiFetch(API_ENDPOINTS.PACIENTES);
+        const response = await apiFetch(API_ENDPOINTS.PACIENTES_SELECTOR);
         const data = await response.json();
 
         if (!response.ok) {

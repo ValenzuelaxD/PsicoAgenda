@@ -9,7 +9,7 @@ const { getMisNotificaciones, marcarNotificacionComoLeida, eliminarNotificacion 
 const { getPacienteDashboard, getPsicologoDashboard } = require('../controllers/dashboardController');
 const { getPsicologas, getDisponibilidad } = require('../controllers/psicologasController');
 // Importar controladores
-const { getPacientes, crearPaciente, actualizarPaciente, eliminarPaciente } = require('../controllers/pacientesController');
+const { getPacientes, getPacientesSelector, crearPaciente, actualizarPaciente, eliminarPaciente } = require('../controllers/pacientesController');
 const { getMiHistorial, getHistorial, crearEntradaHistorial, actualizarEntradaHistorial } = require('../controllers/historialClinicoController');
 const { getMiPerfil, actualizarMiPerfil, cambiarMiPassword, actualizarImagenTema } = require('../controllers/perfilController');
 const { getReporteCitas } = require('../controllers/reportesController');
@@ -69,6 +69,7 @@ router.get('/citas/tipos', protegerRuta, async (req, res) => {
   }
 });
 router.get('/pacientes', protegerRuta, getPacientes);
+router.get('/pacientes/selector', protegerRuta, getPacientesSelector);
 router.post('/pacientes', protegerRuta, crearPaciente);
 router.put('/pacientes/:pacienteId', protegerRuta, actualizarPaciente);
 router.delete('/pacientes/:pacienteId', protegerRuta, eliminarPaciente);
