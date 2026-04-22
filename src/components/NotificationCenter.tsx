@@ -307,7 +307,7 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout, on
       aria-label={`Abrir menu de perfil de ${userName}`}
     >
       <Avatar className="size-9 border border-slate-600 bg-slate-700 transition-transform duration-200 hover:scale-105">
-        {!isMobile && <AvatarImage src={userPhoto || undefined} alt={userName} />}
+        <AvatarImage src={userPhoto || undefined} alt={userName} />
         <AvatarFallback className="bg-slate-700 text-slate-200 text-[11px] font-semibold">
           {getInitialesUsuario(userName)}
         </AvatarFallback>
