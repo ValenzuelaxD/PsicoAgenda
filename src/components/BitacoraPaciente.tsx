@@ -981,8 +981,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       {/* Diálogo de edición */}
       <Dialog open={editando} onOpenChange={setEditando}>
         <DialogContent
-          className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col"
-          style={{ height: '42rem', maxHeight: '42rem' }}
+          className="w-[56rem] max-w-[95vw] h-[92dvh] sm:h-[42rem] max-h-[92dvh] bg-slate-800 border-slate-700 overflow-hidden flex flex-col"
         >
           <DialogHeader>
             <DialogTitle className="text-slate-100">Nueva Entrada de Bitácora</DialogTitle>
@@ -991,7 +990,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 flex-1 min-h-0 overflow-y-scroll pr-2">
+          <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 pb-2">
             <div className="space-y-2">
               <Label htmlFor="diagnostico" className="text-slate-200">
                 Diagnóstico
@@ -1210,8 +1209,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       {editarEntrada !== null && (
         <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
           <DialogContent
-            className="w-[56rem] max-w-[95vw] !h-[42rem] !max-h-[42rem] bg-slate-800 border-slate-700 overflow-hidden flex flex-col"
-            style={{ height: '42rem', maxHeight: '42rem' }}
+            className="w-[56rem] max-w-[95vw] h-[92dvh] sm:h-[42rem] max-h-[92dvh] bg-slate-800 border-slate-700 overflow-hidden flex flex-col"
           >
             <DialogHeader>
               <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
@@ -1219,7 +1217,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 Actualiza las observaciones de la sesión
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 flex-1 min-h-0 overflow-y-scroll pr-2">
+            <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 pb-2">
               <div className="space-y-2">
                 <Label htmlFor="diagnostico-editar" className="text-slate-200">
                   Diagnóstico
