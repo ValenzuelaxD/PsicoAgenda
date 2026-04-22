@@ -156,14 +156,14 @@ export function Dashboard({
       >
         {/* Top Bar con Notificaciones */}
         <div
-          className="sticky top-0 z-30 backdrop-blur-sm border-b px-4 py-3 sm:py-4"
+          className="sticky top-0 z-30 backdrop-blur-sm border-b px-3 py-2 sm:py-4"
           style={{
             backgroundColor: 'color-mix(in srgb, var(--theme-surface-strong) 82%, transparent)',
             borderColor: 'var(--theme-border)',
           }}
         >
-          <div className="flex items-start sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-3 min-w-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               {isMobile && (
                 <button
                   onClick={() => setDrawerOpen(true)}
@@ -175,7 +175,6 @@ export function Dashboard({
               )}
               <div className="min-w-0">
                 <h2 className="text-base sm:text-lg" style={{ color: 'var(--theme-text)' }}>PsicoAgenda</h2>
-                <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--theme-muted)' }}>Sistema de gestion psicologica profesional</p>
               </div>
             </div>
             <NotificationCenter
