@@ -175,7 +175,6 @@ export function Dashboard({
               )}
               <div className="min-w-0">
                 <h2 className="text-base sm:text-lg" style={{ color: 'var(--theme-text)' }}>PsicoAgenda</h2>
-                <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--theme-muted)' }}>Sistema de gestion psicologica profesional</p>
               </div>
             </div>
             <NotificationCenter
