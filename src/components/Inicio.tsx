@@ -574,7 +574,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                               <p className="text-slate-100 font-medium">{cita.paciente_nombre} {cita.paciente_apellido}</p>
                               <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
                                 <Clock className="w-3 h-3" />
-                                <span>{diaSemana}, {formatearHora12(hora)}</span>
+                                <span>{diaSemana}, {formatHourLabel(hora, hourFormatPreference)}</span>
                                 <span>•</span>
                                 <span>{cita.modalidad}</span>
                               </div>
@@ -642,7 +642,7 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
                               </p>
                               <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
                                 <Clock className="w-3 h-3" />
-                                <span>{diaSemana}, {formatearHora12(hora)}</span>
+                                <span>{diaSemana}, {formatHourLabel(hora, hourFormatPreference)}</span>
                                 <span>•</span>
                                 <span>{cita.modalidad}</span>
                                 <span>•</span>
