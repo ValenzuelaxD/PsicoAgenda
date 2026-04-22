@@ -242,6 +242,7 @@ export interface PacienteDashboardData {
   proximaCita?: string;
   sesionesTotales: number;
   ultimaSesion?: string;
+  comentarioPositivo?: string;
   proximasCitas?: Array<{
     citaid: number;
     fechahora: string;

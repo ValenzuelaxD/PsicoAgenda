@@ -54,9 +54,11 @@ interface CasoEspecialMeta {
 interface BitacoraEntrada extends HistorialClinico {
   observacionesLimpias: string;
   casoEspecial: CasoEspecialMeta | null;
+  comentarioFelicitacion: string;
 }
 
 const META_PREFIX = '[PSICOAGENDA_CASO_ESPECIAL]';
+const FELICITACION_PREFIX = '[PSICOAGENDA_COMENTARIO_FELICITACION]';
 
 const TIPOS_CASO_OPCIONES: Array<{ value: CasoEspecialTipo; label: string }> = [
   { value: 'urgencia', label: 'Urgencia' },
@@ -136,19 +138,46 @@ const esSeveridadValida = (value: string): value is SeveridadCaso =>
 const esEstadoValido = (value: string): value is EstadoCaso =>
   ESTADO_OPCIONES.includes(value as EstadoCaso);
 
-const parseObservaciones = (textoOriginal: string | undefined): { observacionesLimpias: string; casoEspecial: CasoEspecialMeta | null } => {
+const parseObservaciones = (textoOriginal: string | undefined): { observacionesLimpias: string; casoEspecial: CasoEspecialMeta | null; comentarioFelicitacion: string } => {
   const texto = String(textoOriginal || '');
-  const indiceMeta = texto.lastIndexOf(META_PREFIX);
+  const sortedMarkers = [
+    { key: FELICITACION_PREFIX, index: texto.indexOf(FELICITACION_PREFIX) },
+    { key: META_PREFIX, index: texto.indexOf(META_PREFIX) },
+  ]
+    .filter((marker) => marker.index !== -1)
+    .sort((a, b) => a.index - b.index);
 
-  if (indiceMeta === -1) {
+  if (sortedMarkers.length === 0) {
     return {
       observacionesLimpias: texto,
       casoEspecial: null,
+      comentarioFelicitacion: '',
     };
   }
 
-  const observacionesLimpias = texto.slice(0, indiceMeta).trimEnd();
-  const rawMeta = texto.slice(indiceMeta + META_PREFIX.length).trim();
+  const getSegmento = (prefix: string) => {
+    const startIndex = texto.indexOf(prefix);
+    if (startIndex === -1) {
+      return '';
+    }
+
+    const contentStart = startIndex + prefix.length;
+    const nextMarker = sortedMarkers.find((marker) => marker.index > startIndex);
+    const contentEnd = nextMarker ? nextMarker.index : texto.length;
+    return texto.slice(contentStart, contentEnd).trim();
+  };
+
+  const observacionesLimpias = texto.slice(0, sortedMarkers[0].index).trimEnd();
+  const comentarioFelicitacion = getSegmento(FELICITACION_PREFIX);
+  const rawMeta = getSegmento(META_PREFIX);
+
+  if (!rawMeta) {
+    return {
+      observacionesLimpias,
+      casoEspecial: null,
+      comentarioFelicitacion,
+    };
+  }
 
   try {
     const parsed = JSON.parse(rawMeta);
@@ -160,8 +189,9 @@ const parseObservaciones = (textoOriginal: string | undefined): { observacionesL
 
     if (tipos.length === 0) {
       return {
-        observacionesLimpias: texto,
+        observacionesLimpias,
         casoEspecial: null,
+        comentarioFelicitacion,
       };
     }
 
@@ -181,22 +211,40 @@ const parseObservaciones = (textoOriginal: string | undefined): { observacionesL
           motivoFueraHorario: String(parsed?.detalle?.motivoFueraHorario || ''),
         },
       },
+      comentarioFelicitacion,
     };
   } catch {
     return {
-      observacionesLimpias: texto,
+      observacionesLimpias,
       casoEspecial: null,
+      comentarioFelicitacion,
     };
   }
 };
 
-const buildObservacionesPayload = (observacionesLimpias: string, casoEspecial: CasoEspecialMeta | null): string => {
+const buildObservacionesPayload = (
+  observacionesLimpias: string,
+  casoEspecial: CasoEspecialMeta | null,
+  comentarioFelicitacion: string
+): string => {
   const texto = String(observacionesLimpias || '').trim();
-  if (!casoEspecial || casoEspecial.tipos.length === 0) {
+  const comentarioLimpio = String(comentarioFelicitacion || '').trim();
+
+  if ((!casoEspecial || casoEspecial.tipos.length === 0) && !comentarioLimpio) {
     return texto;
   }
 
-  return `${texto}\n\n${META_PREFIX}${JSON.stringify(casoEspecial)}`;
+  const bloquesMetadata: string[] = [];
+
+  if (comentarioLimpio) {
+    bloquesMetadata.push(`${FELICITACION_PREFIX}${comentarioLimpio}`);
+  }
+
+  if (casoEspecial && casoEspecial.tipos.length > 0) {
+    bloquesMetadata.push(`${META_PREFIX}${JSON.stringify(casoEspecial)}`);
+  }
+
+  return `${texto}\n\n${bloquesMetadata.join('\n\n')}`.trim();
 };
 
 const normalizarDetalleCaso = (detalle: CasoEspecialMeta['detalle'] | undefined) => ({
@@ -215,6 +263,7 @@ const normalizarEntrada = (entrada: HistorialClinico): BitacoraEntrada => {
     ...entrada,
     observacionesLimpias: parsed.observacionesLimpias,
     casoEspecial: parsed.casoEspecial,
+    comentarioFelicitacion: parsed.comentarioFelicitacion,
   };
 };
 
@@ -228,6 +277,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
   const [editando, setEditando] = useState(false);
   const [nuevaNota, setNuevaNota] = useState('');
+  const [nuevaFelicitacion, setNuevaFelicitacion] = useState('');
   const [diagnostico, setDiagnostico] = useState('');
   const [tratamiento, setTratamiento] = useState('');
   const [tiposCaso, setTiposCaso] = useState<CasoEspecialTipo[]>([]);
@@ -237,6 +287,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
   const [editarEntrada, setEditarEntrada] = useState<BitacoraEntrada | null>(null);
   const [notaEditar, setNotaEditar] = useState('');
+  const [felicitacionEditar, setFelicitacionEditar] = useState('');
   const [diagnosticoEditar, setDiagnosticoEditar] = useState('');
   const [tratamientoEditar, setTratamientoEditar] = useState('');
   const [tiposCasoEditar, setTiposCasoEditar] = useState<CasoEspecialTipo[]>([]);
@@ -436,7 +487,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         method: 'POST',
         body: JSON.stringify({
           pacienteId: pacienteSeleccionado.pacienteid,
-          observaciones: buildObservacionesPayload(nuevaNota, metaCaso),
+          observaciones: buildObservacionesPayload(nuevaNota, metaCaso, nuevaFelicitacion),
           diagnostico,
           tratamiento,
         }),
@@ -446,6 +497,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       setEntradas([nuevaEntrada, ...entradas]);
       toast.success('Entrada de bitácora guardada exitosamente');
       setNuevaNota('');
+      setNuevaFelicitacion('');
       setDiagnostico('');
       setTratamiento('');
       setTiposCaso([]);
@@ -459,9 +511,10 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
     }
   };
 
-  const handleAbrirEditar = (entrada: HistorialClinico) => {
+  const handleAbrirEditar = (entrada: BitacoraEntrada) => {
     setEditarEntrada(entrada);
     setNotaEditar(entrada.observacionesLimpias ?? '');
+    setFelicitacionEditar(entrada.comentarioFelicitacion ?? '');
     setDiagnosticoEditar(entrada.diagnostico ?? '');
     setTratamientoEditar(entrada.tratamiento ?? '');
     setTiposCasoEditar(entrada.casoEspecial?.tipos || []);
@@ -511,7 +564,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         {
           method: 'PUT',
           body: JSON.stringify({
-            observaciones: buildObservacionesPayload(notaEditar, metaCasoEditar),
+            observaciones: buildObservacionesPayload(notaEditar, metaCasoEditar, felicitacionEditar),
             diagnostico: diagnosticoEditar,
             tratamiento: tratamientoEditar,
           }),
@@ -876,6 +929,13 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         <h4 className="text-slate-200 mb-2">Notas de la Sesión</h4>
                         <p className="text-slate-300 whitespace-pre-wrap">{entrada.observacionesLimpias}</p>
 
+                        {entrada.comentarioFelicitacion && (
+                          <div className="mt-4 rounded-lg border border-emerald-600/40 bg-emerald-900/10 p-3">
+                            <p className="text-xs uppercase tracking-wide text-emerald-300 mb-1">Comentario de felicitacion</p>
+                            <p className="text-sm text-emerald-100 whitespace-pre-wrap">{entrada.comentarioFelicitacion}</p>
+                          </div>
+                        )}
+
                         {entrada.casoEspecial?.detalle && (
                           <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-2">
                             <p className="text-xs uppercase tracking-wide text-slate-400">Detalle de caso especial</p>
@@ -964,6 +1024,19 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 onChange={(e) => setNuevaNota(e.target.value)}
                 placeholder="Observaciones, técnicas aplicadas, temas tratados, tareas asignadas..."
                 rows={6}
+                className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="felicitacion" className="text-slate-200">
+                Comentario de felicitacion (opcional)
+              </Label>
+              <Textarea
+                id="felicitacion"
+                value={nuevaFelicitacion}
+                onChange={(e) => setNuevaFelicitacion(e.target.value)}
+                placeholder="Ej. Excelente avance esta semana, sigue asi."
+                rows={3}
                 className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
               />
             </div>
@@ -1179,6 +1252,19 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   onChange={(e) => setNotaEditar(e.target.value)}
                   placeholder="Observaciones, técnicas aplicadas, temas tratados, tareas asignadas..."
                   rows={6}
+                  className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="felicitacion-editar" className="text-slate-200">
+                  Comentario de felicitacion (opcional)
+                </Label>
+                <Textarea
+                  id="felicitacion-editar"
+                  value={felicitacionEditar}
+                  onChange={(e) => setFelicitacionEditar(e.target.value)}
+                  placeholder="Ej. Excelente avance esta semana, sigue asi."
+                  rows={3}
                   className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
                 />
               </div>

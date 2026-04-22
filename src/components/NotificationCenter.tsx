@@ -1,12 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { Bell, X, Check, Calendar, Clock, AlertCircle, Info } from 'lucide-react';
+import { Bell, X, Check, Calendar, Clock, AlertCircle, Info, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import useIsMobile from '../hooks/useIsMobile';
@@ -25,9 +33,10 @@ interface NotificationCenterProps {
   userType: 'psicologo' | 'paciente' | 'admin';
   userName: string;
   userPhoto: string;
+  onLogout: () => void;
 }
 
-export function NotificationCenter({ userType, userName, userPhoto }: NotificationCenterProps) {
+export function NotificationCenter({ userType, userName, userPhoto, onLogout }: NotificationCenterProps) {
   const isMobile = useIsMobile();
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
@@ -76,16 +85,12 @@ export function NotificationCenter({ userType, userName, userPhoto }: Notificati
   const getEtiquetaRol = () => {
     switch (userType) {
       case 'paciente':
-        return 'paciente';
+        return 'Paciente';
       case 'psicologo':
-        return 'psicólogo/a';
+        return 'Psicologo';
       default:
-        return 'administrador/a';
+        return 'Administrador';
     }
-  };
-
-  const handleAvatarClick = () => {
-    toast.info(`Usted es ${getEtiquetaRol()} ${userName}`);
   };
 
   const fetchNotificaciones = useCallback(async (options: { allowToast?: boolean; silentOnError?: boolean } = {}) => {
@@ -300,19 +305,36 @@ export function NotificationCenter({ userType, userName, userPhoto }: Notificati
     <>
       {/* Botón de notificaciones */}
       <div className="flex items-center gap-2 shrink-0">
-        <button
-          type="button"
-          onClick={handleAvatarClick}
-          className="rounded-full focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-800"
-          aria-label={`Ver perfil de ${userName}`}
-        >
-          <Avatar className="size-9 border border-slate-600 bg-slate-700 transition-transform duration-200 hover:scale-105">
-          <AvatarImage src={userPhoto || undefined} alt={userName} />
-          <AvatarFallback className="bg-slate-700 text-slate-200 text-[11px] font-semibold">
-            {getInitialesUsuario(userName)}
-          </AvatarFallback>
-          </Avatar>
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="rounded-full focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-800"
+              aria-label={`Abrir menu de perfil de ${userName}`}
+            >
+              <Avatar className="size-9 border border-slate-600 bg-slate-700 transition-transform duration-200 hover:scale-105">
+                <AvatarImage src={userPhoto || undefined} alt={userName} />
+                <AvatarFallback className="bg-slate-700 text-slate-200 text-[11px] font-semibold">
+                  {getInitialesUsuario(userName)}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64 bg-slate-900 border-slate-700 text-slate-100">
+            <DropdownMenuLabel className="space-y-1">
+              <p className="text-sm font-semibold break-words">{userName}</p>
+              <p className="text-xs text-slate-400">{getEtiquetaRol()}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-slate-700" />
+            <DropdownMenuItem
+              onClick={onLogout}
+              className="text-red-300 focus:bg-red-950/40 focus:text-red-200 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              Cerrar sesion
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <motion.button
           onClick={() => setMostrarPanel(!mostrarPanel)}

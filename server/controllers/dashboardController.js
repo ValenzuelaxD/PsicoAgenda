@@ -1,4 +1,20 @@
 const db = require('../db');
+const FELICITACION_PREFIX = '[PSICOAGENDA_COMENTARIO_FELICITACION]';
+
+const extraerComentarioFelicitacion = (observaciones) => {
+  const texto = String(observaciones || '');
+  const start = texto.indexOf(FELICITACION_PREFIX);
+
+  if (start === -1) {
+    return '';
+  }
+
+  const contentStart = start + FELICITACION_PREFIX.length;
+  const nextMeta = texto.indexOf('[PSICOAGENDA_', contentStart);
+  const contentEnd = nextMeta === -1 ? texto.length : nextMeta;
+
+  return texto.slice(contentStart, contentEnd).trim();
+};
 
 const construirFotoDesdeBd = (mimeType, dataBuffer) => {
   if (!mimeType || !dataBuffer) return '';
@@ -76,16 +92,26 @@ const getPacienteDashboard = async (req, res) => {
       ORDER BY c.fechahora ASC
       LIMIT 5`;
 
+    const comentarioPositivoQuery = `
+      SELECT observaciones
+      FROM historialclinico
+      WHERE pacienteid = $1
+        AND observaciones ILIKE '%' || $2 || '%'
+      ORDER BY fechaentrada DESC
+      LIMIT 1`;
+
     const [
       proximaCitaResult,
       sesionesTotalesResult,
       ultimaSesionResult,
       proximasCitasResult,
+      comentarioPositivoResult,
     ] = await Promise.all([
       db.query(proximaCitaQuery, [pacienteId]),
       db.query(sesionesTotalesQuery, [pacienteId]),
       db.query(ultimaSesionQuery, [pacienteId]),
       db.query(proximasCitasQuery, [pacienteId]),
+      db.query(comentarioPositivoQuery, [pacienteId, FELICITACION_PREFIX]),
     ]);
 
     const fotosPorUsuario = await obtenerFotosPerfilPorUsuario(
@@ -100,11 +126,16 @@ const getPacienteDashboard = async (req, res) => {
       };
     });
 
+    const comentarioPositivo = extraerComentarioFelicitacion(
+      comentarioPositivoResult.rows[0]?.observaciones
+    );
+
     res.json({
       proximaCita: proximaCitaResult.rows[0]?.fechahora,
       sesionesTotales: parseInt(sesionesTotalesResult.rows[0].count, 10),
       ultimaSesion: ultimaSesionResult.rows[0]?.fechahora,
       proximasCitas: proximasCitasConFoto,
+      comentarioPositivo,
     });
   } catch (error) {
     console.error("Error al obtener datos del dashboard del paciente:", error);

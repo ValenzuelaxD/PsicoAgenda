@@ -370,6 +370,28 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
 
         <FrecuenciaRecomendadaCitas modo="paciente" />
 
+        <Card className="border-emerald-500/30 shadow-lg bg-slate-800/50 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-emerald-900/40 to-teal-900/40">
+            <CardTitle className="text-slate-100">Comentario positivo</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-5">
+            {pacienteData.comentarioPositivo ? (
+              <div className="rounded-xl border border-emerald-700/40 bg-emerald-900/10 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+                  </div>
+                  <p className="text-emerald-100 whitespace-pre-wrap">{pacienteData.comentarioPositivo}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-700 bg-slate-900/30 px-4 py-6 text-center">
+                <p className="text-slate-300">Aun no tienes comentarios positivos registrados.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Recursos Rápidos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="cursor-pointer hover:shadow-xl transition-all border-violet-500/30 bg-slate-800/50 backdrop-blur-sm" onClick={() => onNavigate('historial')}>
