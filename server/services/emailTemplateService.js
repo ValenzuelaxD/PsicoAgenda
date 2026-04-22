@@ -31,7 +31,58 @@ const obtenerNombreCompleto = (nombre, apellido) => {
   return `${String(nombre || '').trim()} ${String(apellido || '').trim()}`.trim();
 };
 
+const parsearFechaHoraSinZona = (value) => {
+  if (typeof value !== 'string') return null;
+
+  const input = value.trim();
+  const match = input.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/);
+  if (!match) return null;
+
+  const [, y, m, d, hh, mm, ss = '00'] = match;
+  const year = Number(y);
+  const month = Number(m);
+  const day = Number(d);
+  const hour = Number(hh);
+  const minute = Number(mm);
+  const second = Number(ss);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute) ||
+    !Number.isInteger(second)
+  ) {
+    return null;
+  }
+
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const formatearFechaHora = (fecha, timezone) => {
+  if (typeof fecha === 'string') {
+    const input = fecha.trim();
+    const contieneZona = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(input);
+
+    if (!contieneZona) {
+      const fechaSinZona = parsearFechaHoraSinZona(input);
+      if (fechaSinZona) {
+        return fechaSinZona.toLocaleString('es-MX', {
+          timeZone: 'UTC',
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+      }
+    }
+  }
+
   const date = new Date(fecha);
   if (Number.isNaN(date.getTime())) {
     return 'fecha no disponible';
