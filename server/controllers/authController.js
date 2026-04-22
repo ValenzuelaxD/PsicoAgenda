@@ -7,7 +7,7 @@ const {
   construirTemplateRecuperacionPassword,
 } = require('../services/emailTemplateService');
 
-const APP_WEB_URL = String(process.env.APP_WEB_URL || 'https://psicoagenda.online').trim().replace(/\/+$/, '');
+const APP_WEB_URL = String(process.env.APP_WEB_URL || 'https://www.psicoagenda.online').trim().replace(/\/+$/, '');
 const RESET_TOKEN_EXPIRES_MINUTES = 30;
 
 function dividirNombreCompleto(nombreCompleto = '') {
