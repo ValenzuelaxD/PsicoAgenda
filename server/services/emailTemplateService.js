@@ -597,6 +597,63 @@ const construirTemplateBienvenidaRegistro = async ({
   };
 };
 
+const construirTemplateBienvenidaPaciente = async ({
+  nombre,
+  apellidoPaterno,
+  correo,
+  password,
+}) => {
+  const nombreCompleto = obtenerNombreCompleto(nombre, apellidoPaterno) || 'paciente';
+  const asunto = 'Bienvenido a PsicoAgenda';
+
+  const html = await renderTransactionalHtml({
+    preview: 'Tu cuenta de paciente fue creada en PsicoAgenda',
+    statusLabel: 'Cuenta creada',
+    statusTone: 'success',
+    title: 'Tu cuenta de paciente esta lista',
+    greeting: `Hola ${limpiarTexto(nombreCompleto, 'paciente')},`,
+    intro: 'Tu psicologa creo tu cuenta en PsicoAgenda para gestionar tus citas y seguimiento clinico. Aqui tienes tus datos de acceso iniciales.',
+    details: [
+      { label: 'Correo', value: limpiarTexto(correo, 'no disponible') },
+      { label: 'Contrasena temporal', value: limpiarTexto(password, 'no disponible') },
+      { label: 'Perfil', value: 'Paciente' },
+    ],
+    primaryAction: {
+      label: 'Iniciar sesion',
+      href: APP_WEB_URL,
+    },
+    secondaryAction: {
+      label: 'Contactar soporte',
+      href: `mailto:${SUPPORT_EMAIL}`,
+    },
+    recommendations: [
+      'Inicia sesion cuanto antes para validar tu acceso.',
+      'Por seguridad, cambia tu contrasena despues del primer ingreso.',
+      'No compartas tus credenciales con terceros.',
+    ],
+    footerNote: 'Si no reconoces este registro, contacta soporte de inmediato.',
+  });
+
+  const texto = [
+    `Hola ${nombreCompleto},`,
+    '',
+    'Tu cuenta de paciente en PsicoAgenda fue creada correctamente.',
+    '',
+    `Correo: ${correo}`,
+    `Contrasena temporal: ${password}`,
+    '',
+    'Por seguridad, te recomendamos cambiar tu contrasena al iniciar sesion.',
+    `Accede a la plataforma: ${APP_WEB_URL}`,
+    `Soporte: ${SUPPORT_EMAIL}`,
+  ].join('\n');
+
+  return {
+    asunto,
+    texto,
+    html,
+  };
+};
+
 const construirTemplateCambioPassword = async ({
   nombre,
   apellidoPaterno,
@@ -712,6 +769,7 @@ module.exports = {
   construirTemplatesAccesoZoom,
   construirTemplatesCancelacionZoom,
   construirTemplateBienvenidaRegistro,
+  construirTemplateBienvenidaPaciente,
   construirTemplateCambioPassword,
   construirTemplateRecuperacionPassword,
   renderTransactionalHtml,
