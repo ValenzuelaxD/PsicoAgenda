@@ -1,32 +1,18 @@
 import { motion } from 'motion/react';
-import { Home, Calendar, CalendarCheck, FileText, User, LogOut, Users, Search, BookOpen, CalendarDays, ShieldCheck } from 'lucide-react';
+import { Home, Calendar, CalendarCheck, FileText, Users, Search, BookOpen, CalendarDays, ShieldCheck } from 'lucide-react';
 import { ViewType } from './Dashboard';
-import { toast } from 'sonner';
 import logo from '../assets/8073927aac7f277f9a509202fa2f1e9e38c58702.png';
-import { useState } from 'react';
 import { ThemePreferences, buildThemeSurfaceStyle } from '../utils/theme';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from './ui/alert-dialog';
 
 interface SidebarProps {
   currentView: ViewType;
   userType: 'psicologo' | 'paciente' | 'admin';
   onNavigate: (view: ViewType) => void;
-  onLogout: () => void;
   themePreferences: ThemePreferences;
   isMobile?: boolean;
 }
 
-export function Sidebar({ currentView, userType, onNavigate, onLogout, themePreferences, isMobile = false }: SidebarProps) {
-  const [mostrarConfirmacionLogout, setMostrarConfirmacionLogout] = useState(false);
+export function Sidebar({ currentView, userType, onNavigate, themePreferences, isMobile = false }: SidebarProps) {
 
   // Desktop: fixed sidebar visible on sm+; Mobile: render full-width content suitable for Drawer
   const containerClass = isMobile
@@ -39,7 +25,6 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, themePref
     { id: 'agendar' as ViewType, label: 'Solicitar Cita', icon: Calendar },
     { id: 'citas' as ViewType, label: 'Mis Citas', icon: CalendarCheck },
     { id: 'historial' as ViewType, label: 'Historial Clínico', icon: FileText },
-    { id: 'perfil' as ViewType, label: 'Mi Perfil', icon: User },
   ];
 
   // RF_US_004, RF_US_005/024, RF_US_006, RF_US_008, RF_US_009/011/012, RF_US_015, RF_US_002
@@ -52,12 +37,10 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, themePref
     { id: 'citas' as ViewType, label: 'Gestionar Citas', icon: CalendarCheck },
     { id: 'bitacora' as ViewType, label: 'Bitácora de Pacientes', icon: BookOpen },
     { id: 'reportes' as ViewType, label: 'Reportes de Citas', icon: FileText },
-    { id: 'perfil' as ViewType, label: 'Mi Perfil', icon: User },
   ];
 
   const adminMenuItems = [
     { id: 'admin-solicitudes' as ViewType, label: 'Solicitudes Psicologas', icon: ShieldCheck },
-    { id: 'perfil' as ViewType, label: 'Mi Perfil', icon: User },
   ];
 
   const menuItems = userType === 'admin'
@@ -65,14 +48,6 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, themePref
     : userType === 'psicologo'
       ? psicologoMenuItems
       : pacienteMenuItems;
-
-  const handleLogout = () => {
-    toast.success('Cerrando sesión...', {
-      description: 'Hasta pronto!'
-    });
-    setMostrarConfirmacionLogout(false);
-    onLogout();
-  };
 
   return (
     <aside className={containerClass} style={buildThemeSurfaceStyle(themePreferences)}>
@@ -116,50 +91,6 @@ export function Sidebar({ currentView, userType, onNavigate, onLogout, themePref
           );
         })}
       </nav>
-
-      {/* Logout Button */}
-      <div className="p-4 border-t mt-auto pb-[max(env(safe-area-inset-bottom),1rem)]" style={{ borderColor: 'var(--theme-border)' }}>
-        <motion.button
-          onClick={() => setMostrarConfirmacionLogout(true)}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/20 transition-all"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <motion.div
-            animate={{ rotate: [0, -10, 10, -10, 0] }}
-            transition={{ duration: 0.5 }}
-          >
-            <LogOut className="w-5 h-5 stroke-2" />
-          </motion.div>
-          <span>Cerrar Sesión</span>
-        </motion.button>
-      </div>
-
-      {/* Modal de Confirmación de Logout */}
-      <AlertDialog open={mostrarConfirmacionLogout} onOpenChange={setMostrarConfirmacionLogout}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-slate-100 flex items-center gap-2">
-              <LogOut className="w-5 h-5 text-red-400 stroke-2" />
-              ¿Cerrar sesión?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-300">
-              ¿Estás seguro que deseas cerrar sesión? Tendrás que iniciar sesión nuevamente para acceder a tu cuenta.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleLogout} 
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Sí, cerrar sesión
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </aside>
   );
 }

@@ -111,7 +111,6 @@ export function Dashboard({
           currentView={currentView}
           userType={userType}
           onNavigate={handleNavigate}
-          onLogout={onLogout}
           themePreferences={themePreferences}
         />
       )}
@@ -140,7 +139,6 @@ export function Dashboard({
                   handleNavigate(v);
                   setDrawerOpen(false);
                 }}
-                onLogout={onLogout}
                 isMobile
               />
             </div>
