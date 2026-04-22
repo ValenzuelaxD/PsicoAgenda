@@ -205,7 +205,7 @@ export function Dashboard({
           )}
           
           <div 
-            className="theme-readable relative z-10"
+            className={`theme-readable relative z-10 ${themePreferences.mode === 'light' ? 'theme-light' : ''}`}
             style={{
               color: themePreferences.mode === 'light' ? '#1a1a1a' : 'inherit'
             }}

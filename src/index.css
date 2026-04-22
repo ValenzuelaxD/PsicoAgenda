@@ -213,6 +213,80 @@
   border-color: color-mix(in srgb, var(--theme-border, #334155) 82%, rgba(255, 255, 255, 0.14)) !important;
 }
 
+.theme-readable.theme-light h1,
+.theme-readable.theme-light h2,
+.theme-readable.theme-light h3,
+.theme-readable.theme-light h4,
+.theme-readable.theme-light .card-title,
+.theme-readable.theme-light [data-slot="card-title"] {
+  color: color-mix(in srgb, var(--theme-text, #0f172a) 96%, #000 4%) !important;
+}
+
+.theme-readable.theme-light .text-teal-200,
+.theme-readable.theme-light .text-teal-300,
+.theme-readable.theme-light .text-teal-400,
+.theme-readable.theme-light .text-emerald-200,
+.theme-readable.theme-light .text-emerald-300,
+.theme-readable.theme-light .text-emerald-400,
+.theme-readable.theme-light .text-green-200,
+.theme-readable.theme-light .text-green-300,
+.theme-readable.theme-light .text-green-400 {
+  color: color-mix(in srgb, var(--theme-primary, #0f766e) 62%, var(--theme-text, #0f172a) 38%) !important;
+}
+
+.theme-readable.theme-light .text-white,
+.theme-readable.theme-light .text-slate-100,
+.theme-readable.theme-light .text-slate-200,
+.theme-readable.theme-light .text-slate-300 {
+  color: var(--theme-text, #0f172a) !important;
+}
+
+.theme-readable.theme-light .bg-slate-950,
+.theme-readable.theme-light .bg-slate-900,
+.theme-readable.theme-light .bg-slate-800,
+.theme-readable.theme-light .bg-slate-700,
+.theme-readable.theme-light .bg-slate-900\/90,
+.theme-readable.theme-light .bg-slate-900\/80,
+.theme-readable.theme-light .bg-slate-900\/70,
+.theme-readable.theme-light .bg-slate-900\/60,
+.theme-readable.theme-light .bg-slate-900\/50,
+.theme-readable.theme-light .bg-slate-900\/40,
+.theme-readable.theme-light .bg-slate-900\/30,
+.theme-readable.theme-light .bg-slate-800\/90,
+.theme-readable.theme-light .bg-slate-800\/80,
+.theme-readable.theme-light .bg-slate-800\/70,
+.theme-readable.theme-light .bg-slate-800\/60,
+.theme-readable.theme-light .bg-slate-800\/50,
+.theme-readable.theme-light .bg-slate-800\/40,
+.theme-readable.theme-light .bg-slate-800\/30,
+.theme-readable.theme-light .bg-slate-700\/70,
+.theme-readable.theme-light .bg-slate-700\/60,
+.theme-readable.theme-light .bg-slate-700\/50,
+.theme-readable.theme-light .bg-slate-700\/40,
+.theme-readable.theme-light .bg-slate-700\/30,
+.theme-readable.theme-light .\!bg-slate-950,
+.theme-readable.theme-light .\!bg-slate-900,
+.theme-readable.theme-light .\!bg-slate-800,
+.theme-readable.theme-light .\!bg-slate-700 {
+  background-color: var(--theme-control-bg, rgba(226, 238, 248, 0.94)) !important;
+}
+
+.theme-readable.theme-light .border-slate-700,
+.theme-readable.theme-light .border-slate-600,
+.theme-readable.theme-light .\!border-slate-700,
+.theme-readable.theme-light .\!border-slate-600 {
+  border-color: var(--theme-control-border, rgba(100, 116, 139, 0.55)) !important;
+}
+
+.theme-readable.theme-light .hover\:bg-slate-900:hover,
+.theme-readable.theme-light .hover\:bg-slate-800:hover,
+.theme-readable.theme-light .hover\:bg-slate-700:hover,
+.theme-readable.theme-light .hover\:\!bg-slate-900:hover,
+.theme-readable.theme-light .hover\:\!bg-slate-800:hover,
+.theme-readable.theme-light .hover\:\!bg-slate-700:hover {
+  background-color: color-mix(in srgb, var(--theme-control-bg, #e2eef8) 90%, var(--theme-surface-strong, #f1f5f9) 10%) !important;
+}
+
 @layer theme {
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
