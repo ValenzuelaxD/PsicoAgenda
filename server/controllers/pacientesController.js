@@ -1,5 +1,7 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
+const { isEmailIntegrationEnabled, enviarCorreo } = require('../services/mailService');
+const { construirTemplateBienvenidaPaciente } = require('../services/emailTemplateService');
 
 async function verificarColumnaSesionesCompletadas() {
   try {
@@ -218,6 +220,7 @@ const getPacientesSelector = async (req, res) => {
 
 const crearPaciente = async (req, res) => {
   let { nombre, apellidoPaterno, apellidoMaterno, correo, telefono, fechaNacimiento, genero, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia, password } = req.body;
+  const correoNormalizado = String(correo || '').toLowerCase();
 
   if (nombre && (!apellidoPaterno || !String(apellidoPaterno).trim())) {
     const nombreDividido = dividirNombreCompleto(nombre);
@@ -243,7 +246,7 @@ const crearPaciente = async (req, res) => {
     }
 
     // Verificar si el correo ya existe
-    const existing = await db.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correo.toLowerCase()]);
+    const existing = await db.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correoNormalizado]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ message: 'El correo ya está registrado.' });
     }
@@ -255,7 +258,7 @@ const crearPaciente = async (req, res) => {
     // Crear usuario
     const newUser = await db.query(
       'INSERT INTO usuarios (nombre, apellidopaterno, apellidomaterno, correo, contrasenahash, telefono, rol, activo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING usuarioid',
-      [nombre, apellidoPaterno, apellidoMaterno || null, correo.toLowerCase(), contrasenaHash, telefono || null, 'paciente', true]
+      [nombre, apellidoPaterno, apellidoMaterno || null, correoNormalizado, contrasenaHash, telefono || null, 'paciente', true]
     );
     const usuarioId = newUser.rows[0].usuarioid;
 
@@ -264,6 +267,28 @@ const crearPaciente = async (req, res) => {
       'INSERT INTO pacientes (usuarioid, fechanacimiento, genero, direccion, motivoconsulta, contactoemergencia, telemergencia, fechaalta) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE) RETURNING pacienteid',
       [usuarioId, fechaNacimiento || null, genero || null, direccion || null, motivoConsulta || null, contactoEmergencia || null, telefonoEmergencia || null]
     );
+
+    if (isEmailIntegrationEnabled()) {
+      Promise.resolve()
+        .then(async () => {
+          const template = await construirTemplateBienvenidaPaciente({
+            nombre,
+            apellidoPaterno,
+            correo: correoNormalizado,
+            password,
+          });
+
+          await enviarCorreo({
+            to: correoNormalizado,
+            subject: template.asunto,
+            text: template.texto,
+            html: template.html,
+          });
+        })
+        .catch((emailError) => {
+          console.error('[pacientes.crearPaciente] Error enviando correo de bienvenida:', emailError.message);
+        });
+    }
 
     res.status(201).json({
       pacienteid: newPaciente.rows[0].pacienteid,
