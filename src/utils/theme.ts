@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 
 export type ThemeMode = 'dark' | 'light';
 export type ThemePreset = 'midnight' | 'forest' | 'ocean' | 'sunset' | 'lavender' | 'coral' | 'mint' | 'bronze' | 'rose' | 'indigo' | 'lime' | 'cyan';
+export type ThemeReadabilityIntensity = 'suave' | 'media' | 'alta';
 
 export interface ThemePreferences {
   preset: ThemePreset;
@@ -9,6 +10,7 @@ export interface ThemePreferences {
   primaryColor: string;
   accentColor: string;
   backgroundImage: string;
+  readabilityIntensity: ThemeReadabilityIntensity;
 }
 
 interface ThemePalette {
@@ -29,6 +31,95 @@ export const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
   primaryColor: '#14b8a6',
   accentColor: '#a78bfa',
   backgroundImage: '',
+  readabilityIntensity: 'media',
+};
+
+export const READABILITY_INTENSITY_OPTIONS: Array<{
+  value: ThemeReadabilityIntensity;
+  label: string;
+  description: string;
+}> = [
+  { value: 'suave', label: 'Suave', description: 'Más imagen, menos capa de contraste' },
+  { value: 'media', label: 'Media', description: 'Equilibrio recomendado para la mayoría de fondos' },
+  { value: 'alta', label: 'Alta', description: 'Máxima legibilidad para fondos complejos' },
+];
+
+const READABILITY_INTENSITY_SET = new Set<ThemeReadabilityIntensity>(['suave', 'media', 'alta']);
+
+const READABILITY_CSS_VARS: Record<ThemeMode, Record<ThemeReadabilityIntensity, {
+  frameBgAlpha: string;
+  paneBgAlpha: string;
+  text500Alpha: string;
+  text400Alpha: string;
+  text300Alpha: string;
+  overlayRgb: string;
+  overlayTopAlpha: string;
+  overlayBottomAlpha: string;
+}>> = {
+  dark: {
+    suave: {
+      frameBgAlpha: '74%',
+      paneBgAlpha: '34%',
+      text500Alpha: '70%',
+      text400Alpha: '80%',
+      text300Alpha: '90%',
+      overlayRgb: '2, 6, 23',
+      overlayTopAlpha: '0.34',
+      overlayBottomAlpha: '0.48',
+    },
+    media: {
+      frameBgAlpha: '84%',
+      paneBgAlpha: '42%',
+      text500Alpha: '62%',
+      text400Alpha: '74%',
+      text300Alpha: '86%',
+      overlayRgb: '2, 6, 23',
+      overlayTopAlpha: '0.48',
+      overlayBottomAlpha: '0.68',
+    },
+    alta: {
+      frameBgAlpha: '92%',
+      paneBgAlpha: '58%',
+      text500Alpha: '74%',
+      text400Alpha: '84%',
+      text300Alpha: '92%',
+      overlayRgb: '2, 6, 23',
+      overlayTopAlpha: '0.62',
+      overlayBottomAlpha: '0.82',
+    },
+  },
+  light: {
+    suave: {
+      frameBgAlpha: '68%',
+      paneBgAlpha: '30%',
+      text500Alpha: '58%',
+      text400Alpha: '68%',
+      text300Alpha: '80%',
+      overlayRgb: '255, 255, 255',
+      overlayTopAlpha: '0.18',
+      overlayBottomAlpha: '0.32',
+    },
+    media: {
+      frameBgAlpha: '76%',
+      paneBgAlpha: '38%',
+      text500Alpha: '64%',
+      text400Alpha: '76%',
+      text300Alpha: '88%',
+      overlayRgb: '255, 255, 255',
+      overlayTopAlpha: '0.32',
+      overlayBottomAlpha: '0.54',
+    },
+    alta: {
+      frameBgAlpha: '88%',
+      paneBgAlpha: '52%',
+      text500Alpha: '74%',
+      text400Alpha: '84%',
+      text300Alpha: '92%',
+      overlayRgb: '255, 255, 255',
+      overlayTopAlpha: '0.46',
+      overlayBottomAlpha: '0.68',
+    },
+  },
 };
 
 export const THEME_PRESET_OPTIONS: Array<{
@@ -356,6 +447,9 @@ const THEME_PALETTES: Record<ThemePreset, Record<ThemeMode, ThemePalette>> = {
 
 export function normalizeThemePreferences(theme?: Partial<ThemePreferences> | null): ThemePreferences {
   const nextTheme = theme || {};
+  const readabilityIntensity = READABILITY_INTENSITY_SET.has(nextTheme.readabilityIntensity as ThemeReadabilityIntensity)
+    ? (nextTheme.readabilityIntensity as ThemeReadabilityIntensity)
+    : DEFAULT_THEME_PREFERENCES.readabilityIntensity;
 
   return {
     preset: THEME_PRESET_OPTIONS.some((option) => option.preset === nextTheme.preset)
@@ -365,6 +459,7 @@ export function normalizeThemePreferences(theme?: Partial<ThemePreferences> | nu
     primaryColor: nextTheme.primaryColor || DEFAULT_THEME_PREFERENCES.primaryColor,
     accentColor: nextTheme.accentColor || DEFAULT_THEME_PREFERENCES.accentColor,
     backgroundImage: nextTheme.backgroundImage || '',
+    readabilityIntensity,
   };
 }
 
@@ -402,6 +497,7 @@ export function buildThemeShellStyle(theme: ThemePreferences): CSSProperties {
   const palette = buildThemePalette(theme);
   const accent = theme.primaryColor || DEFAULT_THEME_PREFERENCES.primaryColor;
   const secondaryAccent = theme.accentColor || DEFAULT_THEME_PREFERENCES.accentColor;
+  const readabilityConfig = READABILITY_CSS_VARS[theme.mode][theme.readabilityIntensity || DEFAULT_THEME_PREFERENCES.readabilityIntensity];
 
   const backgroundLayer = theme.backgroundImage
     ? `linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.48)), url("${theme.backgroundImage}")`
@@ -423,6 +519,14 @@ export function buildThemeShellStyle(theme: ThemePreferences): CSSProperties {
     ['--theme-primary' as any]: accent,
     ['--theme-accent' as any]: secondaryAccent,
     ['--theme-primary-contrast' as any]: theme.mode === 'light' ? '#ffffff' : '#0f172a',
+    ['--theme-frame-bg-alpha' as any]: readabilityConfig.frameBgAlpha,
+    ['--theme-pane-bg-alpha' as any]: readabilityConfig.paneBgAlpha,
+    ['--theme-text-500-alpha' as any]: readabilityConfig.text500Alpha,
+    ['--theme-text-400-alpha' as any]: readabilityConfig.text400Alpha,
+    ['--theme-text-300-alpha' as any]: readabilityConfig.text300Alpha,
+    ['--theme-overlay-rgb' as any]: readabilityConfig.overlayRgb,
+    ['--theme-overlay-top-alpha' as any]: readabilityConfig.overlayTopAlpha,
+    ['--theme-overlay-bottom-alpha' as any]: readabilityConfig.overlayBottomAlpha,
   };
 }
 

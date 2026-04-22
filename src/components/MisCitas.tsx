@@ -753,7 +753,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-0 space-y-8">
+    <div className="theme-pane max-w-6xl mx-auto px-4 sm:px-0 sm:p-4 lg:p-6 space-y-8">
       <div>
         <h1 className="text-slate-100 mb-2">
           {userType === 'psicologo' ? 'Gestionar Citas' : 'Mis Citas'}
@@ -766,7 +766,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
       </div>
 
       <Tabs defaultValue="proximas" className="w-full">
-        <TabsList className="bg-slate-800 border-slate-700 w-full justify-start overflow-x-auto gap-1">
+        <TabsList className="theme-frame bg-slate-800/80 border-slate-700 w-full justify-start overflow-x-auto gap-1">
           <TabsTrigger value="proximas" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white whitespace-nowrap">Próximas Citas</TabsTrigger>
           <TabsTrigger value="pasadas" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white whitespace-nowrap">Historial</TabsTrigger>
           <TabsTrigger value="agenda" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white whitespace-nowrap">Consultar Agenda</TabsTrigger>
@@ -774,7 +774,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
         <TabsContent value="proximas" className="space-y-4 mt-6">
           {userType === 'psicologo' && (
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <Card className="bg-slate-800/72 backdrop-blur-sm border-slate-700">
               <CardContent className="pt-6">
                 <div className="space-y-3">
                   <p className="text-slate-200 flex items-center gap-2">
@@ -827,7 +827,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           {citasProximasFiltradas.map((cita) => (
             <HoverCard key={cita.citaid}>
               <HoverCardTrigger asChild>
-                <Card className="hover:shadow-lg transition-shadow bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                <Card className="hover:shadow-lg transition-shadow bg-slate-800/72 backdrop-blur-sm border-slate-700">
                   <CardContent className="pt-6">
                 {(() => {
                   const estadoVisual = obtenerEstiloEstado(cita.estado);
@@ -940,7 +940,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           ))}
 
           {citasProximasFiltradas.length === 0 && (
-            <Card className="bg-slate-800/30 backdrop-blur-sm border-slate-700">
+            <Card className="bg-slate-800/70 backdrop-blur-sm border-slate-700">
               <CardContent className="py-8 text-center text-slate-400">
                 No hay citas que coincidan con el filtro seleccionado.
               </CardContent>
@@ -950,7 +950,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
         <TabsContent value="pasadas" className="space-y-4 mt-6">
           {citasPasadas.map((cita) => (
-            <Card key={cita.citaid} className="bg-slate-800/30 backdrop-blur-sm border-slate-700">
+            <Card key={cita.citaid} className="bg-slate-800/70 backdrop-blur-sm border-slate-700">
               <CardContent className="pt-6">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">

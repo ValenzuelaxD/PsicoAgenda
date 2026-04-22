@@ -16,7 +16,7 @@ import {
 } from './ui/dialog';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, uploadImagenTema } from '../utils/api';
-import { ThemePreferences, THEME_PRESET_OPTIONS, normalizeThemePreferences, saveThemePreferences } from '../utils/theme';
+import { ThemePreferences, THEME_PRESET_OPTIONS, READABILITY_INTENSITY_OPTIONS, normalizeThemePreferences, saveThemePreferences } from '../utils/theme';
 
 interface PerfilProps {
   userName: string;
@@ -56,9 +56,31 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
   const [passwordConfirmar, setPasswordConfirmar] = useState('');
   const archivoFotoInputRef = useRef<HTMLInputElement | null>(null);
   const [themeDraft, setThemeDraft] = useState(themePreferences);
+  const [readabilityPreview, setReadabilityPreview] = useState(themePreferences.readabilityIntensity);
+  const [readabilityNeedsConfirm, setReadabilityNeedsConfirm] = useState(false);
+
+  const readabilityVisuals: Record<'suave' | 'media' | 'alta', { panelBg: string; textColor: string; borderColor: string }> = {
+    suave: {
+      panelBg: 'rgba(15, 23, 42, 0.34)',
+      textColor: 'rgba(248, 250, 252, 0.78)',
+      borderColor: 'rgba(148, 163, 184, 0.38)',
+    },
+    media: {
+      panelBg: 'rgba(15, 23, 42, 0.5)',
+      textColor: 'rgba(248, 250, 252, 0.9)',
+      borderColor: 'rgba(148, 163, 184, 0.5)',
+    },
+    alta: {
+      panelBg: 'rgba(15, 23, 42, 0.66)',
+      textColor: 'rgba(248, 250, 252, 0.98)',
+      borderColor: 'rgba(148, 163, 184, 0.64)',
+    },
+  };
 
   useEffect(() => {
     setThemeDraft(themePreferences);
+    setReadabilityPreview(themePreferences.readabilityIntensity);
+    setReadabilityNeedsConfirm(false);
   }, [themePreferences]);
 
   // Estado para valores originales (para cancelar)
@@ -335,8 +357,43 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
   const updateThemePreferences = (partialTheme: Partial<ThemePreferences>) => {
     const nextTheme = normalizeThemePreferences({ ...themeDraft, ...partialTheme });
     setThemeDraft(nextTheme);
+    setReadabilityPreview(nextTheme.readabilityIntensity);
+    setReadabilityNeedsConfirm(false);
     saveThemePreferences(nextTheme);
     onThemeUpdated(nextTheme);
+  };
+
+  const previewReadabilityIntensity = (value: ThemePreferences['readabilityIntensity']) => {
+    const previewTheme = normalizeThemePreferences({ ...themeDraft, readabilityIntensity: value });
+    setThemeDraft(previewTheme);
+    setReadabilityPreview(value);
+    setReadabilityNeedsConfirm(value !== themePreferences.readabilityIntensity);
+    onThemeUpdated(previewTheme);
+  };
+
+  const applyReadabilityIntensity = () => {
+    const nextTheme = normalizeThemePreferences({ ...themeDraft, readabilityIntensity: readabilityPreview });
+    setThemeDraft(nextTheme);
+    saveThemePreferences(nextTheme);
+    onThemeUpdated(nextTheme);
+    setReadabilityNeedsConfirm(false);
+    toast.success('Intensidad aplicada', {
+      description: `Se guardó el nivel ${READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === readabilityPreview)?.label || 'Media'} para tu sesión.`,
+    });
+  };
+
+  const revertReadabilityPreview = () => {
+    const restoredTheme = normalizeThemePreferences({
+      ...themeDraft,
+      readabilityIntensity: themePreferences.readabilityIntensity,
+    });
+    setThemeDraft(restoredTheme);
+    setReadabilityPreview(themePreferences.readabilityIntensity);
+    setReadabilityNeedsConfirm(false);
+    onThemeUpdated(restoredTheme);
+    toast.info('Vista previa descartada', {
+      description: 'Se restauró la intensidad guardada en tu sesión.',
+    });
   };
 
   if (isLoading) {
@@ -667,11 +724,70 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               </button>
               <button
                 type="button"
-                onClick={() => updateThemePreferences({ mode: 'dark', preset: 'midnight' })}
+                onClick={() => updateThemePreferences({ mode: 'dark', preset: 'midnight', readabilityIntensity: 'media' })}
                 className="px-4 py-2 rounded-full bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-slate-100 text-sm font-medium transition-colors ml-auto"
               >
                 ↺ Restaurar
               </button>
+            </div>
+
+            {/* Intensidad de legibilidad */}
+            <div className="space-y-3 border-t border-slate-700 pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-slate-100 text-sm font-medium">Intensidad de legibilidad</p>
+                <span className="text-xs text-slate-300">
+                  {READABILITY_INTENSITY_OPTIONS.find((option) => option.value === readabilityPreview)?.label || 'Media'}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {READABILITY_INTENSITY_OPTIONS.map((option) => {
+                  const isSelected = readabilityPreview === option.value;
+                  const visual = readabilityVisuals[option.value];
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => previewReadabilityIntensity(option.value)}
+                      className={`rounded-lg border px-3 py-3 text-left transition-colors ${
+                        isSelected
+                          ? 'border-teal-400 bg-teal-500/20 text-teal-100 shadow-[0_0_0_1px_rgba(45,212,191,0.45)]'
+                          : 'border-slate-600 bg-slate-700/40 text-slate-200 hover:border-slate-500'
+                      }`}
+                    >
+                      <p className="text-sm font-medium">{option.label}</p>
+                      <p className="text-xs text-slate-300 mt-1">{option.description}</p>
+                      <div
+                        className="mt-2 rounded-md border px-2 py-1.5"
+                        style={{ backgroundColor: visual.panelBg, borderColor: visual.borderColor }}
+                      >
+                        <p className="text-[11px] font-medium" style={{ color: visual.textColor }}>Texto e iconos de ejemplo</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-teal-600 hover:bg-teal-700"
+                  onClick={applyReadabilityIntensity}
+                  disabled={!readabilityNeedsConfirm}
+                >
+                  Aplicar intensidad
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                  onClick={revertReadabilityPreview}
+                  disabled={!readabilityNeedsConfirm}
+                >
+                  Descartar vista previa
+                </Button>
+              </div>
             </div>
 
             {/* Paleta de colores - Círculos con mejor indicación */}

@@ -184,28 +184,27 @@ export function Dashboard({
         </div>
 
         <div 
-          className="p-4 sm:p-6 lg:p-8 relative"
+          className="relative p-4 sm:p-6 lg:p-8 min-h-[calc(100dvh-72px)]"
           style={{
             backgroundImage: imagenTema ? `url('${imagenTema}')` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundAttachment: 'fixed'
+            backgroundAttachment: isMobile ? 'scroll' : 'fixed',
+            backgroundRepeat: 'no-repeat',
           }}
         >
           {/* Overlay dinámico según el modo */}
           {imagenTema && (
             <div 
-              className="absolute inset-0 rounded-md pointer-events-none" 
+              className="absolute inset-0 pointer-events-none" 
               style={{
-                backgroundColor: themePreferences.mode === 'light' 
-                  ? 'rgba(255, 255, 255, 0.15)' 
-                  : 'rgba(0, 0, 0, 0.4)'
+                background: 'linear-gradient(180deg, rgba(var(--theme-overlay-rgb, 2, 6, 23), var(--theme-overlay-top-alpha, 0.48)), rgba(var(--theme-overlay-rgb, 2, 6, 23), var(--theme-overlay-bottom-alpha, 0.68)))',
               }}
             />
           )}
           
           <div 
-            className="relative z-10"
+            className="theme-readable relative z-10"
             style={{
               color: themePreferences.mode === 'light' ? '#1a1a1a' : 'inherit'
             }}

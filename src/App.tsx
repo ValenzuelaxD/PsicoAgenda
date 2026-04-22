@@ -5,7 +5,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { LoadingSplash } from './components/LoadingSplash';
 import { Toaster } from 'sonner';
 import { API_ENDPOINTS } from './utils/api';
-import { ThemePreferences, loadThemePreferences, saveThemePreferences } from './utils/theme';
+import { ThemePreferences, loadThemePreferences } from './utils/theme';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -72,7 +72,6 @@ export default function App() {
     };
 
     setThemePreferences(normalizedTheme);
-    saveThemePreferences(normalizedTheme);
   };
 
   const refreshSessionProfile = useCallback(async () => {

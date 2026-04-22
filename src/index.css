@@ -90,6 +90,53 @@
   background-color: rgba(148, 163, 184, 0.95);
 }
 
+/* Superficies translúcidas consistentes para todos los apartados */
+.theme-frame {
+  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) var(--theme-frame-bg-alpha, 84%), transparent);
+  border-color: color-mix(in srgb, var(--theme-border, #334155) 82%, rgba(255, 255, 255, 0.12));
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.28);
+}
+
+.theme-pane {
+  background: color-mix(in srgb, var(--theme-background-secondary, #0f172a) var(--theme-pane-bg-alpha, 42%), transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-border, #334155) 72%, transparent);
+  border-radius: 1rem;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* Capa de legibilidad para contenido sobre fondos personalizados */
+.theme-readable .text-slate-500 {
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-500-alpha, 62%), transparent);
+}
+
+.theme-readable .text-slate-400 {
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-400-alpha, 74%), transparent);
+}
+
+.theme-readable .text-slate-300 {
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-300-alpha, 86%), transparent);
+}
+
+.theme-readable .bg-slate-900\/30 {
+  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 72%, transparent);
+}
+
+.theme-readable .bg-slate-800\/30 {
+  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 66%, transparent);
+}
+
+.theme-readable .bg-slate-700\/30 {
+  background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 60%, transparent);
+}
+
+.theme-readable .border-slate-600,
+.theme-readable .border-slate-700 {
+  border-color: color-mix(in srgb, var(--theme-border, #334155) 82%, rgba(255, 255, 255, 0.14));
+}
+
 @layer theme {
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
