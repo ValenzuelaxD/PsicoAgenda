@@ -56,8 +56,8 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
   const [passwordConfirmar, setPasswordConfirmar] = useState('');
   const archivoFotoInputRef = useRef<HTMLInputElement | null>(null);
   const [themeDraft, setThemeDraft] = useState(themePreferences);
-  const [readabilityPreview, setReadabilityPreview] = useState(themePreferences.readabilityIntensity);
-  const [readabilityNeedsConfirm, setReadabilityNeedsConfirm] = useState(false);
+  const [mostrarPreviewIntensidad, setMostrarPreviewIntensidad] = useState(false);
+  const [intensidadPendiente, setIntensidadPendiente] = useState<ThemePreferences['readabilityIntensity']>(themePreferences.readabilityIntensity);
 
   const readabilityVisuals: Record<'suave' | 'media' | 'alta', { panelBg: string; textColor: string; borderColor: string }> = {
     suave: {
@@ -79,8 +79,7 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
 
   useEffect(() => {
     setThemeDraft(themePreferences);
-    setReadabilityPreview(themePreferences.readabilityIntensity);
-    setReadabilityNeedsConfirm(false);
+    setIntensidadPendiente(themePreferences.readabilityIntensity);
   }, [themePreferences]);
 
   // Estado para valores originales (para cancelar)
@@ -357,42 +356,23 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
   const updateThemePreferences = (partialTheme: Partial<ThemePreferences>) => {
     const nextTheme = normalizeThemePreferences({ ...themeDraft, ...partialTheme });
     setThemeDraft(nextTheme);
-    setReadabilityPreview(nextTheme.readabilityIntensity);
-    setReadabilityNeedsConfirm(false);
     saveThemePreferences(nextTheme);
     onThemeUpdated(nextTheme);
   };
 
-  const previewReadabilityIntensity = (value: ThemePreferences['readabilityIntensity']) => {
-    const previewTheme = normalizeThemePreferences({ ...themeDraft, readabilityIntensity: value });
-    setThemeDraft(previewTheme);
-    setReadabilityPreview(value);
-    setReadabilityNeedsConfirm(value !== themePreferences.readabilityIntensity);
-    onThemeUpdated(previewTheme);
+  const abrirPreviewIntensidad = (value: ThemePreferences['readabilityIntensity']) => {
+    setIntensidadPendiente(value);
+    setMostrarPreviewIntensidad(true);
   };
 
-  const applyReadabilityIntensity = () => {
-    const nextTheme = normalizeThemePreferences({ ...themeDraft, readabilityIntensity: readabilityPreview });
+  const confirmarIntensidad = () => {
+    const nextTheme = normalizeThemePreferences({ ...themeDraft, readabilityIntensity: intensidadPendiente });
     setThemeDraft(nextTheme);
     saveThemePreferences(nextTheme);
     onThemeUpdated(nextTheme);
-    setReadabilityNeedsConfirm(false);
+    setMostrarPreviewIntensidad(false);
     toast.success('Intensidad aplicada', {
-      description: `Se guardó el nivel ${READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === readabilityPreview)?.label || 'Media'} para tu sesión.`,
-    });
-  };
-
-  const revertReadabilityPreview = () => {
-    const restoredTheme = normalizeThemePreferences({
-      ...themeDraft,
-      readabilityIntensity: themePreferences.readabilityIntensity,
-    });
-    setThemeDraft(restoredTheme);
-    setReadabilityPreview(themePreferences.readabilityIntensity);
-    setReadabilityNeedsConfirm(false);
-    onThemeUpdated(restoredTheme);
-    toast.info('Vista previa descartada', {
-      description: 'Se restauró la intensidad guardada en tu sesión.',
+      description: `Se guardó el nivel ${READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === intensidadPendiente)?.label || 'Media'} para tu sesión.`,
     });
   };
 
@@ -736,19 +716,19 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
               <div className="flex items-center justify-between gap-3">
                 <p className="text-slate-100 text-sm font-medium">Intensidad de legibilidad</p>
                 <span className="text-xs text-slate-300">
-                  {READABILITY_INTENSITY_OPTIONS.find((option) => option.value === readabilityPreview)?.label || 'Media'}
+                  {READABILITY_INTENSITY_OPTIONS.find((option) => option.value === themeDraft.readabilityIntensity)?.label || 'Media'}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {READABILITY_INTENSITY_OPTIONS.map((option) => {
-                  const isSelected = readabilityPreview === option.value;
+                  const isSelected = themeDraft.readabilityIntensity === option.value;
                   const visual = readabilityVisuals[option.value];
 
                   return (
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => previewReadabilityIntensity(option.value)}
+                      onClick={() => abrirPreviewIntensidad(option.value)}
                       className={`rounded-lg border px-3 py-3 text-left transition-colors ${
                         isSelected
                           ? 'border-teal-400 bg-teal-500/20 text-teal-100 shadow-[0_0_0_1px_rgba(45,212,191,0.45)]'
@@ -766,27 +746,6 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
                     </button>
                   );
                 })}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="bg-teal-600 hover:bg-teal-700"
-                  onClick={applyReadabilityIntensity}
-                  disabled={!readabilityNeedsConfirm}
-                >
-                  Aplicar intensidad
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                  onClick={revertReadabilityPreview}
-                  disabled={!readabilityNeedsConfirm}
-                >
-                  Descartar vista previa
-                </Button>
               </div>
             </div>
 
@@ -905,6 +864,51 @@ export function Perfil({ userName, userType, onProfileUpdated, themePreferences,
           </Button>
         </div>
       </form>
+
+      <Dialog open={mostrarPreviewIntensidad} onOpenChange={setMostrarPreviewIntensidad}>
+        <DialogContent className="sm:max-w-[520px] bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-slate-100">Vista previa de intensidad</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Revisa cómo se verán textos, íconos y marcos antes de confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-xl border border-slate-600 p-4" style={{ backgroundColor: readabilityVisuals[intensidadPendiente].panelBg }}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold" style={{ color: readabilityVisuals[intensidadPendiente].textColor }}>
+                  {READABILITY_INTENSITY_OPTIONS.find((opt) => opt.value === intensidadPendiente)?.label || 'Media'}
+                </p>
+                <span className="text-xs" style={{ color: readabilityVisuals[intensidadPendiente].textColor }}>
+                  Muestra simulada
+                </span>
+              </div>
+              <div className="mt-3 rounded-lg border px-3 py-2" style={{ borderColor: readabilityVisuals[intensidadPendiente].borderColor }}>
+                <p className="text-sm font-medium" style={{ color: readabilityVisuals[intensidadPendiente].textColor }}>
+                  Texto e iconos de ejemplo
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-slate-600 text-slate-200 hover:bg-slate-700"
+              onClick={() => setMostrarPreviewIntensidad(false)}
+            >
+              No aplicar
+            </Button>
+            <Button
+              type="button"
+              className="bg-teal-600 hover:bg-teal-700"
+              onClick={confirmarIntensidad}
+            >
+              Aplicar intensidad
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal Cambiar Contraseña */}
       <Dialog open={mostrarCambiarPassword} onOpenChange={setMostrarCambiarPassword}>

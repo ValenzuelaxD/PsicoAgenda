@@ -25,6 +25,32 @@ interface ThemePalette {
 
 export const THEME_STORAGE_KEY = 'psicoagenda-theme-preferences';
 
+const LEGACY_THEME_STORAGE_KEY = THEME_STORAGE_KEY;
+
+const getThemeStorageKey = (userKey?: string): string => {
+  const key = String(userKey || '').trim();
+  return key ? `${THEME_STORAGE_KEY}:${key}` : `${THEME_STORAGE_KEY}:anon`;
+};
+
+const getCurrentUserThemeKey = (): string => {
+  if (typeof localStorage === 'undefined') {
+    return 'anon';
+  }
+
+  try {
+    const raw = localStorage.getItem('user');
+    if (!raw) {
+      return 'anon';
+    }
+
+    const parsed = JSON.parse(raw);
+    const candidate = parsed?.usuarioid || parsed?.id || parsed?.correo || parsed?.email || parsed?.nombre;
+    return String(candidate || 'anon');
+  } catch {
+    return 'anon';
+  }
+};
+
 export const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
   preset: 'midnight',
   mode: 'dark',
@@ -463,30 +489,46 @@ export function normalizeThemePreferences(theme?: Partial<ThemePreferences> | nu
   };
 }
 
-export function loadThemePreferences(): ThemePreferences {
+export function loadThemePreferences(userKey?: string): ThemePreferences {
   if (typeof localStorage === 'undefined') {
     return DEFAULT_THEME_PREFERENCES;
   }
 
   try {
-    const raw = localStorage.getItem(THEME_STORAGE_KEY);
+    const scopedStorageKey = getThemeStorageKey(userKey || getCurrentUserThemeKey());
+    const raw = localStorage.getItem(scopedStorageKey);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<ThemePreferences>;
+      return normalizeThemePreferences(parsed);
+    }
+
+    // Compatibilidad con versiones anteriores: migrar tema global legado al usuario actual.
+    const legacyRaw = localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+    if (legacyRaw) {
+      const parsedLegacy = JSON.parse(legacyRaw) as Partial<ThemePreferences>;
+      const normalizedLegacy = normalizeThemePreferences(parsedLegacy);
+      localStorage.setItem(scopedStorageKey, JSON.stringify(normalizedLegacy));
+      localStorage.removeItem(LEGACY_THEME_STORAGE_KEY);
+      return normalizedLegacy;
+    }
+
     if (!raw) {
       return DEFAULT_THEME_PREFERENCES;
     }
-
-    const parsed = JSON.parse(raw) as Partial<ThemePreferences>;
-    return normalizeThemePreferences(parsed);
   } catch {
     return DEFAULT_THEME_PREFERENCES;
   }
+
+  return DEFAULT_THEME_PREFERENCES;
 }
 
-export function saveThemePreferences(theme: ThemePreferences) {
+export function saveThemePreferences(theme: ThemePreferences, userKey?: string) {
   if (typeof localStorage === 'undefined') {
     return;
   }
 
-  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(normalizeThemePreferences(theme)));
+  const scopedStorageKey = getThemeStorageKey(userKey || getCurrentUserThemeKey());
+  localStorage.setItem(scopedStorageKey, JSON.stringify(normalizeThemePreferences(theme)));
 }
 
 export function buildThemePalette(theme: ThemePreferences): ThemePalette {

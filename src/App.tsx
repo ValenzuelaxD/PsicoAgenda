@@ -27,6 +27,7 @@ export default function App() {
       if (token && user) {
         try {
           const userData = JSON.parse(user);
+          setThemePreferences(loadThemePreferences(String(userData?.usuarioid || userData?.id || userData?.correo || userData?.email || userData?.nombre || 'anon')));
           setUserName(userData.nombre || 'Usuario');
           setUserPhoto(userData.fotoperfil || '');
           setImagenTema(userData.imagentema || '');
@@ -64,6 +65,15 @@ export default function App() {
     setIsAuthenticated(true);
     setUserName(name);
     setUserType(type);
+
+    try {
+      const rawUser = localStorage.getItem('user');
+      const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+      const currentUserKey = String(parsedUser?.usuarioid || parsedUser?.id || parsedUser?.correo || parsedUser?.email || parsedUser?.nombre || 'anon');
+      setThemePreferences(loadThemePreferences(currentUserKey));
+    } catch {
+      setThemePreferences(loadThemePreferences('anon'));
+    }
   };
 
   const handleThemeUpdated = (nextTheme: ThemePreferences) => {
@@ -145,6 +155,7 @@ export default function App() {
       setUserType('paciente');
       setUserPhoto('');
       setImagenTema('');
+      setThemePreferences(loadThemePreferences('anon'));
       setIsLoggingOut(false);
     }, 1500);
   };

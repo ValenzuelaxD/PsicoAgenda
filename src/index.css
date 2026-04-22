@@ -120,6 +120,19 @@
   color: color-mix(in srgb, var(--theme-text, #f8fafc) var(--theme-text-300-alpha, 86%), transparent);
 }
 
+.theme-readable .text-slate-200 {
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) 92%, transparent);
+}
+
+.theme-readable .text-slate-100,
+.theme-readable .text-white {
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) 98%, transparent);
+}
+
+.theme-readable .text-slate-600 {
+  color: color-mix(in srgb, var(--theme-text, #f8fafc) 78%, transparent);
+}
+
 .theme-readable .bg-slate-900\/30 {
   background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 72%, transparent);
 }
@@ -130,6 +143,12 @@
 
 .theme-readable .bg-slate-700\/30 {
   background-color: color-mix(in srgb, var(--theme-surface, #1e293b) 60%, transparent);
+}
+
+.theme-readable .bg-slate-800\/50,
+.theme-readable .bg-slate-800\/72,
+.theme-readable .bg-slate-800\/70 {
+  background-color: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 88%, transparent);
 }
 
 .theme-readable .border-slate-600,
