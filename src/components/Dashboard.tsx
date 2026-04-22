@@ -16,6 +16,7 @@ import { ProgramarCita } from './ProgramarCita';
 import { NotificationCenter } from './NotificationCenter';
 import { AdminSolicitudes } from './AdminSolicitudes';
 import { ReportesCitas } from './ReportesCitas';
+import { ErrorBoundary } from './ErrorBoundary';
 import { ThemePreferences, buildThemeShellStyle, buildThemeSurfaceStyle } from '../utils/theme';
 
 interface DashboardProps {
@@ -209,17 +210,24 @@ export function Dashboard({
               color: themePreferences.mode === 'light' ? '#1a1a1a' : 'inherit'
             }}
           >
-            <AnimatePresence>
-              <motion.div 
-                key={currentView}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                {renderView()}
-              </motion.div>
-            </AnimatePresence>
+            <ErrorBoundary
+              resetKey={currentView}
+              onReset={() => setCurrentView((prev) => prev)}
+              fallbackTitle="No pudimos cargar este apartado"
+              fallbackDescription="Se detectó un error inesperado. Intenta recargar la vista o cambia de apartado."
+            >
+              <AnimatePresence>
+                <motion.div 
+                  key={currentView}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderView()}
+                </motion.div>
+              </AnimatePresence>
+            </ErrorBoundary>
           </div>
         </div>
       </main>

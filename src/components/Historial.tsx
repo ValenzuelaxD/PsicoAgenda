@@ -3,7 +3,7 @@ import { Badge } from './ui/badge';
 import { FileText, Calendar, TrendingUp, Clock } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, API_ENDPOINTS } from '../utils/api';
 
 const HISTORIAL_CACHE_PREFIX = 'historial_paciente_cache_v1';
