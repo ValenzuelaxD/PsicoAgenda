@@ -621,19 +621,14 @@
 
 .landing-reveal {
   opacity: 0;
-  animation: landing-fade-up 0.8s ease forwards;
-  animation-delay: var(--delay, 0s);
+  transform: translateY(18px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition-delay: var(--delay, 0s);
 }
 
-@keyframes landing-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.landing-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 @keyframes landing-float {
@@ -650,6 +645,12 @@
   .landing-reveal,
   .landing-orb {
     animation: none;
+  }
+
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
