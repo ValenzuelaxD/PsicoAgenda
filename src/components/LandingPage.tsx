@@ -12,7 +12,10 @@ export default function LandingPage() {
 
       <header className="landing-nav landing-reveal" style={{ "--delay": "0.05s" } as CSSProperties}>
         <div className="landing-brand">
-          <span className="landing-logo">PsicoAgenda</span>
+          <div className="landing-brand-row">
+            <img className="landing-logo-mark" src="/favicon.png" alt="Logo de PsicoAgenda" />
+            <span className="landing-logo">PsicoAgenda</span>
+          </div>
           <span className="landing-tagline">Gestion clinica con calidez y orden</span>
         </div>
         <nav className="landing-nav-actions">
@@ -56,26 +59,28 @@ export default function LandingPage() {
               Respondemos en menos de 24 horas habiles.
             </p>
           </div>
-          <div className="landing-hero-card landing-reveal" style={{ "--delay": "0.22s" } as CSSProperties}>
-            <div className="landing-card-header">
-              <span>Hoy</span>
-              <span className="landing-pill">Agenda equilibrada</span>
+          <div className="landing-benefits landing-reveal" style={{ "--delay": "0.22s" } as CSSProperties}>
+            <div className="landing-benefits-header">
+              <span className="landing-pill">Beneficios clave</span>
+              <span>Lo esencial en un solo lugar</span>
             </div>
-            <div className="landing-card-body">
-              <div className="landing-card-block">
-                <p className="landing-card-title">Sesiones confirmadas</p>
-                <p className="landing-card-value">8</p>
-                <p className="landing-card-note">Recordatorios automaticos enviados</p>
-              </div>
-              <div className="landing-card-block landing-card-block--accent">
-                <p className="landing-card-title">Pacientes activos</p>
-                <p className="landing-card-value">36</p>
-                <p className="landing-card-note">Seguimiento clinico centralizado</p>
-              </div>
+            <div className="landing-benefits-body">
+              <article className="landing-benefit">
+                <h3>Agenda sin friccion</h3>
+                <p>Programacion clara, reprogramaciones simples y control total del dia.</p>
+              </article>
+              <article className="landing-benefit landing-benefit--accent">
+                <h3>Recordatorios automaticos</h3>
+                <p>Reduce ausencias con notificaciones puntuales y consistentes.</p>
+              </article>
+              <article className="landing-benefit">
+                <h3>Historial clinico seguro</h3>
+                <p>Acceso rapido a notas, sesiones y seguimiento del paciente.</p>
+              </article>
             </div>
-            <div className="landing-card-footer">
-              <span>Ultima actualizacion</span>
-              <span>Hace 2 minutos</span>
+            <div className="landing-benefits-footer">
+              <span>Atencion ordenada</span>
+              <span>Mas tiempo para escuchar</span>
             </div>
           </div>
         </section>
