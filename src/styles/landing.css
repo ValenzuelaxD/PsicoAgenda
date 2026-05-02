@@ -1,23 +1,24 @@
 @import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Manrope:wght@300;400;500;600;700&display=swap");
 
 :root {
-  --landing-ink: #0f172a;
-  --landing-ink-soft: #1e293b;
-  --landing-muted: #475569;
-  --landing-surface: #f8fafc;
-  --landing-surface-soft: #f1f5f9;
-  --landing-accent: #f97360;
-  --landing-accent-dark: #ea5b4a;
+  --landing-ink: #f8fafc;
+  --landing-ink-soft: #e2e8f0;
+  --landing-muted: #94a3b8;
+  --landing-surface: #0f172a;
+  --landing-surface-soft: #111827;
+  --landing-accent: #14b8a6;
+  --landing-accent-dark: #0d9488;
+  --landing-accent-alt: #8b5cf6;
   --landing-border: rgba(148, 163, 184, 0.25);
-  --landing-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+  --landing-shadow: 0 20px 60px rgba(2, 6, 23, 0.45);
 }
 
 .landing-root {
   position: relative;
   min-height: 100vh;
-  background: radial-gradient(circle at top left, rgba(255, 237, 213, 0.7), transparent 55%),
-    radial-gradient(circle at 30% 20%, rgba(226, 232, 240, 0.9), transparent 60%),
-    linear-gradient(160deg, #ffffff 0%, #f8fafc 40%, #fef3ea 100%);
+  background: radial-gradient(circle at top left, rgba(20, 184, 166, 0.25), transparent 55%),
+    radial-gradient(circle at 75% 10%, rgba(139, 92, 246, 0.2), transparent 60%),
+    linear-gradient(160deg, #0b1220 0%, #0f172a 45%, #1e1b4b 100%);
   color: var(--landing-ink);
   font-family: "Manrope", "Segoe UI", system-ui, sans-serif;
   overflow: hidden;
@@ -34,14 +35,14 @@
   position: absolute;
   border-radius: 999px;
   filter: blur(0);
-  opacity: 0.7;
+  opacity: 0.55;
   animation: landing-float 12s ease-in-out infinite;
 }
 
 .landing-orb--one {
   width: 320px;
   height: 320px;
-  background: rgba(249, 115, 96, 0.15);
+  background: rgba(20, 184, 166, 0.25);
   top: -80px;
   left: -40px;
 }
@@ -49,7 +50,7 @@
 .landing-orb--two {
   width: 220px;
   height: 220px;
-  background: rgba(14, 116, 144, 0.12);
+  background: rgba(139, 92, 246, 0.25);
   top: 30%;
   right: -60px;
   animation-delay: 1s;
@@ -58,7 +59,7 @@
 .landing-orb--three {
   width: 260px;
   height: 260px;
-  background: rgba(251, 191, 36, 0.15);
+  background: rgba(56, 189, 248, 0.2);
   bottom: -120px;
   left: 20%;
   animation-delay: 2s;
@@ -107,12 +108,13 @@
 }
 
 .landing-link:hover {
-  color: var(--landing-accent-dark);
+  color: var(--landing-accent);
   transform: translateY(-1px);
 }
 
 .landing-link--ghost {
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.4);
   border-radius: 999px;
   padding: 0.4rem 1.1rem;
 }
@@ -166,32 +168,32 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: var(--landing-accent);
+  background: linear-gradient(120deg, var(--landing-accent), var(--landing-accent-alt));
   color: #fff;
   padding: 0.85rem 1.6rem;
   border-radius: 999px;
   text-decoration: none;
   font-weight: 600;
-  box-shadow: 0 10px 24px rgba(249, 115, 96, 0.32);
+  box-shadow: 0 10px 24px rgba(20, 184, 166, 0.32);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .landing-button:hover {
-  background: var(--landing-accent-dark);
+  background: linear-gradient(120deg, var(--landing-accent-dark), #7c3aed);
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(249, 115, 96, 0.36);
+  box-shadow: 0 14px 30px rgba(20, 184, 166, 0.38);
 }
 
 .landing-button--ghost {
   background: transparent;
   color: var(--landing-ink-soft);
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.45);
   box-shadow: none;
 }
 
 .landing-button--ghost:hover {
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--landing-ink);
+  background: rgba(15, 23, 42, 0.65);
+  color: #fff;
 }
 
 .landing-microcopy {
@@ -201,7 +203,7 @@
 }
 
 .landing-hero-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(15, 23, 42, 0.82);
   border-radius: 24px;
   padding: 1.75rem;
   border: 1px solid var(--landing-border);
@@ -220,8 +222,8 @@
 }
 
 .landing-pill {
-  background: rgba(249, 115, 96, 0.12);
-  color: var(--landing-accent-dark);
+  background: rgba(20, 184, 166, 0.18);
+  color: var(--landing-accent);
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
   font-weight: 600;
@@ -236,13 +238,13 @@
 .landing-card-block {
   padding: 1rem;
   border-radius: 18px;
-  background: var(--landing-surface-soft);
+  background: rgba(30, 41, 59, 0.65);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .landing-card-block--accent {
-  background: rgba(249, 115, 96, 0.12);
-  border-color: rgba(249, 115, 96, 0.3);
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.45);
 }
 
 .landing-card-title {
@@ -291,7 +293,7 @@
 }
 
 .landing-problem {
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(15, 23, 42, 0.72);
   border-top: 1px solid var(--landing-border);
   border-bottom: 1px solid var(--landing-border);
   display: grid;
@@ -323,7 +325,7 @@
   width: 1rem;
   height: 1rem;
   border-radius: 6px;
-  background: rgba(249, 115, 96, 0.25);
+  background: rgba(20, 184, 166, 0.25);
   border: 2px solid var(--landing-accent);
 }
 
@@ -339,11 +341,11 @@
 }
 
 .landing-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(15, 23, 42, 0.78);
   border-radius: 20px;
   padding: 1.6rem;
   border: 1px solid var(--landing-border);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -359,11 +361,11 @@
 
 .landing-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.35);
 }
 
 .landing-split {
-  background: rgba(248, 250, 252, 0.8);
+  background: rgba(15, 23, 42, 0.6);
 }
 
 .landing-split-grid {
@@ -376,7 +378,7 @@
   padding: 1.6rem;
   border-radius: 20px;
   border: 1px solid var(--landing-border);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(15, 23, 42, 0.82);
 }
 
 .landing-panel h3 {
@@ -389,7 +391,7 @@
 }
 
 .landing-trust {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.7));
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6));
 }
 
 .landing-trust-grid {
@@ -417,7 +419,7 @@
 .landing-trust-card {
   padding: 1.8rem;
   border-radius: 22px;
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(8, 12, 28, 0.95);
   color: #fff;
   box-shadow: var(--landing-shadow);
 }
@@ -451,7 +453,7 @@
 }
 
 .landing-cta-inner {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(15, 23, 42, 0.78);
   border-radius: 24px;
   padding: 2.5rem;
   border: 1px solid var(--landing-border);
@@ -492,7 +494,7 @@
   padding: 1.4rem;
   border-radius: 20px;
   border: 1px solid var(--landing-border);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(15, 23, 42, 0.8);
 }
 
 .landing-faq-item h3 {
@@ -514,7 +516,7 @@
   flex-wrap: wrap;
   gap: 2rem;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(15, 23, 42, 0.7);
 }
 
 .landing-footer p {
@@ -535,7 +537,7 @@
 }
 
 .landing-footer-links a:hover {
-  color: var(--landing-accent-dark);
+  color: var(--landing-accent);
 }
 
 .landing-reveal {
