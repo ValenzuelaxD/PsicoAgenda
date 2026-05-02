@@ -37,6 +37,10 @@ export default function LandingPage() {
       <main>
         <section className="landing-hero">
           <div className="landing-hero-text">
+            <div className="landing-hero-logo landing-reveal" style={{ "--delay": "0.08s" } as CSSProperties}>
+              <img src="/favicon.png" alt="Logo de PsicoAgenda" />
+              <span>PsicoAgenda</span>
+            </div>
             <p className="landing-eyebrow landing-reveal" style={{ "--delay": "0.12s" } as CSSProperties}>
               PsicoAgenda para psicologos y clinicas
             </p>

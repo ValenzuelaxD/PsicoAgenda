@@ -163,6 +163,31 @@
   gap: 1.5rem;
 }
 
+.landing-hero-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--landing-border-soft);
+  box-shadow: var(--landing-shadow-soft);
+  width: fit-content;
+}
+
+.landing-hero-logo img {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--landing-border-soft);
+}
+
+.landing-hero-logo span {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 .landing-eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.2em;
