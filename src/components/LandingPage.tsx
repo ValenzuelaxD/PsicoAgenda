@@ -320,6 +320,7 @@ export default function LandingPage() {
         <div>
           <strong>PsicoAgenda</strong>
           <p>Agenda clinica inteligente para psicologos.</p>
+          <p>©2026 PsicoAgenda. Todos los derechos reservados.</p>
         </div>
         <div className="landing-footer-links">
           <a href="mailto:info@psicoagenda.online">info@psicoagenda.online</a>
