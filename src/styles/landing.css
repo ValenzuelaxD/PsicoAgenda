@@ -1,27 +1,36 @@
-@import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Manrope:wght@300;400;500;600;700&display=swap");
-
 :root {
   --landing-ink: #f8fafc;
   --landing-ink-soft: #e2e8f0;
   --landing-muted: #94a3b8;
-  --landing-surface: #0f172a;
-  --landing-surface-soft: #111827;
+  --landing-surface: rgba(15, 23, 42, 0.92);
+  --landing-surface-soft: rgba(17, 24, 39, 0.88);
   --landing-accent: #14b8a6;
   --landing-accent-dark: #0d9488;
   --landing-accent-alt: #8b5cf6;
-  --landing-border: rgba(148, 163, 184, 0.25);
-  --landing-shadow: 0 20px 60px rgba(2, 6, 23, 0.45);
+  --landing-border: rgba(71, 85, 105, 0.6);
+  --landing-border-soft: rgba(71, 85, 105, 0.35);
+  --landing-shadow: 0 20px 60px rgba(2, 6, 23, 0.55);
+  --landing-shadow-soft: 0 12px 30px rgba(2, 6, 23, 0.4);
 }
 
 .landing-root {
   position: relative;
   min-height: 100vh;
-  background: radial-gradient(circle at top left, rgba(20, 184, 166, 0.25), transparent 55%),
-    radial-gradient(circle at 75% 10%, rgba(139, 92, 246, 0.2), transparent 60%),
-    linear-gradient(160deg, #0b1220 0%, #0f172a 45%, #1e1b4b 100%);
+  background: radial-gradient(circle at 10% 10%, rgba(20, 184, 166, 0.22), transparent 52%),
+    radial-gradient(circle at 80% 15%, rgba(139, 92, 246, 0.22), transparent 58%),
+    linear-gradient(160deg, #0b1220 0%, #0f1b2d 45%, #121937 100%);
   color: var(--landing-ink);
-  font-family: "Manrope", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Segoe UI Emoji");
   overflow: hidden;
+}
+
+.landing-root::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.45) 0%, rgba(2, 6, 23, 0.15) 40%, rgba(2, 6, 23, 0.55) 100%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .landing-bg {
@@ -72,7 +81,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
-  padding: 2.5rem clamp(1.5rem, 4vw, 4.5rem) 1.5rem;
+  padding: 2rem clamp(1.5rem, 4vw, 4.5rem) 1.5rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.35));
+  border-bottom: 1px solid var(--landing-border-soft);
+  backdrop-filter: blur(10px) saturate(120%);
 }
 
 .landing-brand {
@@ -82,7 +94,6 @@
 }
 
 .landing-logo {
-  font-family: "Libre Baskerville", "Times New Roman", serif;
   font-size: 1.5rem;
   letter-spacing: 0.02em;
 }
@@ -126,7 +137,7 @@
   gap: 2.5rem;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-items: center;
-  padding: 2rem clamp(1.5rem, 6vw, 6rem) 4rem;
+  padding: 2.2rem clamp(1.5rem, 6vw, 6rem) 4rem;
 }
 
 .landing-hero-text {
@@ -144,7 +155,6 @@
 }
 
 .landing-title {
-  font-family: "Libre Baskerville", "Times New Roman", serif;
   font-size: clamp(2.4rem, 4vw, 3.6rem);
   line-height: 1.12;
   margin: 0;
@@ -203,11 +213,12 @@
 }
 
 .landing-hero-card {
-  background: rgba(15, 23, 42, 0.82);
+  background: var(--landing-surface);
   border-radius: 24px;
   padding: 1.75rem;
   border: 1px solid var(--landing-border);
   box-shadow: var(--landing-shadow);
+  backdrop-filter: blur(12px) saturate(120%);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -238,8 +249,8 @@
 .landing-card-block {
   padding: 1rem;
   border-radius: 18px;
-  background: rgba(30, 41, 59, 0.65);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
 .landing-card-block--accent {
@@ -280,7 +291,6 @@
 }
 
 .landing-section-title {
-  font-family: "Libre Baskerville", "Times New Roman", serif;
   font-size: clamp(1.8rem, 2.8vw, 2.4rem);
   margin: 0 0 1rem;
 }
@@ -293,7 +303,7 @@
 }
 
 .landing-problem {
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(15, 23, 42, 0.78);
   border-top: 1px solid var(--landing-border);
   border-bottom: 1px solid var(--landing-border);
   display: grid;
@@ -341,11 +351,12 @@
 }
 
 .landing-card {
-  background: rgba(15, 23, 42, 0.78);
+  background: var(--landing-surface-soft);
   border-radius: 20px;
   padding: 1.6rem;
   border: 1px solid var(--landing-border);
-  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.3);
+  box-shadow: var(--landing-shadow-soft);
+  backdrop-filter: blur(10px) saturate(120%);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -361,11 +372,11 @@
 
 .landing-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.35);
+  box-shadow: 0 22px 40px rgba(2, 6, 23, 0.5);
 }
 
 .landing-split {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
 }
 
 .landing-split-grid {
@@ -378,7 +389,8 @@
   padding: 1.6rem;
   border-radius: 20px;
   border: 1px solid var(--landing-border);
-  background: rgba(15, 23, 42, 0.82);
+  background: var(--landing-surface);
+  backdrop-filter: blur(12px) saturate(120%);
 }
 
 .landing-panel h3 {
@@ -391,7 +403,7 @@
 }
 
 .landing-trust {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6));
+  background: linear-gradient(135deg, rgba(10, 15, 28, 0.92), rgba(20, 30, 48, 0.7));
 }
 
 .landing-trust-grid {
@@ -453,7 +465,7 @@
 }
 
 .landing-cta-inner {
-  background: rgba(15, 23, 42, 0.78);
+  background: var(--landing-surface);
   border-radius: 24px;
   padding: 2.5rem;
   border: 1px solid var(--landing-border);
@@ -462,11 +474,11 @@
   gap: 2rem;
   align-items: center;
   justify-content: space-between;
+  backdrop-filter: blur(12px) saturate(120%);
 }
 
 .landing-cta-inner h2 {
   margin: 0 0 0.6rem;
-  font-family: "Libre Baskerville", "Times New Roman", serif;
 }
 
 .landing-cta-inner p {
@@ -494,7 +506,8 @@
   padding: 1.4rem;
   border-radius: 20px;
   border: 1px solid var(--landing-border);
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--landing-surface-soft);
+  backdrop-filter: blur(10px) saturate(120%);
 }
 
 .landing-faq-item h3 {
@@ -516,7 +529,7 @@
   flex-wrap: wrap;
   gap: 2rem;
   justify-content: space-between;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(12, 18, 32, 0.8);
 }
 
 .landing-footer p {
