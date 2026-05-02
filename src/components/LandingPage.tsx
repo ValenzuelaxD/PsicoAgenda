@@ -275,7 +275,6 @@ export default function LandingPage() {
         <section className="landing-section landing-logo-showcase">
           <div className="landing-logo-wrap landing-reveal" style={{ "--delay": "0.08s" } as CSSProperties}>
             <img src="/favicon.png" alt="PsicoAgenda" />
-            <h2>PsicoAgenda</h2>
             <p>Gestion clinica con calidez y orden.</p>
           </div>
         </section>
