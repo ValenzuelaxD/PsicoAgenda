@@ -179,9 +179,11 @@ export function FrecuenciaRecomendadaCitas({
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
 
-    if (fechaBase < hoy) {
-      return formatearFechaISO(hoy);
+    if (fechaBase <= hoy) {
+      return formatearFechaISO(manana);
     }
 
     return fechaSiguienteRecomendada;
@@ -202,12 +204,14 @@ export function FrecuenciaRecomendadaCitas({
       try {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
+        const manana = new Date(hoy);
+        manana.setDate(manana.getDate() + 1);
         const base = new Date(`${fechaBaseBusqueda}T00:00:00`);
         const limite = new Date(hoy);
         limite.setDate(limite.getDate() + CLIENT_CONFIG.APPOINTMENT_WINDOW_PATIENT_DAYS);
         limite.setHours(23, 59, 59, 999);
 
-        const inicio = base > hoy ? base : hoy;
+        const inicio = base > manana ? base : manana;
         const fechas: string[] = [];
         const cursor = new Date(inicio);
         while (cursor <= limite) {
