@@ -63,12 +63,14 @@ export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: 
   const hoyTexto = formatearFechaLocal(hoy);
   const fechaSugeridaNormalizada = fechaSugerida ? formatearFechaLocal(new Date(`${fechaSugerida}T00:00:00`)) : '';
   const psicologoPreseleccionado = Boolean(psicologoSugeridoAplicado);
+        const [psicologoSugeridoAplicado, setPsicologoSugeridoAplicado] = useState('');
 
   const obtenerFechasProximas = (dias = 7) => {
-    const base = new Date();
-    base.setHours(0, 0, 0, 0);
-
-    return Array.from({ length: dias }, (_, index) => {
+        const psicologoSeleccionadoValue = psicologo || psicologoSugeridoId || '';
+        const psicologoSeleccionado = useMemo(
+          () => psicologos.find((item) => String(item.psicologaid) === psicologoSeleccionadoValue),
+          [psicologos, psicologoSeleccionadoValue]
+        );
       const fecha = new Date(base);
       fecha.setDate(base.getDate() + index);
       return fecha;
@@ -87,10 +89,10 @@ export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: 
   };
 
   const esFechaSeleccionable = (candidate: Date) => {
-    if (candidate < hoy) {
+            const response = await apiFetch(API_ENDPOINTS.CITAS, {
       return false;
     }
-
+                psicologaId: psicologoSeleccionadoValue,
     if (candidate > finRango) {
       return false;
     }
