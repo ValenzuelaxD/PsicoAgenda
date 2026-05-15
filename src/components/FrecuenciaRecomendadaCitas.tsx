@@ -17,7 +17,7 @@ interface FrecuenciaRecomendadaCitasProps {
   modo: ModoModulo;
   pacienteId?: number;
   ultimaSesion?: string;
-  onSolicitarCitaConFecha?: (fechaISO: string) => void;
+  onSolicitarCitaConFecha?: (data: { fechaISO: string; psicologaId?: number }) => void;
 }
 
 const LABEL_UNIDAD_PLURAL: Record<UnidadFrecuencia, string> = {
@@ -372,7 +372,10 @@ export function FrecuenciaRecomendadaCitas({
                     type="button"
                     onClick={() => {
                       if (fechaParaSolicitar && onSolicitarCitaConFecha) {
-                        onSolicitarCitaConFecha(fechaParaSolicitar);
+                        onSolicitarCitaConFecha({
+                          fechaISO: fechaParaSolicitar,
+                          psicologaId: frecuencia?.psicologaId,
+                        });
                       }
                     }}
                     disabled={!fechaParaSolicitar || !onSolicitarCitaConFecha}

@@ -16,7 +16,7 @@ const DASHBOARD_CACHE_TTL_MS = 60 * 1000;
 interface InicioProps {
   userName: string;
   userType: 'psicologo' | 'paciente' | 'admin';
-  onNavigate: (view: ViewType, options?: { fechaSugerida?: string }) => void;
+  onNavigate: (view: ViewType, options?: { fechaSugerida?: string; psicologoSugeridoId?: string }) => void;
 }
 
 export function Inicio({ userName, userType, onNavigate }: InicioProps) {
@@ -363,7 +363,10 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
         <FrecuenciaRecomendadaCitas
           modo="paciente"
           ultimaSesion={pacienteData.ultimaSesion}
-          onSolicitarCitaConFecha={(fechaSugerida) => onNavigate('agendar', { fechaSugerida })}
+          onSolicitarCitaConFecha={({ fechaISO, psicologaId }) => onNavigate('agendar', {
+            fechaSugerida: fechaISO,
+            psicologoSugeridoId: psicologaId ? String(psicologaId) : undefined,
+          })}
         />
 
         <Card className="border-emerald-500/30 shadow-lg bg-slate-800/50 backdrop-blur-sm">

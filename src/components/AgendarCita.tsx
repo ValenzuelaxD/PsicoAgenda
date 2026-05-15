@@ -13,11 +13,12 @@ import { apiFetch, API_ENDPOINTS, CLIENT_CONFIG } from '../utils/api';
 import { formatHourLabel, loadHourFormatPreference } from '../utils/timeFormat';
 
 interface AgendarCitaProps {
-  onNavigate: (view: ViewType) => void;
+  onNavigate: (view: ViewType, options?: { fechaSugerida?: string; psicologoSugeridoId?: string }) => void;
   fechaSugerida?: string;
+  psicologoSugeridoId?: string;
 }
 
-export function AgendarCita({ onNavigate, fechaSugerida }: AgendarCitaProps) {
+export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: AgendarCitaProps) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
@@ -52,6 +53,7 @@ export function AgendarCita({ onNavigate, fechaSugerida }: AgendarCitaProps) {
   const [fechasConDisponibilidad, setFechasConDisponibilidad] = useState<string[]>([]);
   const [hourFormatPreference] = useState(() => loadHourFormatPreference());
   const [fechaSugeridaAplicada, setFechaSugeridaAplicada] = useState('');
+  const [psicologoSugeridoAplicado, setPsicologoSugeridoAplicado] = useState('');
 
   const fechasConDisponibilidadSet = useMemo(() => new Set(fechasConDisponibilidad), [fechasConDisponibilidad]);
   const psicologoSeleccionado = useMemo(
@@ -60,6 +62,7 @@ export function AgendarCita({ onNavigate, fechaSugerida }: AgendarCitaProps) {
   );
   const hoyTexto = formatearFechaLocal(hoy);
   const fechaSugeridaNormalizada = fechaSugerida ? formatearFechaLocal(new Date(`${fechaSugerida}T00:00:00`)) : '';
+  const psicologoPreseleccionado = Boolean(psicologoSugeridoAplicado);
 
   const obtenerFechasProximas = (dias = 7) => {
     const base = new Date();
@@ -311,6 +314,15 @@ export function AgendarCita({ onNavigate, fechaSugerida }: AgendarCitaProps) {
   }, [fechaSugeridaNormalizada]);
 
   useEffect(() => {
+    if (!psicologoSugeridoId) {
+      return;
+    }
+
+    setPsicologo(psicologoSugeridoId);
+    setPsicologoSugeridoAplicado(psicologoSugeridoId);
+  }, [psicologoSugeridoId]);
+
+  useEffect(() => {
     if (!date || !psicologo || loadingCalendario) {
       return;
     }
@@ -418,6 +430,11 @@ export function AgendarCita({ onNavigate, fechaSugerida }: AgendarCitaProps) {
             })}
           </p>
         )}
+        {psicologoPreseleccionado && (
+          <p className="mt-2 inline-flex rounded-full border border-violet-500/40 bg-violet-500/10 px-3 py-1 text-xs text-violet-200">
+            Psicólogo sugerido aplicado
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -436,6 +453,7 @@ export function AgendarCita({ onNavigate, fechaSugerida }: AgendarCitaProps) {
                   <Label htmlFor="psicologo" className="text-slate-200">Seleccionar Psicólogo</Label>
                   <Select value={psicologo} onValueChange={(value) => {
                     setPsicologo(value);
+                    setPsicologoSugeridoAplicado('');
                     setDate(undefined);
                     setHora('');
                     setMesCalendario(inicioRango);
