@@ -61,7 +61,26 @@ function construirTexto(cadaCantidad: number, unidad: UnidadFrecuencia): string 
 function sumarFrecuenciaAFecha(fechaBase: string | undefined, cadaCantidad: number, unidad: UnidadFrecuencia): string | null {
   if (!fechaBase) return null;
 
-  const fecha = new Date(fechaBase);
+  const fechaBaseLocal = (() => {
+    const coincidencia = String(fechaBase).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (coincidencia) {
+      return coincidencia[1];
+    }
+
+    const fechaParseada = new Date(fechaBase);
+    if (Number.isNaN(fechaParseada.getTime())) {
+      return null;
+    }
+
+    const year = fechaParseada.getFullYear();
+    const month = `${fechaParseada.getMonth() + 1}`.padStart(2, '0');
+    const day = `${fechaParseada.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  })();
+
+  if (!fechaBaseLocal) return null;
+
+  const fecha = new Date(`${fechaBaseLocal}T00:00:00`);
   if (Number.isNaN(fecha.getTime())) return null;
 
   const cantidad = Number(cadaCantidad);

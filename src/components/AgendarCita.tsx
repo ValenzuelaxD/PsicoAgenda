@@ -61,20 +61,37 @@ export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: 
     [psicologos, psicologo]
   );
   const hoyTexto = formatearFechaLocal(hoy);
-  const fechaSugeridaNormalizada = fechaSugerida ? formatearFechaLocal(new Date(`${fechaSugerida}T00:00:00`)) : '';
-  const psicologoPreseleccionado = Boolean(psicologoSugeridoAplicado);
-        const [psicologoSugeridoAplicado, setPsicologoSugeridoAplicado] = useState('');
+  const fechaSugeridaNormalizada = useMemo(() => {
+    if (!fechaSugerida) return '';
 
-  const obtenerFechasProximas = (dias = 7) => {
-        const psicologoSeleccionadoValue = psicologo || psicologoSugeridoId || '';
-        const psicologoSeleccionado = useMemo(
-          () => psicologos.find((item) => String(item.psicologaid) === psicologoSeleccionadoValue),
-          [psicologos, psicologoSeleccionadoValue]
-        );
-      const fecha = new Date(base);
-      fecha.setDate(base.getDate() + index);
-      return fecha;
-    });
+    const fechaLocal = new Date(`${fechaSugerida}T00:00:00`);
+    if (Number.isNaN(fechaLocal.getTime())) return '';
+
+    return formatearFechaLocal(fechaLocal);
+  }, [fechaSugerida]);
+  const psicologoSugeridoNormalizado = useMemo(
+    () => (psicologoSugeridoId ? String(psicologoSugeridoId) : ''),
+    [psicologoSugeridoId]
+  );
+  const psicologoPreseleccionado = Boolean(psicologoSugeridoAplicado);
+
+  const obtenerFechasProximas = (dias = 7) => Array.from({ length: dias }, (_, index) => {
+    const fecha = new Date(hoy);
+    fecha.setDate(hoy.getDate() + index);
+    return fecha;
+  });
+
+  const aplicarFechaSeleccionada = (fechaISO: string) => {
+    const fechaLocal = new Date(`${fechaISO}T00:00:00`);
+    if (Number.isNaN(fechaLocal.getTime())) {
+      return;
+    }
+
+    const normalizada = formatearFechaLocal(fechaLocal);
+    setFechaSugeridaAplicada(normalizada);
+    setDate(fechaLocal);
+    setMesCalendario(new Date(fechaLocal.getFullYear(), fechaLocal.getMonth(), 1));
+    setHora('');
   };
 
   const filtrarHorariosPasados = (fechaSeleccionada: string, horariosDisponibles: string[]) => {
@@ -129,10 +146,7 @@ export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: 
   };
 
   const seleccionarProximoDia = (fecha: string) => {
-    const siguienteFecha = new Date(`${fecha}T00:00:00`);
-    setDate(siguienteFecha);
-    setMesCalendario(new Date(siguienteFecha.getFullYear(), siguienteFecha.getMonth(), 1));
-    setHora('');
+    aplicarFechaSeleccionada(fecha);
   };
 
   const usarPrimerDiaDisponible = () => {
@@ -320,20 +334,40 @@ export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: 
       return;
     }
 
-    setPsicologo(psicologoSugeridoId);
-    setPsicologoSugeridoAplicado(psicologoSugeridoId);
-  }, [psicologoSugeridoId]);
-
-  useEffect(() => {
-    if (!date || !psicologo || loadingCalendario) {
+    if (psicologos.length === 0) {
       return;
     }
 
-    if (!esFechaSeleccionable(date) && formatearFechaLocal(date) !== fechaSugeridaAplicada) {
-      setDate(undefined);
-      setHora('');
+    const psicologoEncontrado = psicologos.some((item) => String(item.psicologaid) === psicologoSugeridoNormalizado);
+    if (!psicologoEncontrado) {
+      return;
     }
-  }, [date, psicologo, loadingCalendario, fechasConDisponibilidadSet, fechaSugeridaAplicada]);
+
+    setPsicologo(psicologoSugeridoNormalizado);
+    setPsicologoSugeridoAplicado(psicologoSugeridoNormalizado);
+  }, [psicologos, psicologoSugeridoNormalizado]);
+
+  useEffect(() => {
+    if (!fechaSugeridaNormalizada || !psicologo || loadingCalendario) {
+      return;
+    }
+
+    const fechaObjetivo = new Date(`${fechaSugeridaNormalizada}T00:00:00`);
+    if (Number.isNaN(fechaObjetivo.getTime())) {
+      return;
+    }
+
+    if (esFechaSeleccionable(fechaObjetivo)) {
+      if (formatearFechaLocal(fechaObjetivo) !== fechaSugeridaAplicada) {
+        aplicarFechaSeleccionada(fechaSugeridaNormalizada);
+      }
+      return;
+    }
+
+    if (proximosHorarios.length > 0) {
+      seleccionarProximoDia(proximosHorarios[0].fecha);
+    }
+  }, [fechaSugeridaNormalizada, psicologo, loadingCalendario, proximosHorarios, fechasConDisponibilidadSet, fechaSugeridaAplicada]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -613,8 +647,7 @@ export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: 
                                       if (!nextDate || !esFechaSeleccionable(nextDate)) {
                                         return;
                                       }
-                                      setDate(nextDate);
-                                      setHora('');
+                                      aplicarFechaSeleccionada(formatearFechaLocal(nextDate));
                                     }}
                                     month={mesCalendario}
                                     onMonthChange={manejarCambioMes}
