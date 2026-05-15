@@ -256,6 +256,7 @@ export function FrecuenciaRecomendadaCitas({
   }, [modo, frecuencia, fechaBaseBusqueda]);
 
   const fechaSiguienteVisual = fechaSiguienteDisponible || fechaBaseBusqueda || fechaSiguienteRecomendada;
+  const fechaParaSolicitar = fechaSiguienteDisponible || fechaBaseBusqueda || fechaSiguienteRecomendada;
   const fechaSiguienteRecomendadaLabel = fechaSiguienteVisual
     ? formatearFechaLarga(fechaSiguienteVisual)
     : 'Aún no se puede calcular';
@@ -370,11 +371,11 @@ export function FrecuenciaRecomendadaCitas({
                   <Button
                     type="button"
                     onClick={() => {
-                      if (fechaSiguienteRecomendada && onSolicitarCitaConFecha) {
-                        onSolicitarCitaConFecha(fechaSiguienteRecomendada);
+                      if (fechaParaSolicitar && onSolicitarCitaConFecha) {
+                        onSolicitarCitaConFecha(fechaParaSolicitar);
                       }
                     }}
-                    disabled={!fechaSiguienteRecomendada || !onSolicitarCitaConFecha}
+                    disabled={!fechaParaSolicitar || !onSolicitarCitaConFecha}
                     className="bg-teal-600 hover:bg-teal-700 shrink-0"
                   >
                     <ArrowRight className="w-4 h-4 mr-2" />
