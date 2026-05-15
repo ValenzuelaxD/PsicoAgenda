@@ -6,7 +6,7 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { CalendarClock, Save, RefreshCw, Plus, Minus, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_ENDPOINTS, apiFetch } from '../utils/api';
+import { API_ENDPOINTS, CLIENT_CONFIG, apiFetch } from '../utils/api';
 import { FrecuenciaRecomendadaCita } from '../utils/types';
 
 type ModoModulo = 'psicologo' | 'paciente';
@@ -82,6 +82,22 @@ function sumarFrecuenciaAFecha(fechaBase: string | undefined, cadaCantidad: numb
   return `${year}-${month}-${day}`;
 }
 
+function formatearFechaISO(fecha: Date): string {
+  const year = fecha.getFullYear();
+  const month = `${fecha.getMonth() + 1}`.padStart(2, '0');
+  const day = `${fecha.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function esFechaPasada(fechaISO: string): boolean {
+  const fecha = new Date(`${fechaISO}T00:00:00`);
+  if (Number.isNaN(fecha.getTime())) return false;
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return fecha < hoy;
+}
+
 export function FrecuenciaRecomendadaCitas({
   modo,
   pacienteId,
@@ -95,6 +111,8 @@ export function FrecuenciaRecomendadaCitas({
   const [cadaCantidad, setCadaCantidad] = useState(1);
   const [unidad, setUnidad] = useState<UnidadFrecuencia>('semanas');
   const [nota, setNota] = useState('');
+  const [fechaSiguienteDisponible, setFechaSiguienteDisponible] = useState<string | null>(null);
+  const [buscandoFechaDisponible, setBuscandoFechaDisponible] = useState(false);
 
   const endpoint = useMemo(() => {
     if (modo === 'paciente') return API_ENDPOINTS.FRECUENCIA_CITAS_MI;
@@ -149,9 +167,102 @@ export function FrecuenciaRecomendadaCitas({
     return sumarFrecuenciaAFecha(ultimaSesion, frecuencia.cadaCantidad, frecuencia.unidad);
   }, [frecuencia, modo, ultimaSesion]);
 
-  const fechaSiguienteRecomendadaLabel = fechaSiguienteRecomendada
-    ? formatearFechaLarga(fechaSiguienteRecomendada)
+  const fechaBaseBusqueda = useMemo(() => {
+    if (!fechaSiguienteRecomendada) {
+      return null;
+    }
+
+    const fechaBase = new Date(`${fechaSiguienteRecomendada}T00:00:00`);
+    if (Number.isNaN(fechaBase.getTime())) {
+      return null;
+    }
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    if (fechaBase < hoy) {
+      return formatearFechaISO(hoy);
+    }
+
+    return fechaSiguienteRecomendada;
+  }, [fechaSiguienteRecomendada]);
+
+  useEffect(() => {
+    if (modo !== 'paciente' || !frecuencia || !frecuencia.psicologaId || !fechaBaseBusqueda) {
+      setFechaSiguienteDisponible(null);
+      return;
+    }
+
+    let cancelado = false;
+
+    const buscarSiguienteDisponible = async () => {
+      setBuscandoFechaDisponible(true);
+      setFechaSiguienteDisponible(null);
+
+      try {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const base = new Date(`${fechaBaseBusqueda}T00:00:00`);
+        const limite = new Date(hoy);
+        limite.setDate(limite.getDate() + CLIENT_CONFIG.APPOINTMENT_WINDOW_PATIENT_DAYS);
+        limite.setHours(23, 59, 59, 999);
+
+        const inicio = base > hoy ? base : hoy;
+        const fechas: string[] = [];
+        const cursor = new Date(inicio);
+        while (cursor <= limite) {
+          fechas.push(formatearFechaISO(cursor));
+          cursor.setDate(cursor.getDate() + 1);
+        }
+
+        for (const fecha of fechas) {
+          const response = await apiFetch(`${API_ENDPOINTS.PSICOLOGAS}/${frecuencia.psicologaId}/disponibilidad?fecha=${fecha}`);
+          if (!response.ok) {
+            continue;
+          }
+
+          const horarios = await response.json();
+          if (Array.isArray(horarios) && horarios.length > 0) {
+            if (!cancelado) {
+              setFechaSiguienteDisponible(fecha);
+            }
+            return;
+          }
+        }
+
+        if (!cancelado) {
+          setFechaSiguienteDisponible(null);
+        }
+      } catch {
+        if (!cancelado) {
+          setFechaSiguienteDisponible(null);
+        }
+      } finally {
+        if (!cancelado) {
+          setBuscandoFechaDisponible(false);
+        }
+      }
+    };
+
+    buscarSiguienteDisponible();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [modo, frecuencia, fechaBaseBusqueda]);
+
+  const fechaSiguienteVisual = fechaSiguienteDisponible || fechaBaseBusqueda || fechaSiguienteRecomendada;
+  const fechaSiguienteRecomendadaLabel = fechaSiguienteVisual
+    ? formatearFechaLarga(fechaSiguienteVisual)
     : 'Aún no se puede calcular';
+
+  const fechaSiguienteSubtitulo = fechaBaseBusqueda && fechaSiguienteDisponible && fechaBaseBusqueda !== fechaSiguienteDisponible
+    ? `La fecha ideal ya pasó o no tiene cupo, así que se ajustó a la primera fecha disponible.`
+    : fechaBaseBusqueda && esFechaPasada(fechaBaseBusqueda)
+      ? 'La fecha ideal ya pasó; se ajustó a la primera fecha disponible.'
+      : fechaBaseBusqueda
+        ? `Basada en tu última cita del ${formatearFechaLarga(ultimaSesion)}`
+        : 'Necesitamos una última cita registrada para calcularla.';
 
   const guardarFrecuencia = async () => {
     if (modo !== 'psicologo' || !endpoint) return;
@@ -245,11 +356,7 @@ export function FrecuenciaRecomendadaCitas({
                 <div className="space-y-1">
                   <p className="text-xs uppercase tracking-wide text-teal-300">Siguiente fecha recomendada</p>
                   <p className="text-slate-100 text-lg font-semibold">{fechaSiguienteRecomendadaLabel}</p>
-                  {ultimaSesion ? (
-                    <p className="text-xs text-slate-400">Basada en tu última cita del {formatearFechaLarga(ultimaSesion)}</p>
-                  ) : (
-                    <p className="text-xs text-slate-400">Necesitamos una última cita registrada para calcularla.</p>
-                  )}
+                  <p className="text-xs text-slate-400">{buscandoFechaDisponible ? 'Buscando horarios disponibles más cercanos...' : fechaSiguienteSubtitulo}</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
