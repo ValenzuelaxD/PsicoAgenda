@@ -40,6 +40,20 @@ const unidadLabel = (unidad) => {
   return 'meses';
 };
 
+const unidadLabelContextual = (unidad, cantidad) => {
+  const cantidadNormalizada = Number(cantidad);
+
+  if (unidad === 'dias') {
+    return cantidadNormalizada === 1 ? 'día' : 'días';
+  }
+
+  if (unidad === 'semanas') {
+    return cantidadNormalizada === 1 ? 'semana' : 'semanas';
+  }
+
+  return cantidadNormalizada === 1 ? 'mes' : 'meses';
+};
+
 const mapFrecuencia = (row) => {
   if (!row) return null;
   return {
@@ -49,7 +63,7 @@ const mapFrecuencia = (row) => {
     cadaCantidad: row.cadacantidad,
     unidad: row.unidad,
     nota: row.nota || '',
-    recomendacionTexto: `Cada ${row.cadacantidad} ${unidadLabel(row.unidad)}`,
+    recomendacionTexto: `Cada ${row.cadacantidad} ${unidadLabelContextual(row.unidad, row.cadacantidad)}`,
     fechaCreacion: row.fechacreacion,
     fechaModificacion: row.fechamodificacion,
     psicologaNombre: row.psicologa_nombre || '',

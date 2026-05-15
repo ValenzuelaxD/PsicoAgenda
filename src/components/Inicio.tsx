@@ -16,7 +16,7 @@ const DASHBOARD_CACHE_TTL_MS = 60 * 1000;
 interface InicioProps {
   userName: string;
   userType: 'psicologo' | 'paciente' | 'admin';
-  onNavigate: (view: ViewType) => void;
+  onNavigate: (view: ViewType, options?: { fechaSugerida?: string }) => void;
 }
 
 export function Inicio({ userName, userType, onNavigate }: InicioProps) {
@@ -360,7 +360,11 @@ export function Inicio({ userName, userType, onNavigate }: InicioProps) {
           </CardContent>
         </Card>
 
-        <FrecuenciaRecomendadaCitas modo="paciente" />
+        <FrecuenciaRecomendadaCitas
+          modo="paciente"
+          ultimaSesion={pacienteData.ultimaSesion}
+          onSolicitarCitaConFecha={(fechaSugerida) => onNavigate('agendar', { fechaSugerida })}
+        />
 
         <Card className="border-emerald-500/30 shadow-lg bg-slate-800/50 backdrop-blur-sm">
           <CardHeader className="bg-gradient-to-r from-emerald-900/40 to-teal-900/40">

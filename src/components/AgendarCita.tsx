@@ -14,9 +14,10 @@ import { formatHourLabel, loadHourFormatPreference } from '../utils/timeFormat';
 
 interface AgendarCitaProps {
   onNavigate: (view: ViewType) => void;
+  fechaSugerida?: string;
 }
 
-export function AgendarCita({ onNavigate }: AgendarCitaProps) {
+export function AgendarCita({ onNavigate, fechaSugerida }: AgendarCitaProps) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
@@ -50,6 +51,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   const [proximosHorarios, setProximosHorarios] = useState<Array<{ fecha: string; etiqueta: string; horarios: string[] }>>([]);
   const [fechasConDisponibilidad, setFechasConDisponibilidad] = useState<string[]>([]);
   const [hourFormatPreference] = useState(() => loadHourFormatPreference());
+  const [fechaSugeridaAplicada, setFechaSugeridaAplicada] = useState('');
 
   const fechasConDisponibilidadSet = useMemo(() => new Set(fechasConDisponibilidad), [fechasConDisponibilidad]);
   const psicologoSeleccionado = useMemo(
@@ -57,6 +59,7 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
     [psicologos, psicologo]
   );
   const hoyTexto = formatearFechaLocal(hoy);
+  const fechaSugeridaNormalizada = fechaSugerida ? formatearFechaLocal(new Date(`${fechaSugerida}T00:00:00`)) : '';
 
   const obtenerFechasProximas = (dias = 7) => {
     const base = new Date();
@@ -97,7 +100,12 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
       return false;
     }
 
-    return fechasConDisponibilidadSet.has(formatearFechaLocal(candidate));
+    const candidataTexto = formatearFechaLocal(candidate);
+    if (fechaSugeridaNormalizada && candidataTexto === fechaSugeridaNormalizada) {
+      return true;
+    }
+
+    return fechasConDisponibilidadSet.has(candidataTexto);
   };
 
   const manejarCambioMes = (nextMonth: Date) => {
@@ -291,15 +299,27 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
   }, [hoyTexto, psicologo, mesCalendario]);
 
   useEffect(() => {
+    if (!fechaSugeridaNormalizada) {
+      return;
+    }
+
+    setFechaSugeridaAplicada(fechaSugeridaNormalizada);
+    const sugerida = new Date(`${fechaSugeridaNormalizada}T00:00:00`);
+    setDate(sugerida);
+    setMesCalendario(new Date(sugerida.getFullYear(), sugerida.getMonth(), 1));
+    setHora('');
+  }, [fechaSugeridaNormalizada]);
+
+  useEffect(() => {
     if (!date || !psicologo || loadingCalendario) {
       return;
     }
 
-    if (!esFechaSeleccionable(date)) {
+    if (!esFechaSeleccionable(date) && formatearFechaLocal(date) !== fechaSugeridaAplicada) {
       setDate(undefined);
       setHora('');
     }
-  }, [date, psicologo, loadingCalendario, fechasConDisponibilidadSet]);
+  }, [date, psicologo, loadingCalendario, fechasConDisponibilidadSet, fechaSugeridaAplicada]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -388,6 +408,16 @@ export function AgendarCita({ onNavigate }: AgendarCitaProps) {
         <p className="text-slate-300 text-sm sm:text-base">
           Selecciona el profesional, fecha y hora para tu próxima sesión
         </p>
+        {fechaSugeridaAplicada && (
+          <p className="mt-2 inline-flex rounded-full border border-teal-500/40 bg-teal-500/10 px-3 py-1 text-xs text-teal-200">
+            Fecha sugerida aplicada: {new Date(`${fechaSugeridaAplicada}T00:00:00`).toLocaleDateString('es-ES', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>

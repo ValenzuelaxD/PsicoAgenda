@@ -48,6 +48,7 @@ export function Dashboard({
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<number | undefined>(undefined);
+  const [fechaSugeridaAgendar, setFechaSugeridaAgendar] = useState('');
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -56,9 +57,15 @@ export function Dashboard({
     }
   }, [isMobile]);
 
-  const handleNavigate = (view: ViewType, pacienteId?: number) => {
+  const handleNavigate = (view: ViewType, options?: { pacienteId?: number; fechaSugerida?: string }) => {
     setCurrentView(view);
-    if (pacienteId !== undefined) setSelectedPacienteId(pacienteId);
+    if (options?.pacienteId !== undefined) setSelectedPacienteId(options.pacienteId);
+
+    if (view === 'agendar') {
+      setFechaSugeridaAgendar(options?.fechaSugerida || '');
+    } else {
+      setFechaSugeridaAgendar('');
+    }
   };
 
   const renderView = () => {
@@ -66,7 +73,7 @@ export function Dashboard({
       case 'inicio':
         return <Inicio userName={userName} userType={userType} onNavigate={handleNavigate} />;
       case 'agendar':
-        return <AgendarCita onNavigate={handleNavigate} />;
+        return <AgendarCita onNavigate={handleNavigate} fechaSugerida={fechaSugeridaAgendar || undefined} />;
       case 'citas':
         return <MisCitas userType={userType} onNavigate={handleNavigate} />;
       case 'historial':

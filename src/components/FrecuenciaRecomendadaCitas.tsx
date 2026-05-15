@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { CalendarClock, Save, Edit3, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { CalendarClock, Save, RefreshCw, Plus, Minus, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, apiFetch } from '../utils/api';
 import { FrecuenciaRecomendadaCita } from '../utils/types';
@@ -16,12 +16,20 @@ type UnidadFrecuencia = 'dias' | 'semanas' | 'meses';
 interface FrecuenciaRecomendadaCitasProps {
   modo: ModoModulo;
   pacienteId?: number;
+  ultimaSesion?: string;
+  onSolicitarCitaConFecha?: (fechaISO: string) => void;
 }
 
-const LABEL_UNIDAD: Record<UnidadFrecuencia, string> = {
+const LABEL_UNIDAD_PLURAL: Record<UnidadFrecuencia, string> = {
   dias: 'días',
   semanas: 'semanas',
   meses: 'meses',
+};
+
+const LABEL_UNIDAD_SINGULAR: Record<UnidadFrecuencia, string> = {
+  dias: 'día',
+  semanas: 'semana',
+  meses: 'mes',
 };
 
 const OPCIONES_UNIDAD: UnidadFrecuencia[] = ['dias', 'semanas', 'meses'];
@@ -33,11 +41,53 @@ function formatearFecha(fecha?: string): string {
   return date.toLocaleDateString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
-function construirTexto(cadaCantidad: number, unidad: UnidadFrecuencia): string {
-  return `Cada ${cadaCantidad} ${LABEL_UNIDAD[unidad]}`;
+function formatearFechaLarga(fecha?: string): string {
+  if (!fecha) return 'Sin fecha';
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) return 'Sin fecha';
+  return date.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
-export function FrecuenciaRecomendadaCitas({ modo, pacienteId }: FrecuenciaRecomendadaCitasProps) {
+function construirTexto(cadaCantidad: number, unidad: UnidadFrecuencia): string {
+  const labelUnidad = cadaCantidad === 1 ? LABEL_UNIDAD_SINGULAR[unidad] : LABEL_UNIDAD_PLURAL[unidad];
+  return `Cada ${cadaCantidad} ${labelUnidad}`;
+}
+
+function sumarFrecuenciaAFecha(fechaBase: string | undefined, cadaCantidad: number, unidad: UnidadFrecuencia): string | null {
+  if (!fechaBase) return null;
+
+  const fecha = new Date(fechaBase);
+  if (Number.isNaN(fecha.getTime())) return null;
+
+  const cantidad = Number(cadaCantidad);
+  if (!Number.isInteger(cantidad) || cantidad <= 0) return null;
+
+  const siguiente = new Date(fecha);
+  if (unidad === 'dias') {
+    siguiente.setDate(siguiente.getDate() + cantidad);
+  } else if (unidad === 'semanas') {
+    siguiente.setDate(siguiente.getDate() + cantidad * 7);
+  } else {
+    siguiente.setMonth(siguiente.getMonth() + cantidad);
+  }
+
+  const year = siguiente.getFullYear();
+  const month = `${siguiente.getMonth() + 1}`.padStart(2, '0');
+  const day = `${siguiente.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function FrecuenciaRecomendadaCitas({
+  modo,
+  pacienteId,
+  ultimaSesion,
+  onSolicitarCitaConFecha,
+}: FrecuenciaRecomendadaCitasProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -87,6 +137,22 @@ export function FrecuenciaRecomendadaCitas({ modo, pacienteId }: FrecuenciaRecom
     cargarFrecuencia();
   }, [endpoint]);
 
+  const frecuenciaActual = frecuencia
+    ? frecuencia.recomendacionTexto || construirTexto(frecuencia.cadaCantidad, frecuencia.unidad)
+    : 'Sin recomendación registrada';
+
+  const fechaSiguienteRecomendada = useMemo(() => {
+    if (modo !== 'paciente' || !frecuencia) {
+      return null;
+    }
+
+    return sumarFrecuenciaAFecha(ultimaSesion, frecuencia.cadaCantidad, frecuencia.unidad);
+  }, [frecuencia, modo, ultimaSesion]);
+
+  const fechaSiguienteRecomendadaLabel = fechaSiguienteRecomendada
+    ? formatearFechaLarga(fechaSiguienteRecomendada)
+    : 'Aún no se puede calcular';
+
   const guardarFrecuencia = async () => {
     if (modo !== 'psicologo' || !endpoint) return;
 
@@ -124,13 +190,12 @@ export function FrecuenciaRecomendadaCitas({ modo, pacienteId }: FrecuenciaRecom
     }
   };
 
-  const textoFrecuencia = frecuencia
-    ? frecuencia.recomendacionTexto || construirTexto(frecuencia.cadaCantidad, frecuencia.unidad)
-    : 'Sin recomendación registrada';
-
   const nombreProfesional = frecuencia?.psicologaNombre
     ? `${frecuencia.psicologaNombre} ${frecuencia.psicologaApellido || ''}`.trim()
     : '';
+
+  const incrementarCantidad = () => setCadaCantidad((prev) => Math.min(365, prev + 1));
+  const disminuirCantidad = () => setCadaCantidad((prev) => Math.max(1, prev - 1));
 
   return (
     <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
@@ -151,19 +216,6 @@ export function FrecuenciaRecomendadaCitas({ modo, pacienteId }: FrecuenciaRecom
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
-            {modo === 'psicologo' && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setEditando((prev) => !prev)}
-                disabled={loading || saving}
-                className="border-teal-500/50 text-teal-300 hover:bg-teal-500/20"
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                {editando ? 'Cancelar' : 'Editar frecuencia'}
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
@@ -174,7 +226,7 @@ export function FrecuenciaRecomendadaCitas({ modo, pacienteId }: FrecuenciaRecom
           <>
             <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3">
               <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recomendación actual</p>
-              <p className="text-slate-100 text-lg font-semibold">{textoFrecuencia}</p>
+              <p className="text-slate-100 text-lg font-semibold">{frecuenciaActual}</p>
               {frecuencia?.nota ? (
                 <p className="text-sm text-slate-300 mt-2 whitespace-pre-wrap">{frecuencia.nota}</p>
               ) : null}
@@ -188,34 +240,90 @@ export function FrecuenciaRecomendadaCitas({ modo, pacienteId }: FrecuenciaRecom
               </div>
             </div>
 
-            {modo === 'psicologo' && editando && (
+            {modo === 'paciente' && (
               <div className="rounded-lg border border-teal-500/30 bg-slate-900/40 p-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-[10rem_minmax(0,1fr)] gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-slate-200">Cada cuánto</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={cadaCantidad}
-                      onChange={(e) => setCadaCantidad(Number(e.target.value || 1))}
-                      className="bg-slate-700 border-slate-600 text-slate-100"
-                    />
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-teal-300">Siguiente fecha recomendada</p>
+                  <p className="text-slate-100 text-lg font-semibold">{fechaSiguienteRecomendadaLabel}</p>
+                  {ultimaSesion ? (
+                    <p className="text-xs text-slate-400">Basada en tu última cita del {formatearFechaLarga(ultimaSesion)}</p>
+                  ) : (
+                    <p className="text-xs text-slate-400">Necesitamos una última cita registrada para calcularla.</p>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+                  <p className="text-sm text-slate-300">
+                    Puedes usar esta fecha como punto de partida para agendar tu siguiente cita.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (fechaSiguienteRecomendada && onSolicitarCitaConFecha) {
+                        onSolicitarCitaConFecha(fechaSiguienteRecomendada);
+                      }
+                    }}
+                    disabled={!fechaSiguienteRecomendada || !onSolicitarCitaConFecha}
+                    className="bg-teal-600 hover:bg-teal-700 shrink-0"
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Solicitar con esta fecha
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {modo === 'psicologo' && (
+              <div className="rounded-lg border border-teal-500/30 bg-slate-900/40 p-4 space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-slate-200">Frecuencia</Label>
+                    <p className="text-xs text-slate-400">
+                      {construirTexto(cadaCantidad, unidad)}
+                    </p>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-slate-200">Unidad</Label>
-                    <select
-                      value={unidad}
-                      onChange={(e) => setUnidad(e.target.value as UnidadFrecuencia)}
-                      className="w-full h-10 rounded-md border border-slate-600 bg-slate-700 px-3 text-slate-100"
+
+                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={disminuirCantidad}
+                      disabled={saving || cadaCantidad <= 1}
+                      className="border-slate-600 text-slate-200 hover:bg-slate-700"
                     >
-                      {OPCIONES_UNIDAD.map((opcion) => (
-                        <option key={opcion} value={opcion}>
-                          {LABEL_UNIDAD[opcion]}
-                        </option>
-                      ))}
-                    </select>
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <div className="rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-center text-slate-100 font-semibold">
+                      {cadaCantidad}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={incrementarCantidad}
+                      disabled={saving || cadaCantidad >= 365}
+                      className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-200">Unidad</Label>
+                  <Select value={unidad} onValueChange={(value) => setUnidad(value as UnidadFrecuencia)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
+                      <SelectValue placeholder="Selecciona una unidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {OPCIONES_UNIDAD.map((opcion) => (
+                        <SelectItem key={opcion} value={opcion}>
+                          {cadaCantidad === 1 ? LABEL_UNIDAD_SINGULAR[opcion] : LABEL_UNIDAD_PLURAL[opcion]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1">
