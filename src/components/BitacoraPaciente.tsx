@@ -1206,236 +1206,257 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       </Dialog>
 
       {/* Diálogo de edición */}
-      {editarEntrada !== null && (
-        <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
-          <DialogContent className="top-2 left-2 right-2 bottom-2 sm:top-6 sm:left-6 sm:right-6 sm:bottom-6 bg-slate-800 border-slate-700 overflow-hidden flex flex-col translate-x-0 translate-y-0 rounded-xl p-0 max-w-none max-h-none">
-            <div className="flex h-full min-h-0 flex-col p-4 sm:p-6">
-              <DialogHeader className="flex-shrink-0">
-                <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
-                <DialogDescription className="text-slate-400">
-                  Actualiza las observaciones de la sesión
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1 sm:pr-2 pb-2">
-                <div className="space-y-2">
-                  <Label htmlFor="diagnostico-editar" className="text-slate-200">
-                    Diagnóstico
-                  </Label>
-                  <Input
-                    id="diagnostico-editar"
-                    value={diagnosticoEditar}
-                    onChange={(e) => setDiagnosticoEditar(e.target.value)}
-                    className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
-                  />
+      <AnimatePresence>
+        {editarEntrada !== null && (
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editar-bitacora-title"
+            aria-describedby="editar-bitacora-description"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 p-3 sm:p-6"
+            onClick={() => setEditarEntrada(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.98, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.98, opacity: 0, y: 12 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 260 }}
+              onClick={(e) => e.stopPropagation()}
+              className="mx-auto flex h-full w-full max-w-[56rem] overflow-hidden rounded-xl border border-slate-700 bg-slate-800 shadow-2xl"
+            >
+              <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
+                <div className="flex-shrink-0 space-y-2">
+                  <h2 id="editar-bitacora-title" className="text-lg font-semibold text-slate-100">
+                    Editar Bitácora del Paciente
+                  </h2>
+                  <p id="editar-bitacora-description" className="text-sm text-slate-400">
+                    Actualiza las observaciones de la sesión
+                  </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tratamiento-editar" className="text-slate-200">
-                    Tratamiento
-                  </Label>
-                  <Input
-                    id="tratamiento-editar"
-                    value={tratamientoEditar}
-                    onChange={(e) => setTratamientoEditar(e.target.value)}
-                    className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notas-editar" className="text-slate-200">
-                    Notas de la Sesión
-                  </Label>
-                  <Textarea
-                    id="notas-editar"
-                    value={notaEditar}
-                    onChange={(e) => setNotaEditar(e.target.value)}
-                    placeholder="Observaciones, técnicas aplicadas, temas tratados, tareas asignadas..."
-                    rows={6}
-                    className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="felicitacion-editar" className="text-slate-200">
-                    Comentario de felicitacion (opcional)
-                  </Label>
-                  <Textarea
-                    id="felicitacion-editar"
-                    value={felicitacionEditar}
-                    onChange={(e) => setFelicitacionEditar(e.target.value)}
-                    placeholder="Ej. Excelente avance esta semana, sigue asi."
-                    rows={3}
-                    className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
-                  />
-                </div>
-
-                <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
-                  <p className="text-sm text-slate-200">Caso especial (opcional)</p>
-                  <div className="flex flex-wrap gap-2">
-                    {TIPOS_CASO_OPCIONES.map((tipo) => {
-                      const activo = tiposCasoEditar.includes(tipo.value);
-                      return (
-                        <Button
-                          key={tipo.value}
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleTipoCasoEditar(tipo.value)}
-                          className={claseBotonOpcion(activo, 'bg-teal-600 text-white')}
-                        >
-                          {tipo.label}
-                        </Button>
-                      );
-                    })}
+                <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1 sm:pr-2 pb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="diagnostico-editar" className="text-slate-200">
+                      Diagnóstico
+                    </Label>
+                    <Input
+                      id="diagnostico-editar"
+                      value={diagnosticoEditar}
+                      onChange={(e) => setDiagnosticoEditar(e.target.value)}
+                      className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                    />
                   </div>
 
-                  {tiposCasoEditar.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label className="text-slate-300">Severidad</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {SEVERIDAD_OPCIONES.map((nivel) => (
-                            <Button
-                              key={nivel}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSeveridadCasoEditar(nivel)}
-                              className={severidadCasoEditar === nivel ? claseSeveridadActiva(nivel) : claseInactivaSegmento}
-                            >
-                              {nivel}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tratamiento-editar" className="text-slate-200">
+                      Tratamiento
+                    </Label>
+                    <Input
+                      id="tratamiento-editar"
+                      value={tratamientoEditar}
+                      onChange={(e) => setTratamientoEditar(e.target.value)}
+                      className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                    />
+                  </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-slate-300">Estado del caso</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {ESTADO_OPCIONES.map((estado) => (
-                            <Button
-                              key={estado}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setEstadoCasoEditar(estado)}
-                              className={estadoCasoEditar === estado ? claseEstadoActiva(estado) : claseInactivaSegmento}
-                            >
-                              {estado}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="notas-editar" className="text-slate-200">
+                      Notas de la Sesión
+                    </Label>
+                    <Textarea
+                      id="notas-editar"
+                      value={notaEditar}
+                      onChange={(e) => setNotaEditar(e.target.value)}
+                      placeholder="Observaciones, técnicas aplicadas, temas tratados, tareas asignadas..."
+                      rows={6}
+                      className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                    />
+                  </div>
 
-                  {tiposCasoEditar.includes('urgencia') && (
-                    <div className="space-y-2 rounded-lg border border-rose-700/40 bg-rose-900/10 p-3">
-                      <Label className="text-rose-200">Acción inmediata (urgencia)</Label>
-                      <Textarea
-                        value={detalleCasoEditar.accionInmediata}
-                        onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, accionInmediata: e.target.value }))}
-                        rows={2}
-                        className="bg-slate-700 border-slate-600 text-slate-100"
-                      />
-                      <Label className="text-rose-200">Plan de seguimiento 24h</Label>
-                      <Textarea
-                        value={detalleCasoEditar.planSeguimiento24h}
-                        onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, planSeguimiento24h: e.target.value }))}
-                        rows={2}
-                        className="bg-slate-700 border-slate-600 text-slate-100"
-                      />
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="felicitacion-editar" className="text-slate-200">
+                      Comentario de felicitacion (opcional)
+                    </Label>
+                    <Textarea
+                      id="felicitacion-editar"
+                      value={felicitacionEditar}
+                      onChange={(e) => setFelicitacionEditar(e.target.value)}
+                      placeholder="Ej. Excelente avance esta semana, sigue asi."
+                      rows={3}
+                      className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                    />
+                  </div>
 
-                  {tiposCasoEditar.includes('familiar') && (
-                    <div className="space-y-2 rounded-lg border border-violet-700/40 bg-violet-900/10 p-3">
-                      <Label className="text-violet-200">Relación del familiar o red de apoyo</Label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {RELACION_FAMILIAR_OPCIONES.map((valor) => (
+                  <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+                    <p className="text-sm text-slate-200">Caso especial (opcional)</p>
+                    <div className="flex flex-wrap gap-2">
+                      {TIPOS_CASO_OPCIONES.map((tipo) => {
+                        const activo = tiposCasoEditar.includes(tipo.value);
+                        return (
                           <Button
-                            key={`relacion-edit-${valor}`}
+                            key={tipo.value}
                             type="button"
                             size="sm"
                             variant="outline"
-                            onClick={() => setDetalleCasoEditar((prev) => ({ ...prev, relacionFamiliar: valor }))}
-                            className={detalleCasoEditar.relacionFamiliar === valor
-                              ? 'bg-violet-600 text-white border-transparent'
-                              : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                            onClick={() => toggleTipoCasoEditar(tipo.value)}
+                            className={claseBotonOpcion(activo, 'bg-teal-600 text-white')}
                           >
-                            {valor}
+                            {tipo.label}
                           </Button>
-                        ))}
-                      </div>
+                        );
+                      })}
+                    </div>
 
-                      {detalleCasoEditar.relacionFamiliar === 'Otro' && (
+                    {tiposCasoEditar.length > 0 && (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label className="text-slate-300">Severidad</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {SEVERIDAD_OPCIONES.map((nivel) => (
+                              <Button
+                                key={nivel}
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSeveridadCasoEditar(nivel)}
+                                className={severidadCasoEditar === nivel ? claseSeveridadActiva(nivel) : claseInactivaSegmento}
+                              >
+                                {nivel}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-slate-300">Estado del caso</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {ESTADO_OPCIONES.map((estado) => (
+                              <Button
+                                key={estado}
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEstadoCasoEditar(estado)}
+                                className={estadoCasoEditar === estado ? claseEstadoActiva(estado) : claseInactivaSegmento}
+                              >
+                                {estado}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {tiposCasoEditar.includes('urgencia') && (
+                      <div className="space-y-2 rounded-lg border border-rose-700/40 bg-rose-900/10 p-3">
+                        <Label className="text-rose-200">Acción inmediata (urgencia)</Label>
+                        <Textarea
+                          value={detalleCasoEditar.accionInmediata}
+                          onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, accionInmediata: e.target.value }))}
+                          rows={2}
+                          className="bg-slate-700 border-slate-600 text-slate-100"
+                        />
+                        <Label className="text-rose-200">Plan de seguimiento 24h</Label>
+                        <Textarea
+                          value={detalleCasoEditar.planSeguimiento24h}
+                          onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, planSeguimiento24h: e.target.value }))}
+                          rows={2}
+                          className="bg-slate-700 border-slate-600 text-slate-100"
+                        />
+                      </div>
+                    )}
+
+                    {tiposCasoEditar.includes('familiar') && (
+                      <div className="space-y-2 rounded-lg border border-violet-700/40 bg-violet-900/10 p-3">
+                        <Label className="text-violet-200">Relación del familiar o red de apoyo</Label>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          {RELACION_FAMILIAR_OPCIONES.map((valor) => (
+                            <Button
+                              key={`relacion-edit-${valor}`}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDetalleCasoEditar((prev) => ({ ...prev, relacionFamiliar: valor }))}
+                              className={detalleCasoEditar.relacionFamiliar === valor
+                                ? 'bg-violet-600 text-white border-transparent'
+                                : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                            >
+                              {valor}
+                            </Button>
+                          ))}
+                        </div>
+
+                        {detalleCasoEditar.relacionFamiliar === 'Otro' && (
+                          <Input
+                            value={detalleCasoEditar.relacionFamiliarOtro}
+                            onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, relacionFamiliarOtro: e.target.value }))}
+                            placeholder="Especifica la relación"
+                            className="h-11 bg-slate-700 border-slate-600 text-slate-100"
+                          />
+                        )}
+
+                        <Label className="text-violet-200">Consentimiento informado</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(['Si', 'No'] as const).map((valor) => (
+                            <Button
+                              key={`consent-edit-${valor}`}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDetalleCasoEditar((prev) => ({ ...prev, consentimientoFamiliar: valor }))}
+                              className={detalleCasoEditar.consentimientoFamiliar === valor
+                                ? 'bg-violet-600 text-white border-transparent'
+                                : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                            >
+                              {valor}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {tiposCasoEditar.includes('fuera_horario') && (
+                      <div className="space-y-2 rounded-lg border border-amber-700/40 bg-amber-900/10 p-3">
+                        <Label className="text-amber-200">Hora del contacto fuera de horario</Label>
                         <Input
-                          value={detalleCasoEditar.relacionFamiliarOtro}
-                          onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, relacionFamiliarOtro: e.target.value }))}
-                          placeholder="Especifica la relación"
+                          value={detalleCasoEditar.horaFueraHorario}
+                          onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, horaFueraHorario: e.target.value }))}
+                          placeholder="Ej. 22:30"
                           className="h-11 bg-slate-700 border-slate-600 text-slate-100"
                         />
-                      )}
-
-                      <Label className="text-violet-200">Consentimiento informado</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(['Si', 'No'] as const).map((valor) => (
-                          <Button
-                            key={`consent-edit-${valor}`}
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setDetalleCasoEditar((prev) => ({ ...prev, consentimientoFamiliar: valor }))}
-                            className={detalleCasoEditar.consentimientoFamiliar === valor
-                              ? 'bg-violet-600 text-white border-transparent'
-                              : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
-                          >
-                            {valor}
-                          </Button>
-                        ))}
+                        <Label className="text-amber-200">Motivo fuera de horario</Label>
+                        <Textarea
+                          value={detalleCasoEditar.motivoFueraHorario}
+                          onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, motivoFueraHorario: e.target.value }))}
+                          rows={2}
+                          className="bg-slate-700 border-slate-600 text-slate-100"
+                        />
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                </div>
 
-                  {tiposCasoEditar.includes('fuera_horario') && (
-                    <div className="space-y-2 rounded-lg border border-amber-700/40 bg-amber-900/10 p-3">
-                      <Label className="text-amber-200">Hora del contacto fuera de horario</Label>
-                      <Input
-                        value={detalleCasoEditar.horaFueraHorario}
-                        onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, horaFueraHorario: e.target.value }))}
-                        placeholder="Ej. 22:30"
-                        className="h-11 bg-slate-700 border-slate-600 text-slate-100"
-                      />
-                      <Label className="text-amber-200">Motivo fuera de horario</Label>
-                      <Textarea
-                        value={detalleCasoEditar.motivoFueraHorario}
-                        onChange={(e) => setDetalleCasoEditar((prev) => ({ ...prev, motivoFueraHorario: e.target.value }))}
-                        rows={2}
-                        className="bg-slate-700 border-slate-600 text-slate-100"
-                      />
-                    </div>
-                  )}
+                <div className="mt-4 flex-shrink-0 flex-col gap-2 sm:flex sm:flex-row sm:justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditarEntrada(null)}
+                    className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleGuardarEdicion} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
+                    <Save className="w-4 h-4 mr-2 stroke-2" />
+                    Guardar Cambios
+                  </Button>
                 </div>
               </div>
-
-              <DialogFooter className="mt-4 flex-shrink-0 flex-col sm:flex-row gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setEditarEntrada(null)}
-                  className="border-slate-600 text-slate-200 hover:bg-slate-700 w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleGuardarEdicion} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
-                  <Save className="w-4 h-4 mr-2 stroke-2" />
-                  Guardar Cambios
-                </Button>
-              </DialogFooter>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal de éxito */}
       <AnimatePresence>
