@@ -664,6 +664,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                       )}
                     </AnimatePresence>
                   </div>
+                  {entradasFiltradas.map((entrada) => (
                   <Card key={entrada.historialid} className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                     <CardHeader>
                       <div className="flex items-start justify-end">
