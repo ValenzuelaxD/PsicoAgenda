@@ -33,6 +33,9 @@ type CasoEspecialTipo =
   | 'violencia'
   | 'abandono'
   | 'otro';
+
+export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
+  const renderHistorial = () => (
               <div className="space-y-4">
                 <div className="flex flex-col gap-3">
                   <h2 className="text-white">Historial de Sesiones</h2>
@@ -243,6 +246,9 @@ type CasoEspecialTipo =
                               ))
                             )}
                           </div>
+    );
+
+    const handleGuardarEdicion = async () => {
     if (!notaEditar || !diagnosticoEditar || !tratamientoEditar || !editarEntrada) {
       toast.error('Por favor completa todos los campos');
       return;
