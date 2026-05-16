@@ -33,451 +33,261 @@ type CasoEspecialTipo =
   | 'violencia'
   | 'abandono'
   | 'otro';
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3">
+                  <h2 className="text-white">Historial de Sesiones</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="pt-4 pb-4 text-center">
+                        <p className="text-xs text-slate-400">Casos especiales</p>
+                        <p className="text-xl text-teal-300 font-semibold">{resumenCasosEspeciales.totalEspeciales}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="pt-4 pb-4 text-center">
+                        <p className="text-xs text-slate-400">Urgencias abiertas</p>
+                        <p className="text-xl text-rose-400 font-semibold">{resumenCasosEspeciales.urgentesAbiertos}</p>
+                      </CardContent>
+                    </Card>
+                    {SEVERIDAD_OPCIONES.slice(0, 3).map((nivel) => (
+                      <Card key={`resumen-${nivel}`} className="bg-slate-800/50 border-slate-700">
+                        <CardContent className="pt-4 pb-4 text-center">
+                          <p className="text-xs text-slate-400">Severidad {nivel}</p>
+                          <p
+                            className="text-xl font-semibold"
+                            style={{ color: nivel === 'Media' ? '#f59e0b' : nivel === 'Alta' ? '#f97316' : '#10b981' }}
+                          >
+                            {resumenCasosEspeciales.porSeveridad[nivel]}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3">
+                    <p className="text-sm text-slate-300">Filtros de casos especiales</p>
+                    <div className="space-y-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setFiltroCasoEspecial(filtroCasoEspecial === 'solo' ? 'todos' : 'solo')}
+                        className={
+                          filtroCasoEspecial === 'solo'
+                            ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+                            : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                        }
+                      >
+                        {filtroCasoEspecial === 'solo' ? 'Solo casos especiales' : 'Todos los registros'}
+                      </Button>
 
-type SeveridadCaso = 'Baja' | 'Media' | 'Alta' | 'Critica';
-type EstadoCaso = 'Abierto' | 'Seguimiento' | 'Escalado' | 'Cerrado';
-type NivelRiesgoAutolesivo = 'Sin riesgo' | 'Ideación pasiva' | 'Ideación activa' | 'Plan' | 'Intento';
-type QuienRealizoContacto = 'Paciente' | 'Familiar' | 'Tutor' | 'Otro';
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-400">Tipo</Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setFiltroTipo('todos')}
+                            className={filtroTipo === 'todos' ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
+                          >
+                            Todos
+                          </Button>
+                          {TIPOS_CASO_OPCIONES.map((tipo) => (
+                            <Button
+                              key={`filtro-tipo-${tipo.value}`}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setFiltroTipo(tipo.value)}
+                              className={filtroTipo === tipo.value ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
+                            >
+                              {tipo.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
 
-interface ClinicaMetaBitacora {
-  fechaSesion: string;
-  numeroSesion: string;
-  cedulaProfesional: string;
-  codigoCie11: string;
-  motivoConsulta: string;
-  observacionesAvance: string;
-  proximaCitaFecha: string;
-  planSeguimiento: string;
-  consentimientoVigente: boolean;
-  riesgoAutolesivo: {
-    nivel: NivelRiesgoAutolesivo | '';
-    planSeguridad: string;
-    notificadoFamiliar: boolean;
-    protocoloCrisis: boolean;
-  };
-  fueraHorario: {
-    quienRealizoContacto: QuienRealizoContacto | '';
-    accionTomada: string;
-    protocoloCrisis: boolean;
-  };
-}
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-400">Severidad</Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setFiltroSeveridad('todas')}
+                            className={filtroSeveridad === 'todas' ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
+                          >
+                            Todas
+                          </Button>
+                          {SEVERIDAD_OPCIONES.map((nivel) => (
+                            <Button
+                              key={`filtro-sev-${nivel}`}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setFiltroSeveridad(nivel)}
+                              className={filtroSeveridad === nivel ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
+                            >
+                              {nivel}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
 
-interface CasoEspecialMeta {
-  tipos: CasoEspecialTipo[];
-  severidad: SeveridadCaso;
-  estado: EstadoCaso;
-  detalle?: {
-    accionInmediata?: string;
-    planSeguimiento24h?: string;
-    relacionFamiliar?: string;
-    relacionFamiliarOtro?: string;
-    consentimientoFamiliar?: 'Si' | 'No';
-    horaFueraHorario?: string;
-    motivoFueraHorario?: string;
-  };
-}
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-400">Estado</Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setFiltroEstado('todos')}
+                            className={filtroEstado === 'todos' ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
+                          >
+                            Todos
+                          </Button>
+                          {ESTADO_OPCIONES.map((estado) => (
+                            <Button
+                              key={`filtro-estado-${estado}`}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setFiltroEstado(estado)}
+                              className={filtroEstado === estado ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
+                            >
+                              {estado}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
 
-interface BitacoraEntrada extends HistorialClinico {
-  observacionesLimpias: string;
-  casoEspecial: CasoEspecialMeta | null;
-  comentarioFelicitacion: string;
-  clinica: ClinicaMetaBitacora | null;
-}
+                      <div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setFiltroCasoEspecial('todos');
+                            setFiltroTipo('todos');
+                            setFiltroSeveridad('todas');
+                            setFiltroEstado('todos');
+                          }}
+                          className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                        >
+                          Limpiar filtros
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-const META_PREFIX = '[PSICOAGENDA_CASO_ESPECIAL]';
-const FELICITACION_PREFIX = '[PSICOAGENDA_COMENTARIO_FELICITACION]';
-const CIE11_PATTERN = /^[A-Z0-9]{2,7}(?:\.[A-Z0-9]{1,4})?$/i;
+                {loadingHistorial ? (
+                  <p className="text-slate-400">Cargando historial...</p>
+                ) : entradasFiltradas.length === 0 ? (
+                  <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                    <CardContent className="py-12 text-center">
+                      <Calendar className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                      <p className="text-slate-400">No hay entradas que coincidan con los filtros actuales.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  entradasFiltradas.map((entrada) => (
+                    <Card key={entrada.historialid} className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2 text-slate-100 flex-wrap">
+                              {entrada.diagnostico && <Badge variant="default">{entrada.diagnostico}</Badge>}
+                              {entrada.tratamiento && <Badge variant="secondary">{entrada.tratamiento}</Badge>}
+                              {!entrada.diagnostico && !entrada.tratamiento && (
+                                <Badge variant="outline" className="text-slate-200 border-slate-500">
+                                  Entrada clinica
+                                </Badge>
+                              )}
+                              {entrada.casoEspecial?.tipos.map((tipo) => {
+                                const tipoLabel = TIPOS_CASO_OPCIONES.find((opcion) => opcion.value === tipo)?.label || tipo;
+                                return (
+                                  <Badge key={`${entrada.historialid}-${tipo}`} className="bg-slate-700 text-slate-100 border border-slate-600">
+                                    {tipoLabel}
+                                  </Badge>
+                                );
+                              })}
+                              {entrada.casoEspecial && (
+                                <>
+                                  <Badge className={clasesSeveridad[entrada.casoEspecial.severidad]}>{entrada.casoEspecial.severidad}</Badge>
+                                  <Badge className={clasesEstado[entrada.casoEspecial.estado]}>{entrada.casoEspecial.estado}</Badge>
+                                </>
+                              )}
+                            </CardTitle>
+                            <CardDescription className="flex items-center gap-2 mt-1 text-slate-400">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(entrada.fechaentrada).toLocaleDateString()}
+                            </CardDescription>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleAbrirEditar(entrada)}
+                            className="text-slate-300 hover:bg-slate-700 shrink-0"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <h4 className="text-slate-200 mb-2">Notas de la Sesión</h4>
+                        <p className="text-slate-300 whitespace-pre-wrap">{entrada.observacionesLimpias}</p>
 
-const padDos = (value: number) => String(value).padStart(2, '0');
+                        {entrada.comentarioFelicitacion && (
+                          <div className="mt-4 rounded-lg border border-emerald-600/40 bg-emerald-900/10 p-3">
+                            <p className="text-xs uppercase tracking-wide text-emerald-300 mb-1">Observaciones de avance terapéutico</p>
+                            <p className="text-sm text-emerald-100 whitespace-pre-wrap">{entrada.comentarioFelicitacion}</p>
+                          </div>
+                        )}
 
-const formatearFechaHoraLocalInput = (fecha?: string | Date) => {
-  const fechaObj = fecha instanceof Date ? fecha : fecha ? new Date(fecha) : new Date();
-  if (Number.isNaN(fechaObj.getTime())) {
-    return '';
-  }
-
-  return [
-    fechaObj.getFullYear(),
-    padDos(fechaObj.getMonth() + 1),
-    padDos(fechaObj.getDate()),
-  ].join('-') + `T${padDos(fechaObj.getHours())}:${padDos(fechaObj.getMinutes())}`;
-};
-
-const formatearFechaLocalInput = (fecha?: string | Date) => {
-  const fechaObj = fecha instanceof Date ? fecha : fecha ? new Date(fecha) : new Date();
-  if (Number.isNaN(fechaObj.getTime())) {
-    return '';
-  }
-
-  return [
-    fechaObj.getFullYear(),
-    padDos(fechaObj.getMonth() + 1),
-    padDos(fechaObj.getDate()),
-  ].join('-');
-};
-
-const generarFolioClinico = (historialId?: number) => {
-  const ahora = new Date();
-  const base = `${ahora.getFullYear()}${padDos(ahora.getMonth() + 1)}${padDos(ahora.getDate())}`;
-  const sufijo = historialId ? String(historialId).padStart(5, '0') : `${padDos(ahora.getHours())}${padDos(ahora.getMinutes())}${padDos(ahora.getSeconds())}`;
-  return `BIT-${base}-${sufijo}`;
-};
-
-const obtenerCedulaProfesionalSesion = () => {
-  try {
-    const rawUser = localStorage.getItem('user');
-    if (!rawUser) {
-      return '';
-    }
-
-    const user = JSON.parse(rawUser);
-    return String(user?.cedulaProfesional || user?.cedulaprofesional || '');
-  } catch {
-    return '';
-  }
-};
-
-const TIPOS_CASO_OPCIONES: Array<{ value: CasoEspecialTipo; label: string }> = [
-  { value: 'urgencia', label: 'Urgencia' },
-  { value: 'familiar', label: 'Familiar' },
-  { value: 'fuera_horario', label: 'Fuera de horario' },
-  { value: 'riesgo_autolesivo', label: 'Riesgo autolesivo' },
-  { value: 'violencia', label: 'Violencia' },
-  { value: 'abandono', label: 'Abandono' },
-  { value: 'otro', label: 'Otro' },
-];
-
-const SEVERIDAD_OPCIONES: SeveridadCaso[] = ['Baja', 'Media', 'Alta', 'Critica'];
-const ESTADO_OPCIONES: EstadoCaso[] = ['Abierto', 'Seguimiento', 'Escalado', 'Cerrado'];
-const RELACION_FAMILIAR_OPCIONES = ['Familiar', 'Red de apoyo', 'Otro'] as const;
-type RelacionFamiliarOpcion = (typeof RELACION_FAMILIAR_OPCIONES)[number];
-
-const clasesSeveridad: Record<SeveridadCaso, string> = {
-  Baja: 'bg-emerald-600 text-white',
-  Media: 'bg-amber-500 text-slate-900',
-  Alta: 'bg-orange-500 text-white',
-  Critica: 'bg-rose-600 text-white',
-};
-
-const clasesEstado: Record<EstadoCaso, string> = {
-  Abierto: 'bg-sky-600 text-white',
-  Seguimiento: 'bg-violet-600 text-white',
-  Escalado: 'bg-fuchsia-600 text-white',
-  Cerrado: 'bg-slate-600 text-white',
-};
-
-const claseBotonOpcion = (activo: boolean, claseActiva: string) => {
-  if (activo) {
-    return `${claseActiva} border-transparent hover:opacity-90`;
-  }
-
-  return 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700';
-};
-
-const claseSeveridadActiva = (nivel: SeveridadCaso) => {
-  switch (nivel) {
-    case 'Baja':
-      return '!bg-emerald-600 !text-white !border-transparent hover:opacity-90';
-    case 'Media':
-      return '!bg-amber-500 !text-slate-900 !border-transparent hover:opacity-90';
-    case 'Alta':
-      return '!bg-orange-500 !text-white !border-transparent hover:opacity-90';
-    case 'Critica':
-      return '!bg-rose-600 !text-white !border-transparent hover:opacity-90';
-    default:
-      return '!bg-teal-600 !text-white !border-transparent hover:opacity-90';
-  }
-};
-
-const claseEstadoActiva = (estado: EstadoCaso) => {
-  switch (estado) {
-    case 'Abierto':
-      return '!bg-sky-600 !text-white !border-transparent hover:opacity-90';
-    case 'Seguimiento':
-      return '!bg-violet-600 !text-white !border-transparent hover:opacity-90';
-    case 'Escalado':
-      return '!bg-fuchsia-600 !text-white !border-transparent hover:opacity-90';
-    case 'Cerrado':
-      return '!bg-slate-600 !text-white !border-transparent hover:opacity-90';
-    default:
-      return '!bg-teal-600 !text-white !border-transparent hover:opacity-90';
-  }
-};
-
-const claseInactivaSegmento = '!border-slate-600 !bg-slate-800 !text-slate-200 hover:!bg-slate-700';
-
-const esTipoCasoValido = (value: string): value is CasoEspecialTipo =>
-  TIPOS_CASO_OPCIONES.some((opcion) => opcion.value === value);
-
-const esSeveridadValida = (value: string): value is SeveridadCaso =>
-  SEVERIDAD_OPCIONES.includes(value as SeveridadCaso);
-
-const esEstadoValido = (value: string): value is EstadoCaso =>
-  ESTADO_OPCIONES.includes(value as EstadoCaso);
-
-const parseObservaciones = (textoOriginal: string | undefined): {
-  observacionesLimpias: string;
-  casoEspecial: CasoEspecialMeta | null;
-  comentarioFelicitacion: string;
-  clinica: ClinicaMetaBitacora | null;
-} => {
-  const texto = String(textoOriginal || '');
-  const sortedMarkers = [
-    { key: FELICITACION_PREFIX, index: texto.indexOf(FELICITACION_PREFIX) },
-    { key: META_PREFIX, index: texto.indexOf(META_PREFIX) },
-  ]
-    .filter((marker) => marker.index !== -1)
-    .sort((a, b) => a.index - b.index);
-
-  if (sortedMarkers.length === 0) {
-    return {
-      observacionesLimpias: texto,
-      casoEspecial: null,
-      comentarioFelicitacion: '',
-      clinica: null,
-    };
-  }
-
-  const getSegmento = (prefix: string) => {
-    const startIndex = texto.indexOf(prefix);
-    if (startIndex === -1) {
-      return '';
-    }
-
-    const contentStart = startIndex + prefix.length;
-    const nextMarker = sortedMarkers.find((marker) => marker.index > startIndex);
-    const contentEnd = nextMarker ? nextMarker.index : texto.length;
-    return texto.slice(contentStart, contentEnd).trim();
-  };
-
-  const observacionesLimpias = texto.slice(0, sortedMarkers[0].index).trimEnd();
-  const comentarioFelicitacion = getSegmento(FELICITACION_PREFIX);
-  const rawMeta = getSegmento(META_PREFIX);
-
-  if (!rawMeta) {
-    return {
-      observacionesLimpias,
-      casoEspecial: null,
-      comentarioFelicitacion,
-      clinica: null,
-    };
-  }
-
-  try {
-    const parsed = JSON.parse(rawMeta);
-    const casoEspecialFuente = parsed?.casoEspecial || parsed;
-    const clinicaFuente = parsed?.clinica;
-    const tipos = Array.isArray(casoEspecialFuente?.tipos)
-      ? casoEspecialFuente.tipos.filter((tipo: string) => esTipoCasoValido(tipo))
-      : [];
-    const severidad = esSeveridadValida(String(casoEspecialFuente?.severidad || '')) ? casoEspecialFuente.severidad : 'Media';
-    const estado = esEstadoValida(String(casoEspecialFuente?.estado || '')) ? casoEspecialFuente.estado : 'Abierto';
-    const clinica = clinicaFuente
-      ? normalizarClinicaMeta(clinicaFuente)
-      : null;
-
-    if (tipos.length === 0) {
-      return {
-        observacionesLimpias,
-        casoEspecial: null,
-        comentarioFelicitacion,
-        clinica,
-      };
-    }
-
-    return {
-      observacionesLimpias,
-      casoEspecial: {
-        tipos,
-        severidad,
-        estado,
-        detalle: {
-          accionInmediata: String(casoEspecialFuente?.detalle?.accionInmediata || ''),
-          planSeguimiento24h: String(casoEspecialFuente?.detalle?.planSeguimiento24h || ''),
-          relacionFamiliar: String(casoEspecialFuente?.detalle?.relacionFamiliar || ''),
-          relacionFamiliarOtro: String(casoEspecialFuente?.detalle?.relacionFamiliarOtro || ''),
-          consentimientoFamiliar: casoEspecialFuente?.detalle?.consentimientoFamiliar === 'No' ? 'No' : 'Si',
-          horaFueraHorario: String(casoEspecialFuente?.detalle?.horaFueraHorario || ''),
-          motivoFueraHorario: String(casoEspecialFuente?.detalle?.motivoFueraHorario || ''),
-        },
-      },
-      comentarioFelicitacion,
-      clinica,
-    };
-  } catch {
-    return {
-      observacionesLimpias,
-      casoEspecial: null,
-      comentarioFelicitacion,
-      clinica: null,
-    };
-  }
-};
-
-const buildObservacionesPayload = (
-  observacionesLimpias: string,
-  casoEspecial: CasoEspecialMeta | null,
-  comentarioFelicitacion: string,
-  clinica?: ClinicaMetaBitacora | null
-): string => {
-  const texto = String(observacionesLimpias || '').trim();
-  const comentarioLimpio = String(comentarioFelicitacion || '').trim();
-
-  const clinicaActiva = clinica
-    ? {
-        ...clinica,
-        fechaSesion: String(clinica.fechaSesion || '').trim(),
-        numeroSesion: String(clinica.numeroSesion || '').trim(),
-        cedulaProfesional: String(clinica.cedulaProfesional || '').trim(),
-        codigoCie11: String(clinica.codigoCie11 || '').trim().toUpperCase(),
-        motivoConsulta: String(clinica.motivoConsulta || '').trim(),
-        observacionesAvance: String(clinica.observacionesAvance || '').trim(),
-        proximaCitaFecha: String(clinica.proximaCitaFecha || '').trim(),
-        planSeguimiento: String(clinica.planSeguimiento || '').trim(),
-        consentimientoVigente: Boolean(clinica.consentimientoVigente),
-        riesgoAutolesivo: {
-          ...clinica.riesgoAutolesivo,
-          planSeguridad: String(clinica.riesgoAutolesivo?.planSeguridad || '').trim(),
-          notificadoFamiliar: Boolean(clinica.riesgoAutolesivo?.notificadoFamiliar),
-          protocoloCrisis: Boolean(clinica.riesgoAutolesivo?.protocoloCrisis),
-        },
-        fueraHorario: {
-          ...clinica.fueraHorario,
-          accionTomada: String(clinica.fueraHorario?.accionTomada || '').trim(),
-          protocoloCrisis: Boolean(clinica.fueraHorario?.protocoloCrisis),
-        },
-      }
-    : null;
-
-  if ((!casoEspecial || casoEspecial.tipos.length === 0) && !comentarioLimpio && !clinicaActiva) {
-    return texto;
-  }
-
-  const bloquesMetadata: string[] = [];
-  const metadata: Record<string, unknown> = {};
-
-  if (comentarioLimpio) {
-    bloquesMetadata.push(`${FELICITACION_PREFIX}${comentarioLimpio}`);
-  }
-
-  if (casoEspecial && casoEspecial.tipos.length > 0) {
-    metadata.casoEspecial = casoEspecial;
-  }
-
-  if (clinicaActiva) {
-    metadata.clinica = clinicaActiva;
-  }
-
-  if (Object.keys(metadata).length > 0) {
-    bloquesMetadata.push(`${META_PREFIX}${JSON.stringify(metadata)}`);
-  }
-
-  return `${texto}\n\n${bloquesMetadata.join('\n\n')}`.trim();
-};
-
-const normalizarDetalleCaso = (detalle: CasoEspecialMeta['detalle'] | undefined) => ({
-  accionInmediata: String(detalle?.accionInmediata || ''),
-  planSeguimiento24h: String(detalle?.planSeguimiento24h || ''),
-  relacionFamiliar: String(detalle?.relacionFamiliar || '') as RelacionFamiliarOpcion | '',
-  relacionFamiliarOtro: String(detalle?.relacionFamiliarOtro || ''),
-  consentimientoFamiliar: detalle?.consentimientoFamiliar === 'No' ? 'No' : 'Si',
-  horaFueraHorario: String(detalle?.horaFueraHorario || ''),
-  motivoFueraHorario: String(detalle?.motivoFueraHorario || ''),
-});
-
-const normalizarClinicaMeta = (
-  clinica: Partial<ClinicaMetaBitacora> | undefined,
-  contexto?: { fechaSesion?: string; numeroSesion?: string; cedulaProfesional?: string }
-): ClinicaMetaBitacora => ({
-  fechaSesion: String(clinica?.fechaSesion || contexto?.fechaSesion || ''),
-  numeroSesion: String(clinica?.numeroSesion || contexto?.numeroSesion || ''),
-  cedulaProfesional: String(clinica?.cedulaProfesional || contexto?.cedulaProfesional || ''),
-  codigoCie11: String(clinica?.codigoCie11 || ''),
-  motivoConsulta: String(clinica?.motivoConsulta || ''),
-  observacionesAvance: String(clinica?.observacionesAvance || ''),
-  proximaCitaFecha: String(clinica?.proximaCitaFecha || ''),
-  planSeguimiento: String(clinica?.planSeguimiento || ''),
-  consentimientoVigente: Boolean(clinica?.consentimientoVigente),
-  riesgoAutolesivo: {
-    nivel: (['Sin riesgo', 'Ideación pasiva', 'Ideación activa', 'Plan', 'Intento'] as const).includes(clinica?.riesgoAutolesivo?.nivel as NivelRiesgoAutolesivo)
-      ? (clinica?.riesgoAutolesivo?.nivel as NivelRiesgoAutolesivo)
-      : '',
-    planSeguridad: String(clinica?.riesgoAutolesivo?.planSeguridad || ''),
-    notificadoFamiliar: Boolean(clinica?.riesgoAutolesivo?.notificadoFamiliar),
-    protocoloCrisis: Boolean(clinica?.riesgoAutolesivo?.protocoloCrisis),
-  },
-  fueraHorario: {
-    quienRealizoContacto: (['Paciente', 'Familiar', 'Tutor', 'Otro'] as const).includes(clinica?.fueraHorario?.quienRealizoContacto as QuienRealizoContacto)
-      ? (clinica?.fueraHorario?.quienRealizoContacto as QuienRealizoContacto)
-      : '',
-    accionTomada: String(clinica?.fueraHorario?.accionTomada || ''),
-    protocoloCrisis: Boolean(clinica?.fueraHorario?.protocoloCrisis),
-  },
-});
-
-const normalizarEntrada = (entrada: HistorialClinico): BitacoraEntrada => {
-  const parsed = parseObservaciones(entrada.observaciones);
-  return {
-    ...entrada,
-    observacionesLimpias: parsed.observacionesLimpias,
-    casoEspecial: parsed.casoEspecial,
-    comentarioFelicitacion: parsed.comentarioFelicitacion,
-    clinica: parsed.clinica,
-  };
-};
-
-export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [pacienteSeleccionado, setPacienteSeleccionado] = useState<Paciente | null>(null);
-  const [entradas, setEntradas] = useState<BitacoraEntrada[]>([]);
-  const [loadingPacientes, setLoadingPacientes] = useState(true);
-  const [loadingHistorial, setLoadingHistorial] = useState(false);
-
-  const [editando, setEditando] = useState(false);
-  const [nuevaNota, setNuevaNota] = useState('');
-  const [nuevaFelicitacion, setNuevaFelicitacion] = useState('');
-  const [diagnostico, setDiagnostico] = useState('');
-  const [tratamiento, setTratamiento] = useState('');
-  const [tiposCaso, setTiposCaso] = useState<CasoEspecialTipo[]>([]);
-  const [severidadCaso, setSeveridadCaso] = useState<SeveridadCaso>('Media');
-  const [estadoCaso, setEstadoCaso] = useState<EstadoCaso>('Abierto');
-  const [detalleCaso, setDetalleCaso] = useState(normalizarDetalleCaso(undefined));
-
-  const [editarEntrada, setEditarEntrada] = useState<BitacoraEntrada | null>(null);
-  const [notaEditar, setNotaEditar] = useState('');
-  const [felicitacionEditar, setFelicitacionEditar] = useState('');
-  const [clinicaEditar, setClinicaEditar] = useState<ClinicaMetaBitacora>(normalizarClinicaMeta(undefined));
-  const [diagnosticoEditar, setDiagnosticoEditar] = useState('');
-  const [tratamientoEditar, setTratamientoEditar] = useState('');
-  const [tiposCasoEditar, setTiposCasoEditar] = useState<CasoEspecialTipo[]>([]);
-  const [severidadCasoEditar, setSeveridadCasoEditar] = useState<SeveridadCaso>('Media');
-  const [estadoCasoEditar, setEstadoCasoEditar] = useState<EstadoCaso>('Abierto');
-  const [detalleCasoEditar, setDetalleCasoEditar] = useState(normalizarDetalleCaso(undefined));
-
-  const [filtroCasoEspecial, setFiltroCasoEspecial] = useState<'todos' | 'solo'>('todos');
-  const [filtroTipo, setFiltroTipo] = useState<'todos' | CasoEspecialTipo>('todos');
-  const [filtroSeveridad, setFiltroSeveridad] = useState<'todas' | SeveridadCaso>('todas');
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoCaso>('todos');
-
-  const [mostrarExito, setMostrarExito] = useState(false);
-  const ultimaAlertaUrgenciaRef = useRef('');
-
-  const fetchPacientesList = async () => {
-    try {
-      const response = await apiFetch(API_ENDPOINTS.PACIENTES);
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
-      }
-      if (!response.ok) throw new Error('Error al cargar pacientes');
-      const data = await response.json();
-      setPacientes(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setLoadingPacientes(false);
+                        {entrada.casoEspecial?.detalle && (
+                          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-2">
+                            <p className="text-xs uppercase tracking-wide text-slate-400">Detalle de caso especial</p>
+                            {entrada.casoEspecial.detalle.accionInmediata ? (
+                              <p className="text-sm text-slate-300">
+                                <span className="text-slate-400">Acción inmediata:</span> {entrada.casoEspecial.detalle.accionInmediata}
+                              </p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.planSeguimiento24h ? (
+                              <p className="text-sm text-slate-300">
+                                <span className="text-slate-400">Plan 24h:</span> {entrada.casoEspecial.detalle.planSeguimiento24h}
+                              </p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.relacionFamiliar ? (
+                              <p className="text-sm text-slate-300">
+                                <span className="text-slate-400">Relación familiar:</span>{' '}
+                                {entrada.casoEspecial.detalle.relacionFamiliar === 'Otro' && entrada.casoEspecial.detalle.relacionFamiliarOtro
+                                  ? `Otro (${entrada.casoEspecial.detalle.relacionFamiliarOtro})`
+                                  : entrada.casoEspecial.detalle.relacionFamiliar}
+                              </p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.consentimientoFamiliar ? (
+                              <p className="text-sm text-slate-300">
+                                <span className="text-slate-400">Consentimiento familiar:</span> {entrada.casoEspecial.detalle.consentimientoFamiliar}
+                              </p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.horaFueraHorario ? (
+                              <p className="text-sm text-slate-300">
+                                <span className="text-slate-400">Hora fuera de horario:</span> {entrada.casoEspecial.detalle.horaFueraHorario}
+                              </p>
+                            ) : null}
+                            {entrada.casoEspecial.detalle.motivoFueraHorario ? (
+                              <p className="text-sm text-slate-300">
+                                <span className="text-slate-400">Motivo fuera de horario:</span> {entrada.casoEspecial.detalle.motivoFueraHorario}
+                              </p>
+                            ) : null}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
     }
   };
 
