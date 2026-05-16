@@ -708,8 +708,8 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                         )}
                       </CardContent>
                     </Card>
-                  ))
-                )}
+                  </div>
+                </>
               </div>
             </>
           ) : (
