@@ -664,6 +664,10 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                       )}
                     </AnimatePresence>
                   </div>
+                  <Card key={entrada.historialid} className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                    <CardHeader>
+                      <div className="flex items-start justify-end">
+                        <Button size="sm" variant="ghost" onClick={() => handleAbrirEditar(entrada)} className="text-slate-300 hover:bg-slate-700 shrink-0">
                             <Edit className="w-4 h-4" />
                           </Button>
                         </div>
