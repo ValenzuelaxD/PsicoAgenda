@@ -1209,16 +1209,17 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       {editarEntrada !== null && (
         <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
           <DialogContent
-            className="w-[56rem] max-w-[95vw] h-[calc(100dvh-1.5rem)] bg-slate-800 border-slate-700 overflow-hidden flex flex-col top-4 translate-y-0"
+            className="w-[56rem] max-w-[95vw] max-h-[calc(100dvh-1.5rem)] bg-slate-800 border-slate-700 overflow-hidden flex flex-col top-4 translate-y-0 p-0"
           >
-            <DialogHeader>
-              <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
-              <DialogDescription className="text-slate-400">
-                Actualiza las observaciones de la sesión
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 pb-2">
-              <div className="space-y-2">
+            <div className="flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden p-6">
+              <DialogHeader className="flex-shrink-0">
+                <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Actualiza las observaciones de la sesión
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 sm:pr-2 pb-2">
+                <div className="space-y-2">
                 <Label htmlFor="diagnostico-editar" className="text-slate-200">
                   Diagnóstico
                 </Label>
@@ -1229,7 +1230,8 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
                 />
               </div>
-              <div className="space-y-2">
+                </div>
+                <div className="space-y-2">
                 <Label htmlFor="tratamiento-editar" className="text-slate-200">
                   Tratamiento
                 </Label>
@@ -1240,7 +1242,8 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
                 />
               </div>
-              <div className="space-y-2">
+                </div>
+                <div className="space-y-2">
                 <Label htmlFor="notas-editar" className="text-slate-200">
                   Notas de la Sesión
                 </Label>
@@ -1253,7 +1256,8 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                   className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
                 />
               </div>
-              <div className="space-y-2">
+                </div>
+                <div className="space-y-2">
                 <Label htmlFor="felicitacion-editar" className="text-slate-200">
                   Comentario de felicitacion (opcional)
                 </Label>
@@ -1267,7 +1271,9 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 />
               </div>
 
-              <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+                </div>
+
+                <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
                 <p className="text-sm text-slate-200">Caso especial (opcional)</p>
                 <div className="flex flex-wrap gap-2">
                   {TIPOS_CASO_OPCIONES.map((tipo) => {
@@ -1413,9 +1419,9 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                     />
                   </div>
                 )}
+                </div>
               </div>
-            </div>
-            <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0">
+              <DialogFooter className="mt-4 flex-col sm:flex-row gap-2 shrink-0">
               <Button
                 variant="outline"
                 onClick={() => setEditarEntrada(null)}
@@ -1427,7 +1433,8 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 <Save className="w-4 h-4 mr-2 stroke-2" />
                 Guardar Cambios
               </Button>
-            </DialogFooter>
+              </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       )}
