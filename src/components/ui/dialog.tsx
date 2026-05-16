@@ -53,26 +53,15 @@ function DialogContent({
   children,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content>) {
-  // If the caller provides positioning overrides (e.g. translate-x-0 or explicit top/left),
-  // prefer a more neutral base class that doesn't force centering transforms. This
-  // prevents content from being positioned off-screen when authors want an anchored panel.
-  const usesAnchoredPosition = Boolean(
-    className?.includes('translate-x-0') || className?.includes('translate-y-0') ||
-      className?.includes('top-') || className?.includes('left-') || className?.includes('inset-')
-  );
-
-  const baseCentered =
+  const baseClasses =
     "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg";
-
-  const baseAnchored =
-    "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed z-50 grid w-full gap-4 rounded-lg border p-6 shadow-lg duration-200";
 
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
-        className={cn(usesAnchoredPosition ? baseAnchored : baseCentered, className)}
+        className={cn(baseClasses, className)}
         {...props}
       >
         {children}
