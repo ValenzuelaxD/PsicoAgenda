@@ -1216,7 +1216,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/70 p-3 sm:p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-3 sm:p-6"
             onClick={() => setEditarEntrada(null)}
           >
             <motion.div
@@ -1225,7 +1225,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
               exit={{ scale: 0.98, opacity: 0, y: 12 }}
               transition={{ type: 'spring', damping: 24, stiffness: 260 }}
               onClick={(e) => e.stopPropagation()}
-              className="mx-auto flex h-full w-full max-w-[56rem] overflow-hidden rounded-xl border border-slate-700 bg-slate-800 shadow-2xl"
+              className="flex w-full max-w-[56rem] max-h-[calc(100dvh-1.5rem)] overflow-hidden rounded-xl border border-slate-700 bg-slate-800 shadow-2xl sm:max-h-[calc(100dvh-3rem)]"
             >
               <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
                 <div className="flex-shrink-0 space-y-2">
