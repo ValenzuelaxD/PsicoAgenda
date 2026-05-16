@@ -712,7 +712,6 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 )}
               </div>
             </>
-            </>
           ) : (
             <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 h-full">
               <CardContent className="flex flex-col items-center justify-center h-full py-24">
