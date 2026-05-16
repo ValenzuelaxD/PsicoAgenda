@@ -106,10 +106,6 @@ export function AgendarCita({ onNavigate, fechaSugerida, psicologoSugeridoId }: 
   };
 
   const esFechaSeleccionable = (candidate: Date) => {
-            const response = await apiFetch(API_ENDPOINTS.CITAS, {
-      return false;
-    }
-                psicologaId: psicologoSeleccionadoValue,
     if (candidate > finRango) {
       return false;
     }
