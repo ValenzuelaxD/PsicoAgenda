@@ -126,6 +126,360 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
     }
   };
 
+  type EntradaHistorialNormalizada = HistorialClinico & {
+    observacionesLimpias: string;
+    comentarioFelicitacion: string;
+    casoEspecial: {
+      tipos: CasoEspecialTipo[];
+      severidad: string;
+      estado: string;
+      detalle: DetalleCaso;
+    } | null;
+  };
+
+  const claseInactivaSegmento = 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700';
+  const claseBotonOpcion = (activo: boolean, claseActiva: string) => (activo ? claseActiva : claseInactivaSegmento);
+  const claseSeveridadActiva = (nivel: string) => {
+    if (nivel === 'Alta') return 'bg-rose-600 text-white border-transparent';
+    if (nivel === 'Media') return 'bg-amber-600 text-white border-transparent';
+    return 'bg-emerald-600 text-white border-transparent';
+  };
+  const claseEstadoActiva = (estado: string) => {
+    if (estado === 'Cerrado') return 'bg-sky-600 text-white border-transparent';
+    if (estado === 'En seguimiento') return 'bg-violet-600 text-white border-transparent';
+    return 'bg-teal-600 text-white border-transparent';
+  };
+
+  const TIPOS_CASO_OPCIONES: Array<{ value: CasoEspecialTipo; label: string }> = [
+    { value: 'urgencia', label: 'Urgencia' },
+    { value: 'familiar', label: 'Familiar' },
+    { value: 'fuera_horario', label: 'Fuera de horario' },
+    { value: 'riesgo_autolesivo', label: 'Riesgo autolesivo' },
+    { value: 'violencia', label: 'Violencia' },
+    { value: 'abandono', label: 'Abandono' },
+    { value: 'otro', label: 'Otro' },
+  ];
+  const SEVERIDAD_OPCIONES = ['Baja', 'Media', 'Alta'] as const;
+  const ESTADO_OPCIONES = ['Abierto', 'En seguimiento', 'Cerrado'] as const;
+  const RELACION_FAMILIAR_OPCIONES = ['Madre', 'Padre', 'Tutor', 'Pareja', 'Hijo/a', 'Otro'];
+  const CIE11_PATTERN = /^[A-Z0-9]{1,3}(?:\.[A-Z0-9]{1,4})?$/i;
+
+  const [busqueda, setBusqueda] = useState('');
+  const [loadingPacientes, setLoadingPacientes] = useState(true);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [pacienteSeleccionado, setPacienteSeleccionado] = useState<Paciente | null>(null);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [entradas, setEntradas] = useState<EntradaHistorialNormalizada[]>([]);
+  const [editando, setEditando] = useState(false);
+  const [mostrarExito, setMostrarExito] = useState(false);
+
+  const [diagnostico, setDiagnostico] = useState('');
+  const [tratamiento, setTratamiento] = useState('');
+  const [nuevaNota, setNuevaNota] = useState('');
+  const [nuevaFelicitacion, setNuevaFelicitacion] = useState('');
+  const [tiposCaso, setTiposCaso] = useState<CasoEspecialTipo[]>([]);
+  const [severidadCaso, setSeveridadCaso] = useState<string>('Baja');
+  const [estadoCaso, setEstadoCaso] = useState<string>('Abierto');
+  const [detalleCaso, setDetalleCaso] = useState<DetalleCaso>({
+    accionInmediata: '',
+    planSeguimiento24h: '',
+    relacionFamiliar: '',
+    relacionFamiliarOtro: '',
+    consentimientoFamiliar: '',
+    horaFueraHorario: '',
+    motivoFueraHorario: '',
+  });
+
+  const [editarEntrada, setEditarEntrada] = useState<EntradaHistorialNormalizada | null>(null);
+  const [notaEditar, setNotaEditar] = useState('');
+  const [diagnosticoEditar, setDiagnosticoEditar] = useState('');
+  const [tratamientoEditar, setTratamientoEditar] = useState('');
+  const [felicitacionEditar, setFelicitacionEditar] = useState('');
+  const [tiposCasoEditar, setTiposCasoEditar] = useState<CasoEspecialTipo[]>([]);
+  const [severidadCasoEditar, setSeveridadCasoEditar] = useState<string>('Baja');
+  const [estadoCasoEditar, setEstadoCasoEditar] = useState<string>('Abierto');
+  const [detalleCasoEditar, setDetalleCasoEditar] = useState<DetalleCaso>({
+    accionInmediata: '',
+    planSeguimiento24h: '',
+    relacionFamiliar: '',
+    relacionFamiliarOtro: '',
+    consentimientoFamiliar: '',
+    horaFueraHorario: '',
+    motivoFueraHorario: '',
+  });
+
+  const obtenerNombreCompletoPaciente = (paciente: Partial<Paciente> | null | undefined) => {
+    if (!paciente) return '';
+    return [paciente.nombre, paciente.apellidopaterno, paciente.apellidomaterno]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  };
+
+  const formatearFechaHoraLocalInput = (fecha: string | Date) => {
+    const valor = new Date(fecha);
+    if (Number.isNaN(valor.getTime())) return '';
+    const year = valor.getFullYear();
+    const month = String(valor.getMonth() + 1).padStart(2, '0');
+    const day = String(valor.getDate()).padStart(2, '0');
+    const hours = String(valor.getHours()).padStart(2, '0');
+    const minutes = String(valor.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const generarFolioClinico = (historialId: number) => `BIT-${String(historialId).padStart(6, '0')}`;
+
+  const obtenerCedulaProfesionalSesion = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      return user?.cedulaprofesional || user?.cedulaProfesional || '';
+    } catch {
+      return '';
+    }
+  };
+
+  const normalizarDetalleCaso = (detalle: DetalleCaso): DetalleCaso => ({
+    accionInmediata: detalle.accionInmediata.trim(),
+    planSeguimiento24h: detalle.planSeguimiento24h.trim(),
+    relacionFamiliar: detalle.relacionFamiliar,
+    relacionFamiliarOtro: detalle.relacionFamiliarOtro.trim(),
+    consentimientoFamiliar: detalle.consentimientoFamiliar,
+    horaFueraHorario: detalle.horaFueraHorario.trim(),
+    motivoFueraHorario: detalle.motivoFueraHorario.trim(),
+  });
+
+  const normalizarClinicaMeta = (base: Partial<ClinicaMetaBitacora> | null | undefined, fallback?: Partial<ClinicaMetaBitacora>): ClinicaMetaBitacora => ({
+    fechaSesion: base?.fechaSesion || fallback?.fechaSesion || '',
+    numeroSesion: base?.numeroSesion || fallback?.numeroSesion || '',
+    cedulaProfesional: base?.cedulaProfesional || fallback?.cedulaProfesional || '',
+    codigoCie11: base?.codigoCie11 || fallback?.codigoCie11 || '',
+    motivoConsulta: base?.motivoConsulta || fallback?.motivoConsulta || '',
+    proximaCitaFecha: base?.proximaCitaFecha || fallback?.proximaCitaFecha || '',
+    planSeguimiento: base?.planSeguimiento || fallback?.planSeguimiento || '',
+    consentimientoVigente: Boolean(base?.consentimientoVigente ?? fallback?.consentimientoVigente),
+    riesgoAutolesivo: {
+      nivel: base?.riesgoAutolesivo?.nivel || fallback?.riesgoAutolesivo?.nivel || '',
+      planSeguridad: base?.riesgoAutolesivo?.planSeguridad || fallback?.riesgoAutolesivo?.planSeguridad || '',
+      notificadoFamiliar: Boolean(base?.riesgoAutolesivo?.notificadoFamiliar ?? fallback?.riesgoAutolesivo?.notificadoFamiliar),
+      protocoloCrisis: Boolean(base?.riesgoAutolesivo?.protocoloCrisis ?? fallback?.riesgoAutolesivo?.protocoloCrisis),
+    },
+    fueraHorario: {
+      quienRealizoContacto: base?.fueraHorario?.quienRealizoContacto || fallback?.fueraHorario?.quienRealizoContacto || '',
+      accionTomada: base?.fueraHorario?.accionTomada || fallback?.fueraHorario?.accionTomada || '',
+      protocoloCrisis: Boolean(base?.fueraHorario?.protocoloCrisis ?? fallback?.fueraHorario?.protocoloCrisis),
+    },
+  });
+
+  const parseObservaciones = (observaciones: string | null | undefined) => {
+    const texto = (observaciones || '').trim();
+    return {
+      texto,
+      comentarioFelicitacion: '',
+      casoEspecial: null as EntradaHistorialNormalizada['casoEspecial'],
+      clinica: null as ClinicaMetaBitacora | null,
+    };
+  };
+
+  const buildObservacionesPayload = (notaBase: string, metaCaso: any, felicitacion: string, clinica: ClinicaMetaBitacora) => {
+    const bloques = [notaBase.trim()];
+    if (felicitacion.trim()) bloques.push(`\n[avance]\n${felicitacion.trim()}`);
+    if (metaCaso) bloques.push(`\n[caso]\n${JSON.stringify(metaCaso)}`);
+    if (clinica) bloques.push(`\n[clinica]\n${JSON.stringify(clinica)}`);
+    return bloques.filter(Boolean).join('\n').trim();
+  };
+
+  const normalizarEntrada = (entrada: HistorialClinico): EntradaHistorialNormalizada => {
+    const observaciones = parseObservaciones(entrada.observaciones);
+    return {
+      ...entrada,
+      observacionesLimpias: observaciones.texto,
+      comentarioFelicitacion: observaciones.comentarioFelicitacion,
+      casoEspecial: observaciones.casoEspecial,
+    };
+  };
+
+  const toggleTipoCaso = (tipo: CasoEspecialTipo) => {
+    setTiposCaso((prev) => prev.includes(tipo) ? prev.filter((item) => item !== tipo) : [...prev, tipo]);
+  };
+
+  const toggleTipoCasoEditar = (tipo: CasoEspecialTipo) => {
+    setTiposCasoEditar((prev) => prev.includes(tipo) ? prev.filter((item) => item !== tipo) : [...prev, tipo]);
+  };
+
+  const handleAbrirEditar = (entrada: EntradaHistorialNormalizada) => {
+    const observaciones = parseObservaciones(entrada.observaciones);
+    setEditarEntrada(entrada);
+    setNotaEditar(observaciones.texto || entrada.observacionesLimpias || '');
+    setDiagnosticoEditar(entrada.diagnostico || '');
+    setTratamientoEditar(entrada.tratamiento || '');
+    setFelicitacionEditar(observaciones.comentarioFelicitacion || '');
+    setTiposCasoEditar(observaciones.casoEspecial?.tipos || []);
+    setSeveridadCasoEditar(observaciones.casoEspecial?.severidad || 'Baja');
+    setEstadoCasoEditar(observaciones.casoEspecial?.estado || 'Abierto');
+    setDetalleCasoEditar(observaciones.casoEspecial?.detalle || {
+      accionInmediata: '',
+      planSeguimiento24h: '',
+      relacionFamiliar: '',
+      relacionFamiliarOtro: '',
+      consentimientoFamiliar: '',
+      horaFueraHorario: '',
+      motivoFueraHorario: '',
+    });
+  };
+
+  const fetchPacientesList = async () => {
+    setLoadingPacientes(true);
+    try {
+      const response = await apiFetch(API_ENDPOINTS.PACIENTES_SELECTOR);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'No fue posible cargar los pacientes.');
+      }
+
+      const lista = Array.isArray(data) ? data : [];
+      setPacientes(lista);
+
+      if (pacienteId) {
+        const seleccionado = lista.find((paciente: Paciente) => paciente.pacienteid === pacienteId) || null;
+        setPacienteSeleccionado(seleccionado);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error al cargar pacientes.');
+    } finally {
+      setLoadingPacientes(false);
+    }
+  };
+
+  const fetchHistorial = async (pacienteActual: Paciente) => {
+    setLoadingHistorial(true);
+    try {
+      const response = await apiFetch(`${API_ENDPOINTS.HISTORIAL_CLINICO}/${pacienteActual.pacienteid}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'No fue posible cargar el historial.');
+      }
+
+      const lista = Array.isArray(data) ? data : data?.historial ?? [];
+      setEntradas(lista.map((item: HistorialClinico) => normalizarEntrada(item)));
+    } catch (error: any) {
+      toast.error(error.message || 'Error al cargar el historial.');
+      setEntradas([]);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
+
+  const handleGuardarNota = async () => {
+    if (!pacienteSeleccionado) {
+      toast.error('Selecciona un paciente primero.');
+      return;
+    }
+
+    if (!diagnostico.trim() || !tratamiento.trim() || !nuevaNota.trim()) {
+      toast.error('Completa diagnóstico, tratamiento y notas.');
+      return;
+    }
+
+    const metaCaso = tiposCaso.length > 0
+      ? { tipos: tiposCaso, severidad: severidadCaso, estado: estadoCaso, detalle: normalizarDetalleCaso(detalleCaso) }
+      : null;
+
+    try {
+      const response = await apiFetch(API_ENDPOINTS.HISTORIAL_CLINICO, {
+        method: 'POST',
+        body: JSON.stringify({
+          pacienteId: pacienteSeleccionado.pacienteid,
+          diagnostico,
+          tratamiento,
+          observaciones: buildObservacionesPayload(nuevaNota, metaCaso, nuevaFelicitacion, normalizarClinicaMeta(null, {
+            fechaSesion: formatearFechaHoraLocalInput(new Date()),
+            numeroSesion: generarFolioClinico(Date.now()),
+            cedulaProfesional: obtenerCedulaProfesionalSesion(),
+          })),
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al guardar la nota.');
+      }
+
+      const nuevaEntrada = normalizarEntrada(data);
+      setEntradas((prev) => [nuevaEntrada, ...prev]);
+      setEditando(false);
+      setDiagnostico('');
+      setTratamiento('');
+      setNuevaNota('');
+      setNuevaFelicitacion('');
+      setTiposCaso([]);
+      setSeveridadCaso('Baja');
+      setEstadoCaso('Abierto');
+      setDetalleCaso({
+        accionInmediata: '',
+        planSeguimiento24h: '',
+        relacionFamiliar: '',
+        relacionFamiliarOtro: '',
+        consentimientoFamiliar: '',
+        horaFueraHorario: '',
+        motivoFueraHorario: '',
+      });
+      toast.success('Entrada guardada correctamente.');
+    } catch (error: any) {
+      toast.error(error.message || 'No fue posible guardar la entrada.');
+    }
+  };
+
+  const entradasFiltradas = useMemo(() => {
+    const query = busqueda.trim().toLowerCase();
+    return entradas.filter((entrada) => {
+      const coincideTexto = !query || [entrada.observacionesLimpias, entrada.diagnostico, entrada.tratamiento]
+        .filter(Boolean)
+        .some((valor) => String(valor).toLowerCase().includes(query));
+
+      return coincideTexto;
+    });
+  }, [entradas, busqueda]);
+
+  const resumenCasosEspeciales = useMemo(() => {
+    const porSeveridad: Record<string, number> = { Baja: 0, Media: 0, Alta: 0 };
+    entradas.forEach((entrada) => {
+      const severidad = entrada.casoEspecial?.severidad;
+      if (severidad && porSeveridad[severidad] !== undefined) {
+        porSeveridad[severidad] += 1;
+      }
+    });
+
+    const totalEspeciales = entradas.filter((entrada) => Boolean(entrada.casoEspecial)).length;
+    const urgentesAbiertos = entradas.filter((entrada) => entrada.casoEspecial?.tipos.includes('urgencia') && entrada.casoEspecial?.estado !== 'Cerrado').length;
+
+    return {
+      totalEspeciales,
+      urgentesAbiertos,
+      porSeveridad,
+    };
+  }, [entradas]);
+
+  useEffect(() => {
+    fetchPacientesList();
+  }, []);
+
+  useEffect(() => {
+    if (!pacientes.length) return;
+    if (pacienteId) {
+      const seleccionado = pacientes.find((paciente) => paciente.pacienteid === pacienteId) || null;
+      setPacienteSeleccionado(seleccionado);
+    }
+  }, [pacientes, pacienteId]);
+
+  useEffect(() => {
+    if (pacienteSeleccionado) {
+      void fetchHistorial(pacienteSeleccionado);
+    } else {
+      setEntradas([]);
+    }
+  }, [pacienteSeleccionado?.pacienteid]);
+
   return (
     <div className="flex flex-col min-h-[100dvh] overflow-hidden bg-slate-950 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
       {/* Cabecera */}
