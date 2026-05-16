@@ -173,6 +173,20 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [editando, setEditando] = useState(false);
   const [mostrarExito, setMostrarExito] = useState(false);
 
+  // Estado para datos clínicos que se editan en el modal
+  const [clinicaEditar, setClinicaEditar] = useState<ClinicaMetaBitacora>({
+    fechaSesion: '',
+    numeroSesion: '',
+    cedulaProfesional: '',
+    codigoCie11: '',
+    motivoConsulta: '',
+    proximaCitaFecha: '',
+    planSeguimiento: '',
+    consentimientoVigente: false,
+    riesgoAutolesivo: { nivel: '', planSeguridad: '', notificadoFamiliar: false, protocoloCrisis: false },
+    fueraHorario: { quienRealizoContacto: '', accionTomada: '', protocoloCrisis: false },
+  });
+
   const [diagnostico, setDiagnostico] = useState('');
   const [tratamiento, setTratamiento] = useState('');
   const [nuevaNota, setNuevaNota] = useState('');
@@ -207,6 +221,16 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
     horaFueraHorario: '',
     motivoFueraHorario: '',
   });
+
+  // Lista de pacientes filtrada por el texto de búsqueda
+  const pacientesFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return pacientes.filter((p) => {
+      if (!q) return true;
+      const nombre = `${p.nombre ?? ''} ${p.apellidopaterno ?? ''} ${p.apellidomaterno ?? ''}`.toLowerCase();
+      return nombre.includes(q) || String(p.pacienteid ?? '').includes(q);
+    });
+  }, [pacientes, busqueda]);
 
   const obtenerNombreCompletoPaciente = (paciente: Partial<Paciente> | null | undefined) => {
     if (!paciente) return '';
