@@ -52,453 +52,197 @@ type CasoEspecialTipo =
                     {SEVERIDAD_OPCIONES.slice(0, 3).map((nivel) => (
                       <Card key={`resumen-${nivel}`} className="bg-slate-800/50 border-slate-700">
                         <CardContent className="pt-4 pb-4 text-center">
-                          <p className="text-xs text-slate-400">Severidad {nivel}</p>
-                          <p
-                            className="text-xl font-semibold"
-                            style={{ color: nivel === 'Media' ? '#f59e0b' : nivel === 'Alta' ? '#f97316' : '#10b981' }}
-                          >
-                            {resumenCasosEspeciales.porSeveridad[nivel]}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3">
-                    <p className="text-sm text-slate-300">Filtros de casos especiales</p>
-                    <div className="space-y-3">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setFiltroCasoEspecial(filtroCasoEspecial === 'solo' ? 'todos' : 'solo')}
-                        className={
-                          filtroCasoEspecial === 'solo'
-                            ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-                            : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                        }
-                      >
-                        {filtroCasoEspecial === 'solo' ? 'Solo casos especiales' : 'Todos los registros'}
-                      </Button>
+                          <div className="space-y-4">
+                            <div className="flex flex-col gap-3">
+                              <h2 className="text-white">Historial de Sesiones</h2>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                                <Card className="bg-slate-800/50 border-slate-700">
+                                  <CardContent className="pt-4 pb-4 text-center">
+                                    <p className="text-xs text-slate-400">Casos especiales</p>
+                                    <p className="text-xl text-teal-300 font-semibold">{resumenCasosEspeciales.totalEspeciales}</p>
+                                  </CardContent>
+                                </Card>
+                                <Card className="bg-slate-800/50 border-slate-700">
+                                  <CardContent className="pt-4 pb-4 text-center">
+                                    <p className="text-xs text-slate-400">Urgencias abiertas</p>
+                                    <p className="text-xl text-rose-400 font-semibold">{resumenCasosEspeciales.urgentesAbiertos}</p>
+                                  </CardContent>
+                                </Card>
+                                {SEVERIDAD_OPCIONES.slice(0, 3).map((nivel) => (
+                                  <Card key={`resumen-${nivel}`} className="bg-slate-800/50 border-slate-700">
+                                    <CardContent className="pt-4 pb-4 text-center">
+                                      <p className="text-xs text-slate-400">Severidad {nivel}</p>
+                                      <p className="text-xl font-semibold" style={{ color: nivel === 'Media' ? '#f59e0b' : nivel === 'Alta' ? '#f97316' : '#10b981' }}>
+                                        {resumenCasosEspeciales.porSeveridad[nivel]}
+                                      </p>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                              <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3">
+                                <p className="text-sm text-slate-300">Filtros de casos especiales</p>
+                                <div className="space-y-3">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setFiltroCasoEspecial(filtroCasoEspecial === 'solo' ? 'todos' : 'solo')}
+                                    className={filtroCasoEspecial === 'solo'
+                                      ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+                                      : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
+                                  >
+                                    {filtroCasoEspecial === 'solo' ? 'Solo casos especiales' : 'Todos los registros'}
+                                  </Button>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs text-slate-400">Tipo</Label>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setFiltroTipo('todos')}
-                            className={filtroTipo === 'todos' ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
-                          >
-                            Todos
-                          </Button>
-                          {TIPOS_CASO_OPCIONES.map((tipo) => (
-                            <Button
-                              key={`filtro-tipo-${tipo.value}`}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setFiltroTipo(tipo.value)}
-                              className={filtroTipo === tipo.value ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
-                            >
-                              {tipo.label}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-slate-400">Tipo</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                      <Button type="button" size="sm" variant="outline" onClick={() => setFiltroTipo('todos')} className={filtroTipo === 'todos' ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}>
+                                        Todos
+                                      </Button>
+                                      {TIPOS_CASO_OPCIONES.map((tipo) => (
+                                        <Button key={`filtro-tipo-${tipo.value}`} type="button" size="sm" variant="outline" onClick={() => setFiltroTipo(tipo.value)} className={filtroTipo === tipo.value ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}>
+                                          {tipo.label}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs text-slate-400">Severidad</Label>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setFiltroSeveridad('todas')}
-                            className={filtroSeveridad === 'todas' ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
-                          >
-                            Todas
-                          </Button>
-                          {SEVERIDAD_OPCIONES.map((nivel) => (
-                            <Button
-                              key={`filtro-sev-${nivel}`}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setFiltroSeveridad(nivel)}
-                              className={filtroSeveridad === nivel ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
-                            >
-                              {nivel}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-slate-400">Severidad</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                      <Button type="button" size="sm" variant="outline" onClick={() => setFiltroSeveridad('todas')} className={filtroSeveridad === 'todas' ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}>
+                                        Todas
+                                      </Button>
+                                      {SEVERIDAD_OPCIONES.map((nivel) => (
+                                        <Button key={`filtro-sev-${nivel}`} type="button" size="sm" variant="outline" onClick={() => setFiltroSeveridad(nivel)} className={filtroSeveridad === nivel ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}>
+                                          {nivel}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs text-slate-400">Estado</Label>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setFiltroEstado('todos')}
-                            className={filtroEstado === 'todos' ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
-                          >
-                            Todos
-                          </Button>
-                          {ESTADO_OPCIONES.map((estado) => (
-                            <Button
-                              key={`filtro-estado-${estado}`}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setFiltroEstado(estado)}
-                              className={filtroEstado === estado ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
-                            >
-                              {estado}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-slate-400">Estado</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                      <Button type="button" size="sm" variant="outline" onClick={() => setFiltroEstado('todos')} className={filtroEstado === 'todos' ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}>
+                                        Todos
+                                      </Button>
+                                      {ESTADO_OPCIONES.map((estado) => (
+                                        <Button key={`filtro-estado-${estado}`} type="button" size="sm" variant="outline" onClick={() => setFiltroEstado(estado)} className={filtroEstado === estado ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}>
+                                          {estado}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
 
-                      <div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setFiltroCasoEspecial('todos');
-                            setFiltroTipo('todos');
-                            setFiltroSeveridad('todas');
-                            setFiltroEstado('todos');
-                          }}
-                          className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
-                        >
-                          Limpiar filtros
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                                  <div>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setFiltroCasoEspecial('todos');
+                                        setFiltroTipo('todos');
+                                        setFiltroSeveridad('todas');
+                                        setFiltroEstado('todos');
+                                      }}
+                                      className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                                    >
+                                      Limpiar filtros
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
 
-                {loadingHistorial ? (
-                  <p className="text-slate-400">Cargando historial...</p>
-                ) : entradasFiltradas.length === 0 ? (
-                  <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
-                    <CardContent className="py-12 text-center">
-                      <Calendar className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-                      <p className="text-slate-400">No hay entradas que coincidan con los filtros actuales.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  entradasFiltradas.map((entrada) => (
-                    <Card key={entrada.historialid} className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="flex items-center gap-2 text-slate-100 flex-wrap">
-                              {entrada.diagnostico && <Badge variant="default">{entrada.diagnostico}</Badge>}
-                              {entrada.tratamiento && <Badge variant="secondary">{entrada.tratamiento}</Badge>}
-                              {!entrada.diagnostico && !entrada.tratamiento && (
-                                <Badge variant="outline" className="text-slate-200 border-slate-500">
-                                  Entrada clinica
-                                </Badge>
-                              )}
-                              {entrada.casoEspecial?.tipos.map((tipo) => {
-                                const tipoLabel = TIPOS_CASO_OPCIONES.find((opcion) => opcion.value === tipo)?.label || tipo;
-                                return (
-                                  <Badge key={`${entrada.historialid}-${tipo}`} className="bg-slate-700 text-slate-100 border border-slate-600">
-                                    {tipoLabel}
-                                  </Badge>
-                                );
-                              })}
-                              {entrada.casoEspecial && (
-                                <>
-                                  <Badge className={clasesSeveridad[entrada.casoEspecial.severidad]}>{entrada.casoEspecial.severidad}</Badge>
-                                  <Badge className={clasesEstado[entrada.casoEspecial.estado]}>{entrada.casoEspecial.estado}</Badge>
-                                </>
-                              )}
-                            </CardTitle>
-                            <CardDescription className="flex items-center gap-2 mt-1 text-slate-400">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(entrada.fechaentrada).toLocaleDateString()}
-                            </CardDescription>
+                            {loadingHistorial ? (
+                              <p className="text-slate-400">Cargando historial...</p>
+                            ) : entradasFiltradas.length === 0 ? (
+                              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                                <CardContent className="py-12 text-center">
+                                  <Calendar className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                                  <p className="text-slate-400">No hay entradas que coincidan con los filtros actuales.</p>
+                                </CardContent>
+                              </Card>
+                            ) : (
+                              entradasFiltradas.map((entrada) => (
+                                <Card key={entrada.historialid} className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                                  <CardHeader>
+                                    <div className="flex items-start justify-between">
+                                      <div>
+                                        <CardTitle className="flex items-center gap-2 text-slate-100 flex-wrap">
+                                          {entrada.diagnostico && <Badge variant="default">{entrada.diagnostico}</Badge>}
+                                          {entrada.tratamiento && <Badge variant="secondary">{entrada.tratamiento}</Badge>}
+                                          {!entrada.diagnostico && !entrada.tratamiento && (
+                                            <Badge variant="outline" className="text-slate-200 border-slate-500">
+                                              Entrada clinica
+                                            </Badge>
+                                          )}
+                                          {entrada.casoEspecial?.tipos.map((tipo) => {
+                                            const tipoLabel = TIPOS_CASO_OPCIONES.find((opcion) => opcion.value === tipo)?.label || tipo;
+                                            return (
+                                              <Badge key={`${entrada.historialid}-${tipo}`} className="bg-slate-700 text-slate-100 border border-slate-600">
+                                                {tipoLabel}
+                                              </Badge>
+                                            );
+                                          })}
+                                          {entrada.casoEspecial && (
+                                            <>
+                                              <Badge className={clasesSeveridad[entrada.casoEspecial.severidad]}>{entrada.casoEspecial.severidad}</Badge>
+                                              <Badge className={clasesEstado[entrada.casoEspecial.estado]}>{entrada.casoEspecial.estado}</Badge>
+                                            </>
+                                          )}
+                                        </CardTitle>
+                                        <CardDescription className="flex items-center gap-2 mt-1 text-slate-400">
+                                          <Calendar className="w-3 h-3" />
+                                          {new Date(entrada.fechaentrada).toLocaleDateString()}
+                                        </CardDescription>
+                                      </div>
+                                      <Button size="sm" variant="ghost" onClick={() => handleAbrirEditar(entrada)} className="text-slate-300 hover:bg-slate-700 shrink-0">
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <h4 className="text-slate-200 mb-2">Notas de la Sesión</h4>
+                                    <p className="text-slate-300 whitespace-pre-wrap">{entrada.observacionesLimpias}</p>
+
+                                    {entrada.comentarioFelicitacion && (
+                                      <div className="mt-4 rounded-lg border border-emerald-600/40 bg-emerald-900/10 p-3">
+                                        <p className="text-xs uppercase tracking-wide text-emerald-300 mb-1">Observaciones de avance terapéutico</p>
+                                        <p className="text-sm text-emerald-100 whitespace-pre-wrap">{entrada.comentarioFelicitacion}</p>
+                                      </div>
+                                    )}
+
+                                    {entrada.casoEspecial?.detalle && (
+                                      <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-2">
+                                        <p className="text-xs uppercase tracking-wide text-slate-400">Detalle de caso especial</p>
+                                        {entrada.casoEspecial.detalle.accionInmediata ? (
+                                          <p className="text-sm text-slate-300"><span className="text-slate-400">Acción inmediata:</span> {entrada.casoEspecial.detalle.accionInmediata}</p>
+                                        ) : null}
+                                        {entrada.casoEspecial.detalle.planSeguimiento24h ? (
+                                          <p className="text-sm text-slate-300"><span className="text-slate-400">Plan 24h:</span> {entrada.casoEspecial.detalle.planSeguimiento24h}</p>
+                                        ) : null}
+                                        {entrada.casoEspecial.detalle.relacionFamiliar ? (
+                                          <p className="text-sm text-slate-300"><span className="text-slate-400">Relación familiar:</span> {entrada.casoEspecial.detalle.relacionFamiliar === 'Otro' && entrada.casoEspecial.detalle.relacionFamiliarOtro ? `Otro (${entrada.casoEspecial.detalle.relacionFamiliarOtro})` : entrada.casoEspecial.detalle.relacionFamiliar}</p>
+                                        ) : null}
+                                        {entrada.casoEspecial.detalle.consentimientoFamiliar ? (
+                                          <p className="text-sm text-slate-300"><span className="text-slate-400">Consentimiento familiar:</span> {entrada.casoEspecial.detalle.consentimientoFamiliar}</p>
+                                        ) : null}
+                                        {entrada.casoEspecial.detalle.horaFueraHorario ? (
+                                          <p className="text-sm text-slate-300"><span className="text-slate-400">Hora fuera de horario:</span> {entrada.casoEspecial.detalle.horaFueraHorario}</p>
+                                        ) : null}
+                                        {entrada.casoEspecial.detalle.motivoFueraHorario ? (
+                                          <p className="text-sm text-slate-300"><span className="text-slate-400">Motivo fuera de horario:</span> {entrada.casoEspecial.detalle.motivoFueraHorario}</p>
+                                        ) : null}
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              ))
+                            )}
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleAbrirEditar(entrada)}
-                            className="text-slate-300 hover:bg-slate-700 shrink-0"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <h4 className="text-slate-200 mb-2">Notas de la Sesión</h4>
-                        <p className="text-slate-300 whitespace-pre-wrap">{entrada.observacionesLimpias}</p>
-
-                        {entrada.comentarioFelicitacion && (
-                          <div className="mt-4 rounded-lg border border-emerald-600/40 bg-emerald-900/10 p-3">
-                            <p className="text-xs uppercase tracking-wide text-emerald-300 mb-1">Observaciones de avance terapéutico</p>
-                            <p className="text-sm text-emerald-100 whitespace-pre-wrap">{entrada.comentarioFelicitacion}</p>
-                          </div>
-                        )}
-
-                        {entrada.casoEspecial?.detalle && (
-                          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-2">
-                            <p className="text-xs uppercase tracking-wide text-slate-400">Detalle de caso especial</p>
-                            {entrada.casoEspecial.detalle.accionInmediata ? (
-                              <p className="text-sm text-slate-300">
-                                <span className="text-slate-400">Acción inmediata:</span> {entrada.casoEspecial.detalle.accionInmediata}
-                              </p>
-                            ) : null}
-                            {entrada.casoEspecial.detalle.planSeguimiento24h ? (
-                              <p className="text-sm text-slate-300">
-                                <span className="text-slate-400">Plan 24h:</span> {entrada.casoEspecial.detalle.planSeguimiento24h}
-                              </p>
-                            ) : null}
-                            {entrada.casoEspecial.detalle.relacionFamiliar ? (
-                              <p className="text-sm text-slate-300">
-                                <span className="text-slate-400">Relación familiar:</span>{' '}
-                                {entrada.casoEspecial.detalle.relacionFamiliar === 'Otro' && entrada.casoEspecial.detalle.relacionFamiliarOtro
-                                  ? `Otro (${entrada.casoEspecial.detalle.relacionFamiliarOtro})`
-                                  : entrada.casoEspecial.detalle.relacionFamiliar}
-                              </p>
-                            ) : null}
-                            {entrada.casoEspecial.detalle.consentimientoFamiliar ? (
-                              <p className="text-sm text-slate-300">
-                                <span className="text-slate-400">Consentimiento familiar:</span> {entrada.casoEspecial.detalle.consentimientoFamiliar}
-                              </p>
-                            ) : null}
-                            {entrada.casoEspecial.detalle.horaFueraHorario ? (
-                              <p className="text-sm text-slate-300">
-                                <span className="text-slate-400">Hora fuera de horario:</span> {entrada.casoEspecial.detalle.horaFueraHorario}
-                              </p>
-                            ) : null}
-                            {entrada.casoEspecial.detalle.motivoFueraHorario ? (
-                              <p className="text-sm text-slate-300">
-                                <span className="text-slate-400">Motivo fuera de horario:</span> {entrada.casoEspecial.detalle.motivoFueraHorario}
-                              </p>
-                            ) : null}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-
-  // Carga inicial de pacientes
-  useEffect(() => {
-    fetchPacientesList();
-  }, []);
-
-  // Refrescar datos cada 30 segundos para capturar cambios en sesiones completadas
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchPacientesList();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Auto-seleccionar paciente cuando llega el prop pacienteId
-  useEffect(() => {
-    if (pacienteId !== undefined && pacientes.length > 0) {
-      const found = pacientes.find((p) => p.pacienteid === pacienteId);
-      if (found) setPacienteSeleccionado(found);
-    }
-  }, [pacienteId, pacientes]);
-
-  // Cargar historial cuando cambia el paciente seleccionado
-  useEffect(() => {
-    if (!pacienteSeleccionado) {
-      setEntradas([]);
-      return;
-    }
-    const fetchHistorial = async () => {
-      setLoadingHistorial(true);
-      try {
-        const response = await apiFetch(
-          `${API_ENDPOINTS.HISTORIAL_CLINICO}/${pacienteSeleccionado.pacienteid}`
-        );
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
-        }
-        if (!response.ok) throw new Error('Error al cargar el historial');
-        const data = await response.json();
-        setEntradas(Array.isArray(data) ? data.map(normalizarEntrada) : []);
-      } catch (err: any) {
-        toast.error(err.message);
-      } finally {
-        setLoadingHistorial(false);
-      }
-    };
-    fetchHistorial();
-  }, [pacienteSeleccionado]);
-
-  const pacientesFiltrados = pacientes.filter((p) =>
-    `${p.nombre ?? ''} ${p.apellidopaterno ?? ''}`
-      .toLowerCase()
-      .includes(busqueda.toLowerCase())
-  );
-
-  const entradasFiltradas = useMemo(() => {
-    return entradas.filter((entrada) => {
-      const meta = entrada.casoEspecial;
-
-      if (filtroCasoEspecial === 'solo' && !meta) {
-        return false;
-      }
-
-      if (filtroTipo !== 'todos' && (!meta || !meta.tipos.includes(filtroTipo))) {
-        return false;
-      }
-
-      if (filtroSeveridad !== 'todas' && (!meta || meta.severidad !== filtroSeveridad)) {
-        return false;
-      }
-
-      if (filtroEstado !== 'todos' && (!meta || meta.estado !== filtroEstado)) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [entradas, filtroCasoEspecial, filtroTipo, filtroSeveridad, filtroEstado]);
-
-  const resumenCasosEspeciales = useMemo(() => {
-    const entradasEspeciales = entradas.filter((entrada) => Boolean(entrada.casoEspecial));
-    const urgentesAbiertos = entradasEspeciales.filter((entrada) =>
-      entrada.casoEspecial?.tipos.includes('urgencia') && entrada.casoEspecial?.estado !== 'Cerrado'
-    ).length;
-
-    const porSeveridad = SEVERIDAD_OPCIONES.reduce((acc, severidad) => {
-      acc[severidad] = entradasEspeciales.filter((entrada) => entrada.casoEspecial?.severidad === severidad).length;
-      return acc;
-    }, {} as Record<SeveridadCaso, number>);
-
-    return {
-      totalEspeciales: entradasEspeciales.length,
-      urgentesAbiertos,
-      porSeveridad,
-    };
-  }, [entradas]);
-
-  useEffect(() => {
-    if (!pacienteSeleccionado) return;
-    const cantidadUrgente = resumenCasosEspeciales.urgentesAbiertos;
-    if (cantidadUrgente <= 0) return;
-
-    const claveAlerta = `${pacienteSeleccionado.pacienteid}:${cantidadUrgente}`;
-    if (ultimaAlertaUrgenciaRef.current === claveAlerta) {
-      return;
-    }
-
-    ultimaAlertaUrgenciaRef.current = claveAlerta;
-    toast.warning('Hay casos de urgencia abiertos', {
-      description: `${cantidadUrgente} caso(s) requieren seguimiento prioritario.`,
-    });
-  }, [pacienteSeleccionado, resumenCasosEspeciales.urgentesAbiertos]);
-
-  const toggleTipoCaso = (tipo: CasoEspecialTipo) => {
-    setTiposCaso((prev) =>
-      prev.includes(tipo) ? prev.filter((item) => item !== tipo) : [...prev, tipo]
-    );
-  };
-
-  const toggleTipoCasoEditar = (tipo: CasoEspecialTipo) => {
-    setTiposCasoEditar((prev) =>
-      prev.includes(tipo) ? prev.filter((item) => item !== tipo) : [...prev, tipo]
-    );
-  };
-
-  const handleGuardarNota = async () => {
-    if (!nuevaNota || !diagnostico || !tratamiento || !pacienteSeleccionado) {
-      toast.error('Por favor completa todos los campos');
-      return;
-    }
-
-    if (tiposCaso.includes('urgencia') && (!detalleCaso.accionInmediata.trim() || !detalleCaso.planSeguimiento24h.trim())) {
-      toast.error('Para urgencia, captura acción inmediata y plan de seguimiento 24h.');
-      return;
-    }
-
-    if (tiposCaso.includes('familiar') && !detalleCaso.relacionFamiliar.trim()) {
-      toast.error('Para caso familiar, indica la relación del familiar o red de apoyo.');
-      return;
-    }
-
-    if (tiposCaso.includes('familiar') && detalleCaso.relacionFamiliar === 'Otro' && !detalleCaso.relacionFamiliarOtro.trim()) {
-      toast.error('Si seleccionas "Otro", especifica la relación.');
-      return;
-    }
-
-    if (tiposCaso.includes('fuera_horario') && (!detalleCaso.horaFueraHorario.trim() || !detalleCaso.motivoFueraHorario.trim())) {
-      toast.error('Para fuera de horario, indica hora y motivo del contacto.');
-      return;
-    }
-
-    const metaCaso = tiposCaso.length > 0
-      ? {
-          tipos: tiposCaso,
-          severidad: severidadCaso,
-          estado: estadoCaso,
-          detalle: normalizarDetalleCaso(detalleCaso),
-        }
-      : null;
-
-    try {
-      const response = await apiFetch(API_ENDPOINTS.HISTORIAL_CLINICO, {
-        method: 'POST',
-        body: JSON.stringify({
-          pacienteId: pacienteSeleccionado.pacienteid,
-          observaciones: buildObservacionesPayload(nuevaNota, metaCaso, nuevaFelicitacion),
-          diagnostico,
-          tratamiento,
-        }),
-      });
-      if (!response.ok) throw new Error('Error al guardar la nota');
-      const nuevaEntrada = normalizarEntrada(await response.json());
-      setEntradas([nuevaEntrada, ...entradas]);
-      toast.success('Entrada de bitácora guardada exitosamente');
-      setNuevaNota('');
-      setNuevaFelicitacion('');
-      setDiagnostico('');
-      setTratamiento('');
-      setTiposCaso([]);
-      setSeveridadCaso('Media');
-      setEstadoCaso('Abierto');
-      setDetalleCaso(normalizarDetalleCaso(undefined));
-      setEditando(false);
-      setMostrarExito(true);
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
-
-  const handleAbrirEditar = (entrada: BitacoraEntrada) => {
-    setEditarEntrada(entrada);
-    setNotaEditar(entrada.observacionesLimpias ?? '');
-    setFelicitacionEditar(entrada.comentarioFelicitacion ?? '');
-    setClinicaEditar(
-      normalizarClinicaMeta(entrada.clinica || undefined, {
-        fechaSesion: formatearFechaHoraLocalInput(entrada.fechaentrada),
-        numeroSesion: generarFolioClinico(entrada.historialid),
-        cedulaProfesional: obtenerCedulaProfesionalSesion(),
-      })
-    );
-    setDiagnosticoEditar(entrada.diagnostico ?? '');
-    setTratamientoEditar(entrada.tratamiento ?? '');
-    setTiposCasoEditar(entrada.casoEspecial?.tipos || []);
-    setSeveridadCasoEditar(entrada.casoEspecial?.severidad || 'Media');
-    setEstadoCasoEditar(entrada.casoEspecial?.estado || 'Abierto');
-    setDetalleCasoEditar(normalizarDetalleCaso(entrada.casoEspecial?.detalle));
-  };
-
-  const handleGuardarEdicion = async () => {
     if (!notaEditar || !diagnosticoEditar || !tratamientoEditar || !editarEntrada) {
       toast.error('Por favor completa todos los campos');
       return;
