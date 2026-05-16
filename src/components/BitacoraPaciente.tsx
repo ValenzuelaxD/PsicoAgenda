@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Calendar, Edit, Save, Plus, Check, User, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -35,6 +36,31 @@ type CasoEspecialTipo =
 
 type SeveridadCaso = 'Baja' | 'Media' | 'Alta' | 'Critica';
 type EstadoCaso = 'Abierto' | 'Seguimiento' | 'Escalado' | 'Cerrado';
+type NivelRiesgoAutolesivo = 'Sin riesgo' | 'Ideación pasiva' | 'Ideación activa' | 'Plan' | 'Intento';
+type QuienRealizoContacto = 'Paciente' | 'Familiar' | 'Tutor' | 'Otro';
+
+interface ClinicaMetaBitacora {
+  fechaSesion: string;
+  numeroSesion: string;
+  cedulaProfesional: string;
+  codigoCie11: string;
+  motivoConsulta: string;
+  observacionesAvance: string;
+  proximaCitaFecha: string;
+  planSeguimiento: string;
+  consentimientoVigente: boolean;
+  riesgoAutolesivo: {
+    nivel: NivelRiesgoAutolesivo | '';
+    planSeguridad: string;
+    notificadoFamiliar: boolean;
+    protocoloCrisis: boolean;
+  };
+  fueraHorario: {
+    quienRealizoContacto: QuienRealizoContacto | '';
+    accionTomada: string;
+    protocoloCrisis: boolean;
+  };
+}
 
 interface CasoEspecialMeta {
   tipos: CasoEspecialTipo[];
@@ -55,10 +81,61 @@ interface BitacoraEntrada extends HistorialClinico {
   observacionesLimpias: string;
   casoEspecial: CasoEspecialMeta | null;
   comentarioFelicitacion: string;
+  clinica: ClinicaMetaBitacora | null;
 }
 
 const META_PREFIX = '[PSICOAGENDA_CASO_ESPECIAL]';
 const FELICITACION_PREFIX = '[PSICOAGENDA_COMENTARIO_FELICITACION]';
+const CIE11_PATTERN = /^[A-Z0-9]{2,7}(?:\.[A-Z0-9]{1,4})?$/i;
+
+const padDos = (value: number) => String(value).padStart(2, '0');
+
+const formatearFechaHoraLocalInput = (fecha?: string | Date) => {
+  const fechaObj = fecha instanceof Date ? fecha : fecha ? new Date(fecha) : new Date();
+  if (Number.isNaN(fechaObj.getTime())) {
+    return '';
+  }
+
+  return [
+    fechaObj.getFullYear(),
+    padDos(fechaObj.getMonth() + 1),
+    padDos(fechaObj.getDate()),
+  ].join('-') + `T${padDos(fechaObj.getHours())}:${padDos(fechaObj.getMinutes())}`;
+};
+
+const formatearFechaLocalInput = (fecha?: string | Date) => {
+  const fechaObj = fecha instanceof Date ? fecha : fecha ? new Date(fecha) : new Date();
+  if (Number.isNaN(fechaObj.getTime())) {
+    return '';
+  }
+
+  return [
+    fechaObj.getFullYear(),
+    padDos(fechaObj.getMonth() + 1),
+    padDos(fechaObj.getDate()),
+  ].join('-');
+};
+
+const generarFolioClinico = (historialId?: number) => {
+  const ahora = new Date();
+  const base = `${ahora.getFullYear()}${padDos(ahora.getMonth() + 1)}${padDos(ahora.getDate())}`;
+  const sufijo = historialId ? String(historialId).padStart(5, '0') : `${padDos(ahora.getHours())}${padDos(ahora.getMinutes())}${padDos(ahora.getSeconds())}`;
+  return `BIT-${base}-${sufijo}`;
+};
+
+const obtenerCedulaProfesionalSesion = () => {
+  try {
+    const rawUser = localStorage.getItem('user');
+    if (!rawUser) {
+      return '';
+    }
+
+    const user = JSON.parse(rawUser);
+    return String(user?.cedulaProfesional || user?.cedulaprofesional || '');
+  } catch {
+    return '';
+  }
+};
 
 const TIPOS_CASO_OPCIONES: Array<{ value: CasoEspecialTipo; label: string }> = [
   { value: 'urgencia', label: 'Urgencia' },
@@ -138,7 +215,12 @@ const esSeveridadValida = (value: string): value is SeveridadCaso =>
 const esEstadoValido = (value: string): value is EstadoCaso =>
   ESTADO_OPCIONES.includes(value as EstadoCaso);
 
-const parseObservaciones = (textoOriginal: string | undefined): { observacionesLimpias: string; casoEspecial: CasoEspecialMeta | null; comentarioFelicitacion: string } => {
+const parseObservaciones = (textoOriginal: string | undefined): {
+  observacionesLimpias: string;
+  casoEspecial: CasoEspecialMeta | null;
+  comentarioFelicitacion: string;
+  clinica: ClinicaMetaBitacora | null;
+} => {
   const texto = String(textoOriginal || '');
   const sortedMarkers = [
     { key: FELICITACION_PREFIX, index: texto.indexOf(FELICITACION_PREFIX) },
@@ -152,6 +234,7 @@ const parseObservaciones = (textoOriginal: string | undefined): { observacionesL
       observacionesLimpias: texto,
       casoEspecial: null,
       comentarioFelicitacion: '',
+      clinica: null,
     };
   }
 
@@ -176,22 +259,29 @@ const parseObservaciones = (textoOriginal: string | undefined): { observacionesL
       observacionesLimpias,
       casoEspecial: null,
       comentarioFelicitacion,
+      clinica: null,
     };
   }
 
   try {
     const parsed = JSON.parse(rawMeta);
-    const tipos = Array.isArray(parsed?.tipos)
-      ? parsed.tipos.filter((tipo: string) => esTipoCasoValido(tipo))
+    const casoEspecialFuente = parsed?.casoEspecial || parsed;
+    const clinicaFuente = parsed?.clinica;
+    const tipos = Array.isArray(casoEspecialFuente?.tipos)
+      ? casoEspecialFuente.tipos.filter((tipo: string) => esTipoCasoValido(tipo))
       : [];
-    const severidad = esSeveridadValida(String(parsed?.severidad || '')) ? parsed.severidad : 'Media';
-    const estado = esEstadoValido(String(parsed?.estado || '')) ? parsed.estado : 'Abierto';
+    const severidad = esSeveridadValida(String(casoEspecialFuente?.severidad || '')) ? casoEspecialFuente.severidad : 'Media';
+    const estado = esEstadoValida(String(casoEspecialFuente?.estado || '')) ? casoEspecialFuente.estado : 'Abierto';
+    const clinica = clinicaFuente
+      ? normalizarClinicaMeta(clinicaFuente)
+      : null;
 
     if (tipos.length === 0) {
       return {
         observacionesLimpias,
         casoEspecial: null,
         comentarioFelicitacion,
+        clinica,
       };
     }
 
@@ -202,22 +292,24 @@ const parseObservaciones = (textoOriginal: string | undefined): { observacionesL
         severidad,
         estado,
         detalle: {
-          accionInmediata: String(parsed?.detalle?.accionInmediata || ''),
-          planSeguimiento24h: String(parsed?.detalle?.planSeguimiento24h || ''),
-          relacionFamiliar: String(parsed?.detalle?.relacionFamiliar || ''),
-          relacionFamiliarOtro: String(parsed?.detalle?.relacionFamiliarOtro || ''),
-          consentimientoFamiliar: parsed?.detalle?.consentimientoFamiliar === 'No' ? 'No' : 'Si',
-          horaFueraHorario: String(parsed?.detalle?.horaFueraHorario || ''),
-          motivoFueraHorario: String(parsed?.detalle?.motivoFueraHorario || ''),
+          accionInmediata: String(casoEspecialFuente?.detalle?.accionInmediata || ''),
+          planSeguimiento24h: String(casoEspecialFuente?.detalle?.planSeguimiento24h || ''),
+          relacionFamiliar: String(casoEspecialFuente?.detalle?.relacionFamiliar || ''),
+          relacionFamiliarOtro: String(casoEspecialFuente?.detalle?.relacionFamiliarOtro || ''),
+          consentimientoFamiliar: casoEspecialFuente?.detalle?.consentimientoFamiliar === 'No' ? 'No' : 'Si',
+          horaFueraHorario: String(casoEspecialFuente?.detalle?.horaFueraHorario || ''),
+          motivoFueraHorario: String(casoEspecialFuente?.detalle?.motivoFueraHorario || ''),
         },
       },
       comentarioFelicitacion,
+      clinica,
     };
   } catch {
     return {
       observacionesLimpias,
       casoEspecial: null,
       comentarioFelicitacion,
+      clinica: null,
     };
   }
 };
@@ -225,23 +317,59 @@ const parseObservaciones = (textoOriginal: string | undefined): { observacionesL
 const buildObservacionesPayload = (
   observacionesLimpias: string,
   casoEspecial: CasoEspecialMeta | null,
-  comentarioFelicitacion: string
+  comentarioFelicitacion: string,
+  clinica?: ClinicaMetaBitacora | null
 ): string => {
   const texto = String(observacionesLimpias || '').trim();
   const comentarioLimpio = String(comentarioFelicitacion || '').trim();
 
-  if ((!casoEspecial || casoEspecial.tipos.length === 0) && !comentarioLimpio) {
+  const clinicaActiva = clinica
+    ? {
+        ...clinica,
+        fechaSesion: String(clinica.fechaSesion || '').trim(),
+        numeroSesion: String(clinica.numeroSesion || '').trim(),
+        cedulaProfesional: String(clinica.cedulaProfesional || '').trim(),
+        codigoCie11: String(clinica.codigoCie11 || '').trim().toUpperCase(),
+        motivoConsulta: String(clinica.motivoConsulta || '').trim(),
+        observacionesAvance: String(clinica.observacionesAvance || '').trim(),
+        proximaCitaFecha: String(clinica.proximaCitaFecha || '').trim(),
+        planSeguimiento: String(clinica.planSeguimiento || '').trim(),
+        consentimientoVigente: Boolean(clinica.consentimientoVigente),
+        riesgoAutolesivo: {
+          ...clinica.riesgoAutolesivo,
+          planSeguridad: String(clinica.riesgoAutolesivo?.planSeguridad || '').trim(),
+          notificadoFamiliar: Boolean(clinica.riesgoAutolesivo?.notificadoFamiliar),
+          protocoloCrisis: Boolean(clinica.riesgoAutolesivo?.protocoloCrisis),
+        },
+        fueraHorario: {
+          ...clinica.fueraHorario,
+          accionTomada: String(clinica.fueraHorario?.accionTomada || '').trim(),
+          protocoloCrisis: Boolean(clinica.fueraHorario?.protocoloCrisis),
+        },
+      }
+    : null;
+
+  if ((!casoEspecial || casoEspecial.tipos.length === 0) && !comentarioLimpio && !clinicaActiva) {
     return texto;
   }
 
   const bloquesMetadata: string[] = [];
+  const metadata: Record<string, unknown> = {};
 
   if (comentarioLimpio) {
     bloquesMetadata.push(`${FELICITACION_PREFIX}${comentarioLimpio}`);
   }
 
   if (casoEspecial && casoEspecial.tipos.length > 0) {
-    bloquesMetadata.push(`${META_PREFIX}${JSON.stringify(casoEspecial)}`);
+    metadata.casoEspecial = casoEspecial;
+  }
+
+  if (clinicaActiva) {
+    metadata.clinica = clinicaActiva;
+  }
+
+  if (Object.keys(metadata).length > 0) {
+    bloquesMetadata.push(`${META_PREFIX}${JSON.stringify(metadata)}`);
   }
 
   return `${texto}\n\n${bloquesMetadata.join('\n\n')}`.trim();
@@ -257,6 +385,36 @@ const normalizarDetalleCaso = (detalle: CasoEspecialMeta['detalle'] | undefined)
   motivoFueraHorario: String(detalle?.motivoFueraHorario || ''),
 });
 
+const normalizarClinicaMeta = (
+  clinica: Partial<ClinicaMetaBitacora> | undefined,
+  contexto?: { fechaSesion?: string; numeroSesion?: string; cedulaProfesional?: string }
+): ClinicaMetaBitacora => ({
+  fechaSesion: String(clinica?.fechaSesion || contexto?.fechaSesion || ''),
+  numeroSesion: String(clinica?.numeroSesion || contexto?.numeroSesion || ''),
+  cedulaProfesional: String(clinica?.cedulaProfesional || contexto?.cedulaProfesional || ''),
+  codigoCie11: String(clinica?.codigoCie11 || ''),
+  motivoConsulta: String(clinica?.motivoConsulta || ''),
+  observacionesAvance: String(clinica?.observacionesAvance || ''),
+  proximaCitaFecha: String(clinica?.proximaCitaFecha || ''),
+  planSeguimiento: String(clinica?.planSeguimiento || ''),
+  consentimientoVigente: Boolean(clinica?.consentimientoVigente),
+  riesgoAutolesivo: {
+    nivel: (['Sin riesgo', 'Ideación pasiva', 'Ideación activa', 'Plan', 'Intento'] as const).includes(clinica?.riesgoAutolesivo?.nivel as NivelRiesgoAutolesivo)
+      ? (clinica?.riesgoAutolesivo?.nivel as NivelRiesgoAutolesivo)
+      : '',
+    planSeguridad: String(clinica?.riesgoAutolesivo?.planSeguridad || ''),
+    notificadoFamiliar: Boolean(clinica?.riesgoAutolesivo?.notificadoFamiliar),
+    protocoloCrisis: Boolean(clinica?.riesgoAutolesivo?.protocoloCrisis),
+  },
+  fueraHorario: {
+    quienRealizoContacto: (['Paciente', 'Familiar', 'Tutor', 'Otro'] as const).includes(clinica?.fueraHorario?.quienRealizoContacto as QuienRealizoContacto)
+      ? (clinica?.fueraHorario?.quienRealizoContacto as QuienRealizoContacto)
+      : '',
+    accionTomada: String(clinica?.fueraHorario?.accionTomada || ''),
+    protocoloCrisis: Boolean(clinica?.fueraHorario?.protocoloCrisis),
+  },
+});
+
 const normalizarEntrada = (entrada: HistorialClinico): BitacoraEntrada => {
   const parsed = parseObservaciones(entrada.observaciones);
   return {
@@ -264,6 +422,7 @@ const normalizarEntrada = (entrada: HistorialClinico): BitacoraEntrada => {
     observacionesLimpias: parsed.observacionesLimpias,
     casoEspecial: parsed.casoEspecial,
     comentarioFelicitacion: parsed.comentarioFelicitacion,
+    clinica: parsed.clinica,
   };
 };
 
@@ -288,6 +447,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
   const [editarEntrada, setEditarEntrada] = useState<BitacoraEntrada | null>(null);
   const [notaEditar, setNotaEditar] = useState('');
   const [felicitacionEditar, setFelicitacionEditar] = useState('');
+  const [clinicaEditar, setClinicaEditar] = useState<ClinicaMetaBitacora>(normalizarClinicaMeta(undefined));
   const [diagnosticoEditar, setDiagnosticoEditar] = useState('');
   const [tratamientoEditar, setTratamientoEditar] = useState('');
   const [tiposCasoEditar, setTiposCasoEditar] = useState<CasoEspecialTipo[]>([]);
@@ -515,6 +675,13 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
     setEditarEntrada(entrada);
     setNotaEditar(entrada.observacionesLimpias ?? '');
     setFelicitacionEditar(entrada.comentarioFelicitacion ?? '');
+    setClinicaEditar(
+      normalizarClinicaMeta(entrada.clinica || undefined, {
+        fechaSesion: formatearFechaHoraLocalInput(entrada.fechaentrada),
+        numeroSesion: generarFolioClinico(entrada.historialid),
+        cedulaProfesional: obtenerCedulaProfesionalSesion(),
+      })
+    );
     setDiagnosticoEditar(entrada.diagnostico ?? '');
     setTratamientoEditar(entrada.tratamiento ?? '');
     setTiposCasoEditar(entrada.casoEspecial?.tipos || []);
@@ -529,9 +696,32 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       return;
     }
 
+    const clinicaNormalizada = normalizarClinicaMeta(clinicaEditar, {
+      fechaSesion: clinicaEditar.fechaSesion || formatearFechaHoraLocalInput(editarEntrada.fechaentrada),
+      numeroSesion: clinicaEditar.numeroSesion || generarFolioClinico(editarEntrada.historialid),
+      cedulaProfesional: clinicaEditar.cedulaProfesional || obtenerCedulaProfesionalSesion(),
+    });
+
+    if (!clinicaNormalizada.fechaSesion || !clinicaNormalizada.numeroSesion || !clinicaNormalizada.cedulaProfesional || !clinicaNormalizada.motivoConsulta || !clinicaNormalizada.proximaCitaFecha || !clinicaNormalizada.planSeguimiento || !clinicaNormalizada.consentimientoVigente) {
+      toast.error('Completa los campos clínicos obligatorios del expediente.');
+      return;
+    }
+
+    if (!clinicaNormalizada.codigoCie11 || !CIE11_PATTERN.test(clinicaNormalizada.codigoCie11)) {
+      toast.error('El código CIE-11 tiene un formato inválido.');
+      return;
+    }
+
     if (tiposCasoEditar.includes('urgencia') && (!detalleCasoEditar.accionInmediata.trim() || !detalleCasoEditar.planSeguimiento24h.trim())) {
       toast.error('Para urgencia, captura acción inmediata y plan de seguimiento 24h.');
       return;
+    }
+
+    if (tiposCasoEditar.includes('riesgo_autolesivo')) {
+      if (!clinicaNormalizada.riesgoAutolesivo.nivel || !clinicaNormalizada.riesgoAutolesivo.planSeguridad.trim()) {
+        toast.error('Para riesgo autolesivo, selecciona el nivel de riesgo y define el plan de seguridad.');
+        return;
+      }
     }
 
     if (tiposCasoEditar.includes('familiar') && !detalleCasoEditar.relacionFamiliar.trim()) {
@@ -546,6 +736,11 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
     if (tiposCasoEditar.includes('fuera_horario') && (!detalleCasoEditar.horaFueraHorario.trim() || !detalleCasoEditar.motivoFueraHorario.trim())) {
       toast.error('Para fuera de horario, indica hora y motivo del contacto.');
+      return;
+    }
+
+    if (tiposCasoEditar.includes('fuera_horario') && (!clinicaNormalizada.fueraHorario.quienRealizoContacto || !clinicaNormalizada.fueraHorario.accionTomada.trim())) {
+      toast.error('Para fuera de horario, indica quién realizó el contacto y la acción tomada.');
       return;
     }
 
@@ -564,7 +759,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
         {
           method: 'PUT',
           body: JSON.stringify({
-            observaciones: buildObservacionesPayload(notaEditar, metaCasoEditar, felicitacionEditar),
+            observaciones: buildObservacionesPayload(notaEditar, metaCasoEditar, felicitacionEditar, clinicaNormalizada),
             diagnostico: diagnosticoEditar,
             tratamiento: tratamientoEditar,
           }),
@@ -720,207 +915,408 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
               {/* Historial de entradas */}
               <div className="space-y-4">
-                <div className="flex flex-col gap-3">
-                  <h2 className="text-white">Historial de Sesiones</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                    <Card className="bg-slate-800/50 border-slate-700">
-                      <CardContent className="pt-4 pb-4 text-center">
-                        <p className="text-xs text-slate-400">Casos especiales</p>
-                        <p className="text-xl text-teal-300 font-semibold">{resumenCasosEspeciales.totalEspeciales}</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-slate-800/50 border-slate-700">
-                      <CardContent className="pt-4 pb-4 text-center">
-                        <p className="text-xs text-slate-400">Urgencias abiertas</p>
-                        <p className="text-xl text-rose-400 font-semibold">{resumenCasosEspeciales.urgentesAbiertos}</p>
-                      </CardContent>
-                    </Card>
-                    {SEVERIDAD_OPCIONES.slice(0, 3).map((nivel) => (
-                      <Card key={`resumen-${nivel}`} className="bg-slate-800/50 border-slate-700">
-                        <CardContent className="pt-4 pb-4 text-center">
-                          <p className="text-xs text-slate-400">Severidad {nivel}</p>
-                          <p className="text-xl font-semibold" style={{ color: nivel === 'Media' ? '#f59e0b' : nivel === 'Alta' ? '#f97316' : '#10b981' }}>
-                            {resumenCasosEspeciales.porSeveridad[nivel]}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3">
-                    <p className="text-sm text-slate-300">Filtros de casos especiales</p>
-                    <div className="space-y-3">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setFiltroCasoEspecial(filtroCasoEspecial === 'solo' ? 'todos' : 'solo')}
-                        className={filtroCasoEspecial === 'solo'
-                          ? 'border-teal-500 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-                          : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}
-                      >
-                        {filtroCasoEspecial === 'solo' ? 'Solo casos especiales' : 'Todos los registros'}
-                      </Button>
-
-                      <div className="space-y-1">
-                        <Label className="text-xs text-slate-400">Tipo</Label>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setFiltroTipo('todos')}
-                            className={filtroTipo === 'todos' ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
-                          >
-                            Todos
-                          </Button>
-                          {TIPOS_CASO_OPCIONES.map((tipo) => (
-                            <Button
-                              key={`filtro-tipo-${tipo.value}`}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setFiltroTipo(tipo.value)}
-                              className={filtroTipo === tipo.value ? '!bg-teal-600 !text-white !border-transparent' : claseInactivaSegmento}
-                            >
-                              {tipo.label}
-                            </Button>
-                          ))}
-                        </div>
+                <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1 sm:pr-2 pb-2">
+                  <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+                    <p className="text-sm text-slate-200">Datos clínicos obligatorios</p>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="fecha-sesion-editar" className="text-slate-200">
+                          Fecha y hora de la sesión
+                        </Label>
+                        <Input
+                          id="fecha-sesion-editar"
+                          type="datetime-local"
+                          value={clinicaEditar.fechaSesion}
+                          onChange={(e) => setClinicaEditar((prev) => ({ ...prev, fechaSesion: e.target.value }))}
+                          className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                          required
+                        />
                       </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs text-slate-400">Severidad</Label>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setFiltroSeveridad('todas')}
-                            className={filtroSeveridad === 'todas' ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
-                          >
-                            Todas
-                          </Button>
-                          {SEVERIDAD_OPCIONES.map((nivel) => (
-                            <Button
-                              key={`filtro-sev-${nivel}`}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setFiltroSeveridad(nivel)}
-                              className={filtroSeveridad === nivel ? '!bg-violet-600 !text-white !border-transparent' : claseInactivaSegmento}
-                            >
-                              {nivel}
-                            </Button>
-                          ))}
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="folio-sesion-editar" className="text-slate-200">
+                          Número de sesión / folio
+                        </Label>
+                        <Input
+                          id="folio-sesion-editar"
+                          value={clinicaEditar.numeroSesion}
+                          onChange={(e) => setClinicaEditar((prev) => ({ ...prev, numeroSesion: e.target.value }))}
+                          className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                          required
+                        />
                       </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs text-slate-400">Estado</Label>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setFiltroEstado('todos')}
-                            className={filtroEstado === 'todos' ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
-                          >
-                            Todos
-                          </Button>
-                          {ESTADO_OPCIONES.map((estado) => (
-                            <Button
-                              key={`filtro-estado-${estado}`}
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setFiltroEstado(estado)}
-                              className={filtroEstado === estado ? '!bg-sky-600 !text-white !border-transparent' : claseInactivaSegmento}
-                            >
-                              {estado}
-                            </Button>
-                          ))}
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cedula-profesional-editar" className="text-slate-200">
+                          Número de cédula profesional del terapeuta
+                        </Label>
+                        <Input
+                          id="cedula-profesional-editar"
+                          value={clinicaEditar.cedulaProfesional}
+                          onChange={(e) => setClinicaEditar((prev) => ({ ...prev, cedulaProfesional: e.target.value }))}
+                          className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                          required
+                        />
                       </div>
 
-                      <div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setFiltroCasoEspecial('todos');
-                            setFiltroTipo('todos');
-                            setFiltroSeveridad('todas');
-                            setFiltroEstado('todos');
-                          }}
-                          className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
-                        >
-                          Limpiar filtros
-                        </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor="codigo-cie11-editar" className="text-slate-200">
+                          Código CIE-11
+                        </Label>
+                        <Input
+                          id="codigo-cie11-editar"
+                          value={clinicaEditar.codigoCie11}
+                          onChange={(e) => setClinicaEditar((prev) => ({ ...prev, codigoCie11: e.target.value.toUpperCase() }))}
+                          placeholder="Ej. 6A70 o F32.1"
+                          className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                          required
+                        />
+                        <p className="text-xs text-slate-400">Formato alfanumérico con punto opcional.</p>
                       </div>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="motivo-consulta-editar" className="text-slate-200">
+                        Motivo de consulta de la sesión actual
+                      </Label>
+                      <Textarea
+                        id="motivo-consulta-editar"
+                        value={clinicaEditar.motivoConsulta}
+                        onChange={(e) => setClinicaEditar((prev) => ({ ...prev, motivoConsulta: e.target.value }))}
+                        rows={3}
+                        className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                        placeholder="Describe el motivo clínico de la sesión actual"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="proxima-cita-fecha-editar" className="text-slate-200">
+                          Próxima cita
+                        </Label>
+                        <Input
+                          id="proxima-cita-fecha-editar"
+                          type="date"
+                          value={clinicaEditar.proximaCitaFecha}
+                          onChange={(e) => setClinicaEditar((prev) => ({ ...prev, proximaCitaFecha: e.target.value }))}
+                          className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="plan-seguimiento-editar" className="text-slate-200">
+                          Próxima cita o plan de seguimiento
+                        </Label>
+                        <Textarea
+                          id="plan-seguimiento-editar"
+                          value={clinicaEditar.planSeguimiento}
+                          onChange={(e) => setClinicaEditar((prev) => ({ ...prev, planSeguimiento: e.target.value }))}
+                          rows={3}
+                          className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                          placeholder="Indica la conducta terapéutica o plan de seguimiento"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                      <input
+                        id="consentimiento-vigente-editar"
+                        type="checkbox"
+                        checked={clinicaEditar.consentimientoVigente}
+                        onChange={(e) => setClinicaEditar((prev) => ({ ...prev, consentimientoVigente: e.target.checked }))}
+                        className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800 text-teal-600 focus:ring-teal-500"
+                        required
+                      />
+                      <Label htmlFor="consentimiento-vigente-editar" className="text-slate-200 leading-5">
+                        Confirmo que el paciente tiene consentimiento informado vigente y firmado
+                      </Label>
+                    </div>
                   </div>
-                </div>
-                {loadingHistorial ? (
-                  <p className="text-slate-400">Cargando historial...</p>
-                ) : entradasFiltradas.length === 0 ? (
-                  <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
-                    <CardContent className="py-12 text-center">
-                      <Calendar className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-                      <p className="text-slate-400">
-                        No hay entradas que coincidan con los filtros actuales.
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  entradasFiltradas.map((entrada) => (
-                    <Card
-                      key={entrada.historialid}
-                      className="bg-slate-800/50 backdrop-blur-sm border-slate-700"
-                    >
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="flex items-center gap-2 text-slate-100 flex-wrap">
-                              {entrada.diagnostico && (
-                                <Badge variant="default">{entrada.diagnostico}</Badge>
-                              )}
-                              {entrada.tratamiento && (
-                                <Badge variant="secondary">{entrada.tratamiento}</Badge>
-                              )}
-                              {!entrada.diagnostico && !entrada.tratamiento && (
-                                <Badge variant="outline" className="text-slate-200 border-slate-500">Entrada clinica</Badge>
-                              )}
-                              {entrada.casoEspecial?.tipos.map((tipo) => {
-                                const tipoLabel = TIPOS_CASO_OPCIONES.find((opcion) => opcion.value === tipo)?.label || tipo;
-                                return (
-                                  <Badge key={`${entrada.historialid}-${tipo}`} className="bg-slate-700 text-slate-100 border border-slate-600">
-                                    {tipoLabel}
-                                  </Badge>
-                                );
-                              })}
-                              {entrada.casoEspecial && (
-                                <>
-                                  <Badge className={clasesSeveridad[entrada.casoEspecial.severidad]}>
-                                    {entrada.casoEspecial.severidad}
-                                  </Badge>
-                                  <Badge className={clasesEstado[entrada.casoEspecial.estado]}>
-                                    {entrada.casoEspecial.estado}
-                                  </Badge>
-                                </>
-                              )}
-                            </CardTitle>
-                            <CardDescription className="flex items-center gap-2 mt-1 text-slate-400">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(entrada.fechaentrada).toLocaleDateString()}
-                            </CardDescription>
-                          </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="diagnostico-editar" className="text-slate-200">
+                      Diagnóstico
+                    </Label>
+                    <Input
+                      id="diagnostico-editar"
+                      value={diagnosticoEditar}
+                      onChange={(e) => setDiagnosticoEditar(e.target.value)}
+                      className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tratamiento-editar" className="text-slate-200">
+                      Tratamiento
+                    </Label>
+                    <Input
+                      id="tratamiento-editar"
+                      value={tratamientoEditar}
+                      onChange={(e) => setTratamientoEditar(e.target.value)}
+                      className="h-11 bg-slate-700 border-slate-600 text-slate-100 leading-normal"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notas-editar" className="text-slate-200">
+                      Notas de la Sesión
+                    </Label>
+                    <Textarea
+                      id="notas-editar"
+                      value={notaEditar}
+                      onChange={(e) => setNotaEditar(e.target.value)}
+                      placeholder="Observaciones, técnicas aplicadas, temas tratados, tareas asignadas..."
+                      rows={6}
+                      className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="avance-terapeutico-editar" className="text-slate-200">
+                      Observaciones de avance terapéutico (opcional)
+                    </Label>
+                    <Textarea
+                      id="avance-terapeutico-editar"
+                      value={felicitacionEditar}
+                      onChange={(e) => setFelicitacionEditar(e.target.value)}
+                      placeholder="Ej. Excelente avance esta semana, sigue asi."
+                      rows={3}
+                      className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                    />
+                  </div>
+
+                  <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+                    <p className="text-sm text-slate-200">Caso especial (opcional)</p>
+                    <div className="flex flex-wrap gap-2">
+                      {TIPOS_CASO_OPCIONES.map((tipo) => {
+                        const activo = tiposCasoEditar.includes(tipo.value);
+                        return (
                           <Button
+                            key={tipo.value}
+                            type="button"
                             size="sm"
-                            variant="ghost"
-                            onClick={() => handleAbrirEditar(entrada)}
-                            className="text-slate-300 hover:bg-slate-700 shrink-0"
+                            variant="outline"
+                            onClick={() => toggleTipoCasoEditar(tipo.value)}
+                            className={claseBotonOpcion(activo, 'bg-teal-600 text-white')}
                           >
+                            {tipo.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    {tiposCasoEditar.length > 0 && (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label className="text-slate-300">Severidad</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {SEVERIDAD_OPCIONES.map((nivel) => (
+                              <Button
+                                key={nivel}
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSeveridadCasoEditar(nivel)}
+                                className={severidadCasoEditar === nivel ? claseSeveridadActiva(nivel) : claseInactivaSegmento}
+                              >
+                                {nivel}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-slate-300">Estado del caso</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {ESTADO_OPCIONES.map((estado) => (
+                              <Button
+                                key={estado}
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEstadoCasoEditar(estado)}
+                                className={estadoCasoEditar === estado ? claseEstadoActiva(estado) : claseInactivaSegmento}
+                              >
+                                {estado}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <AnimatePresence initial={false}>
+                      {tiposCasoEditar.includes('riesgo_autolesivo') && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.2 }}
+                          className="space-y-3 rounded-lg border border-rose-700/40 bg-rose-900/10 p-3"
+                        >
+                          <p className="text-sm font-medium text-rose-200">Riesgo autolesivo</p>
+                          <div className="space-y-2">
+                            <Label className="text-rose-100">Nivel de riesgo</Label>
+                            <Select
+                              value={clinicaEditar.riesgoAutolesivo.nivel}
+                              onValueChange={(value) =>
+                                setClinicaEditar((prev) => ({
+                                  ...prev,
+                                  riesgoAutolesivo: {
+                                    ...prev.riesgoAutolesivo,
+                                    nivel: value as NivelRiesgoAutolesivo,
+                                  },
+                                }))
+                              }
+                            >
+                              <SelectTrigger className="border-slate-600 bg-slate-700 text-slate-100">
+                                <SelectValue placeholder="Selecciona un nivel" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {['Sin riesgo', 'Ideación pasiva', 'Ideación activa', 'Plan', 'Intento'].map((nivel) => (
+                                  <SelectItem key={nivel} value={nivel}>
+                                    {nivel}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-rose-100">Plan de seguridad aplicado</Label>
+                            <Textarea
+                              value={clinicaEditar.riesgoAutolesivo.planSeguridad}
+                              onChange={(e) =>
+                                setClinicaEditar((prev) => ({
+                                  ...prev,
+                                  riesgoAutolesivo: {
+                                    ...prev.riesgoAutolesivo,
+                                    planSeguridad: e.target.value,
+                                  },
+                                }))
+                              }
+                              rows={3}
+                              className="bg-slate-700 border-slate-600 text-slate-100"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <label className="flex items-start gap-2 text-slate-100">
+                              <input
+                                type="checkbox"
+                                checked={clinicaEditar.riesgoAutolesivo.notificadoFamiliar}
+                                onChange={(e) =>
+                                  setClinicaEditar((prev) => ({
+                                    ...prev,
+                                    riesgoAutolesivo: {
+                                      ...prev.riesgoAutolesivo,
+                                      notificadoFamiliar: e.target.checked,
+                                    },
+                                  }))
+                                }
+                                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800 text-teal-600 focus:ring-teal-500"
+                              />
+                              <span>¿Se notificó a familiar o tutor?</span>
+                            </label>
+                            <label className="flex items-start gap-2 text-slate-100">
+                              <input
+                                type="checkbox"
+                                checked={clinicaEditar.riesgoAutolesivo.protocoloCrisis}
+                                onChange={(e) =>
+                                  setClinicaEditar((prev) => ({
+                                    ...prev,
+                                    riesgoAutolesivo: {
+                                      ...prev.riesgoAutolesivo,
+                                      protocoloCrisis: e.target.checked,
+                                    },
+                                  }))
+                                }
+                                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800 text-teal-600 focus:ring-teal-500"
+                              />
+                              <span>¿Se activó protocolo de crisis?</span>
+                            </label>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <AnimatePresence initial={false}>
+                      {tiposCasoEditar.includes('fuera_horario') && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.2 }}
+                          className="space-y-3 rounded-lg border border-amber-700/40 bg-amber-900/10 p-3"
+                        >
+                          <p className="text-sm font-medium text-amber-200">Fuera de horario</p>
+                          <div className="space-y-2">
+                            <Label className="text-amber-100">¿Quién realizó el contacto?</Label>
+                            <Select
+                              value={clinicaEditar.fueraHorario.quienRealizoContacto}
+                              onValueChange={(value) =>
+                                setClinicaEditar((prev) => ({
+                                  ...prev,
+                                  fueraHorario: {
+                                    ...prev.fueraHorario,
+                                    quienRealizoContacto: value as QuienRealizoContacto,
+                                  },
+                                }))
+                              }
+                            >
+                              <SelectTrigger className="border-slate-600 bg-slate-700 text-slate-100">
+                                <SelectValue placeholder="Selecciona una opción" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {['Paciente', 'Familiar', 'Tutor', 'Otro'].map((valor) => (
+                                  <SelectItem key={valor} value={valor}>
+                                    {valor}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-amber-100">Acción tomada</Label>
+                            <Textarea
+                              value={clinicaEditar.fueraHorario.accionTomada}
+                              onChange={(e) =>
+                                setClinicaEditar((prev) => ({
+                                  ...prev,
+                                  fueraHorario: {
+                                    ...prev.fueraHorario,
+                                    accionTomada: e.target.value,
+                                  },
+                                }))
+                              }
+                              rows={3}
+                              className="bg-slate-700 border-slate-600 text-slate-100"
+                            />
+                          </div>
+
+                          <label className="flex items-start gap-2 text-slate-100">
+                            <input
+                              type="checkbox"
+                              checked={clinicaEditar.fueraHorario.protocoloCrisis}
+                              onChange={(e) =>
+                                setClinicaEditar((prev) => ({
+                                  ...prev,
+                                  fueraHorario: {
+                                    ...prev.fueraHorario,
+                                    protocoloCrisis: e.target.checked,
+                                  },
+                                }))
+                              }
+                              className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800 text-teal-600 focus:ring-teal-500"
+                            />
+                            <span>¿Se activó protocolo de crisis?</span>
+                          </label>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                             <Edit className="w-4 h-4" />
                           </Button>
                         </div>
@@ -931,7 +1327,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
                         {entrada.comentarioFelicitacion && (
                           <div className="mt-4 rounded-lg border border-emerald-600/40 bg-emerald-900/10 p-3">
-                            <p className="text-xs uppercase tracking-wide text-emerald-300 mb-1">Comentario de felicitacion</p>
+                            <p className="text-xs uppercase tracking-wide text-emerald-300 mb-1">Observaciones de avance terapéutico</p>
                             <p className="text-sm text-emerald-100 whitespace-pre-wrap">{entrada.comentarioFelicitacion}</p>
                           </div>
                         )}
@@ -1028,7 +1424,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="felicitacion" className="text-slate-200">
-                Comentario de felicitacion (opcional)
+                Observaciones de avance terapéutico (opcional)
               </Label>
               <Textarea
                 id="felicitacion"
@@ -1278,7 +1674,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
 
                   <div className="space-y-2">
                     <Label htmlFor="felicitacion-editar" className="text-slate-200">
-                      Comentario de felicitacion (opcional)
+                      Observaciones de avance terapéutico (opcional)
                     </Label>
                     <Textarea
                       id="felicitacion-editar"
