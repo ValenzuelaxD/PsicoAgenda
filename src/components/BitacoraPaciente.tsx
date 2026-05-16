@@ -1209,7 +1209,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
       {editarEntrada !== null && (
         <Dialog open={true} onOpenChange={() => setEditarEntrada(null)}>
           <DialogContent className="w-[56rem] max-w-[95vw] max-h-[calc(100dvh-1.5rem)] bg-slate-800 border-slate-700 overflow-hidden flex flex-col top-4 translate-y-0 p-0">
-            <div className="flex min-h-0 flex-col overflow-hidden p-6">
+            <div className="flex h-[calc(100dvh-1.5rem)] min-h-0 flex-col p-6">
               <DialogHeader className="flex-shrink-0">
                 <DialogTitle className="text-slate-100">Editar Bitácora del Paciente</DialogTitle>
                 <DialogDescription className="text-slate-400">
@@ -1217,7 +1217,7 @@ export function BitacoraPaciente({ pacienteId }: BitacoraPacienteProps) {
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 sm:pr-2 pb-2">
+              <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-scroll overscroll-contain pr-1 sm:pr-2 pb-2">
                 <div className="space-y-2">
                   <Label htmlFor="diagnostico-editar" className="text-slate-200">
                     Diagnóstico
