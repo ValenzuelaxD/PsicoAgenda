@@ -288,8 +288,6 @@ type CasoEspecialTipo =
                   ))
                 )}
               </div>
-    }
-  };
 
   // Carga inicial de pacientes
   useEffect(() => {
