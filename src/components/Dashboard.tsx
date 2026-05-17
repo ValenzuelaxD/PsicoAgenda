@@ -204,7 +204,7 @@ export function Dashboard({
         </div>
 
         <div 
-          className="relative p-4 sm:p-6 lg:p-8 min-h-[calc(100dvh-72px)]"
+          className="relative p-4 sm:p-6 lg:p-8 min-h-[calc(100dvh-72px)] flex flex-col"
           style={{
             backgroundImage: imagenTema ? `url('${imagenTema}')` : 'none',
             backgroundSize: 'cover',
@@ -224,7 +224,7 @@ export function Dashboard({
           )}
           
           <div 
-            className={`theme-readable relative z-10 ${themePreferences.mode === 'light' ? 'theme-light' : ''}`}
+            className={`theme-readable relative z-10 flex flex-col flex-1 min-h-0 ${themePreferences.mode === 'light' ? 'theme-light' : ''}`}
             style={{
               color: themePreferences.mode === 'light' ? '#1a1a1a' : 'inherit'
             }}
