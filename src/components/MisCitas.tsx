@@ -944,10 +944,14 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           )}
 
           {noHayCitas && (
-            <div
-              aria-hidden
-              className="w-full flex-1 min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
-            />
+            <Card className="bg-slate-800/60 backdrop-blur-sm border-slate-700">
+              <CardContent className="py-10 text-center text-slate-300 space-y-2">
+                <p className="text-slate-200">Aun no tienes citas registradas.</p>
+                <p className="text-sm text-slate-400">
+                  Cuando programes una cita, aparecera aqui con su estado y detalles.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
@@ -1006,10 +1010,14 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           ))}
 
           {noHayCitas && (
-            <div
-              aria-hidden
-              className="w-full flex-1 min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
-            />
+            <Card className="bg-slate-800/60 backdrop-blur-sm border-slate-700">
+              <CardContent className="py-10 text-center text-slate-300 space-y-2">
+                <p className="text-slate-200">No hay citas en el historial todavia.</p>
+                <p className="text-sm text-slate-400">
+                  Una vez completadas, tus sesiones apareceran en esta seccion.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
         
