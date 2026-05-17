@@ -158,7 +158,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8">
       <div>
         <h1 className="text-white mb-2 text-xl sm:text-2xl">Registro de Paciente</h1>
         <p className="text-slate-300 text-sm sm:text-base">
