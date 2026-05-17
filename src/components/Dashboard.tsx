@@ -204,7 +204,7 @@ export function Dashboard({
         </div>
 
         <div 
-          className="relative p-4 sm:p-6 lg:p-8 min-h-[calc(100dvh-72px)] flex flex-col"
+          className="relative p-4 sm:p-6 lg:p-8 h-[calc(100dvh-72px)] min-h-[calc(100dvh-72px)] flex flex-col"
           style={{
             backgroundImage: imagenTema ? `url('${imagenTema}')` : 'none',
             backgroundSize: 'cover',
