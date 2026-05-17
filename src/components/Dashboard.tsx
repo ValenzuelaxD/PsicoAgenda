@@ -242,6 +242,7 @@ export function Dashboard({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
+                  className="flex flex-col flex-1 min-h-0"
                 >
                   {renderView()}
                 </motion.div>
