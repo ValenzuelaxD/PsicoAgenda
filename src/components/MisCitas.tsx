@@ -741,6 +741,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   const finSemana = new Date(inicioSemana);
   finSemana.setDate(inicioSemana.getDate() + 7);
   const citasMesActual = citas.filter((cita) => esMismoMes(new Date(cita.fechahora), mesActual));
+  const noHayCitas = citas.length === 0;
   const citasHoy = citas.filter((cita) => esMismoDia(new Date(cita.fechahora), ahora));
   const citasSemana = citas.filter((cita) => {
     const fecha = new Date(cita.fechahora);
@@ -748,7 +749,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
   });
 
   return (
-    <div className="theme-pane max-w-6xl mx-auto px-4 sm:px-0 sm:p-4 lg:p-6 space-y-8 flex flex-col flex-1 min-h-full">
+    <div className="theme-pane w-full max-w-6xl mx-auto px-4 sm:px-0 sm:p-4 lg:p-6 space-y-8 flex flex-col min-h-[calc(100dvh-72px)]">
       <div>
         <h1 className="text-slate-100 mb-2">
           {userType === 'psicologo' ? 'Gestionar Citas' : 'Mis Citas'}
@@ -941,6 +942,13 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               </CardContent>
             </Card>
           )}
+
+          {noHayCitas && (
+            <div
+              aria-hidden
+              className="theme-frame border border-slate-700/60 rounded-2xl min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="pasadas" className="space-y-4 mt-6">
@@ -996,6 +1004,13 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               </CardContent>
             </Card>
           ))}
+
+          {noHayCitas && (
+            <div
+              aria-hidden
+              className="theme-frame border border-slate-700/60 rounded-2xl min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
+            />
+          )}
         </TabsContent>
         
         {/* Tab Consultar Agenda */}
