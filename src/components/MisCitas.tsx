@@ -945,11 +945,22 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
 
           {noHayCitas && (
             <Card className="bg-slate-800/60 backdrop-blur-sm border-slate-700">
-              <CardContent className="py-10 text-center text-slate-300 space-y-2">
-                <p className="text-slate-200">Aun no tienes citas registradas.</p>
-                <p className="text-sm text-slate-400">
-                  Cuando programes una cita, aparecera aqui con su estado y detalles.
-                </p>
+              <CardContent className="py-10 text-center text-slate-200 space-y-4 min-h-[35vh] sm:min-h-[40vh] lg:min-h-[45vh] flex flex-col items-center justify-center">
+                <div className="space-y-2">
+                  <p className="text-lg sm:text-xl font-semibold">Estas listo para tu proxima sesion?</p>
+                  <p className="text-sm text-slate-400">
+                    {userType === 'psicologo'
+                      ? 'Aun no hay citas activas. Puedes programar una nueva para tus pacientes.'
+                      : 'Aunque no hay citas actuales, puedes solicitar una nueva facilmente.'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => onNavigate(userType === 'psicologo' ? 'programar-cita' : 'agendar')}
+                  className="bg-teal-600 hover:bg-teal-700 text-white px-6"
+                >
+                  {userType === 'psicologo' ? 'Programar Nueva Cita' : 'Solicitar Nueva Cita'}
+                </Button>
               </CardContent>
             </Card>
           )}
