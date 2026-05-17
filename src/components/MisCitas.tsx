@@ -946,7 +946,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           {noHayCitas && (
             <div
               aria-hidden
-              className="theme-frame border border-slate-700/60 rounded-2xl min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
+              className="w-full flex-1 min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
             />
           )}
         </TabsContent>
@@ -1008,7 +1008,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
           {noHayCitas && (
             <div
               aria-hidden
-              className="theme-frame border border-slate-700/60 rounded-2xl min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
+              className="w-full flex-1 min-h-[220px] sm:min-h-[280px] lg:min-h-[320px]"
             />
           )}
         </TabsContent>
