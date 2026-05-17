@@ -290,8 +290,8 @@
 .landing-benefit {
   padding: 1.1rem 1.2rem;
   border-radius: 18px;
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(139, 92, 246, 0.22);
+  border: 1px solid rgba(139, 92, 246, 0.45);
 }
 
 .landing-benefit--accent {

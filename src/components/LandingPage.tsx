@@ -285,7 +285,7 @@ export default function LandingPage() {
               },
               {
                 q: "Puedo migrar mis pacientes?",
-                a: "Si, puedes importar la informacion existente de manera ordenada y segura.",
+                a: "Aun no contamos con migracion automatica. Por ahora el alta es manual y te ayudamos a organizar los datos clave.",
               },
               {
                 q: "Funciona en movil?",
