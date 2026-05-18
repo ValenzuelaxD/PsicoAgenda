@@ -40,6 +40,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
   const [telefonoEmergencia, setTelefonoEmergencia] = useState('');
   const [motivoConsulta, setMotivoConsulta] = useState('');
   const [mostrarExito, setMostrarExito] = useState(false);
+  const [mostrarDuplicado, setMostrarDuplicado] = useState(false);
   const [credencialesRegistradas, setCredencialesRegistradas] = useState(null as { correo: string; password: string } | null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,10 +157,18 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
     } catch (err: any) {
       const message = String(err?.message || '').toLowerCase();
       if (message.includes('ya existe')) {
-        toast.error('El paciente ya existe en el sistema', {
-          description: 'Cambia a "Paciente existente" para asociarlo a tu lista.',
-        });
-        setModoRegistro('existente');
+        setNombre('');
+        setApellidos('');
+        setPassword('');
+        setConfirmPassword('');
+        setTelefono('');
+        setFechaNacimiento('');
+        setGenero('');
+        setDireccion('');
+        setContactoEmergencia('');
+        setTelefonoEmergencia('');
+        setMotivoConsulta('');
+        setMostrarDuplicado(true);
         return;
       }
       toast.error(err.message || 'Error al registrar el paciente');
@@ -183,6 +192,11 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
     setMotivoConsulta('');
     setCredencialesRegistradas(null);
     onNavigate('buscar-paciente');
+  };
+
+  const handleIrAExistente = () => {
+    setMostrarDuplicado(false);
+    setModoRegistro('existente');
   };
 
   return (
@@ -510,6 +524,43 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                     className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 mt-6"
                   >
                     Aceptar
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {mostrarDuplicado && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+              onClick={() => setMostrarDuplicado(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', damping: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-8"
+              >
+                <div className="text-center space-y-4">
+                  <h2 className="text-white text-xl sm:text-2xl">Paciente ya existe</h2>
+                  <p className="text-slate-300">
+                    El paciente ya está registrado. Para asociarlo a tu lista, usa la opción
+                    de "Paciente existente".
+                  </p>
+                  <Button
+                    onClick={handleIrAExistente}
+                    className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800"
+                  >
+                    Ir a Paciente existente
                   </Button>
                 </div>
               </motion.div>
