@@ -222,3 +222,22 @@ UPDATE Pacientes
 SET SesionesCompletadas = 0
 WHERE SesionesCompletadas IS NULL;
 
+-- 11) Relacion psicologas-pacientes (muchos a muchos)
+-- Permite asociar multiples psicologas a un paciente y viceversa.
+CREATE TABLE IF NOT EXISTS Psicologas_Pacientes (
+  PsicologaID INTEGER NOT NULL REFERENCES Psicologas(PsicologaID) ON DELETE CASCADE,
+  PacienteID  INTEGER NOT NULL REFERENCES Pacientes(PacienteID) ON DELETE CASCADE,
+  CreadoEn    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (PsicologaID, PacienteID)
+);
+
+CREATE INDEX IF NOT EXISTS ix_psicologas_pacientes_paciente
+  ON Psicologas_Pacientes (PacienteID);
+
+-- Backfill recomendado con citas existentes
+INSERT INTO Psicologas_Pacientes (PsicologaID, PacienteID)
+SELECT DISTINCT PsicologaID, PacienteID
+FROM Citas
+WHERE PsicologaID IS NOT NULL AND PacienteID IS NOT NULL
+ON CONFLICT DO NOTHING;
+
