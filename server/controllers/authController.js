@@ -37,11 +37,36 @@ const login = async (req, res) => {
   }
 
   try {
+    const correoNormalizado = email.toLowerCase();
+
     // 1. Busca el usuario por su correo en la tabla 'usuarios'
-    const result = await db.query('SELECT * FROM usuarios WHERE correo = $1', [email.toLowerCase()]);
+    const result = await db.query('SELECT * FROM usuarios WHERE correo = $1', [correoNormalizado]);
 
     // 2. Si no se encuentra el usuario, devuelve un error.
     if (result.rows.length === 0) {
+      const solicitudPendiente = await db.query(
+        `
+        SELECT contrasenahash, estadosolicitud
+        FROM solicitudesregistropsicologas
+        WHERE correo = $1
+        ORDER BY fechasolicitud DESC
+        LIMIT 1
+        `,
+        [correoNormalizado]
+      );
+
+      if (solicitudPendiente.rows.length > 0) {
+        const solicitud = solicitudPendiente.rows[0];
+        const esPasswordCorrecto = await bcrypt.compare(password, solicitud.contrasenahash);
+
+        if (esPasswordCorrecto && solicitud.estadosolicitud === 'Pendiente') {
+          return res.status(403).json({
+            success: false,
+            message: 'Tu registro esta en revision por un administrador. Te avisaremos cuando puedas iniciar sesion.'
+          });
+        }
+      }
+
       return res.status(401).json({ 
         success: false,
         message: "Credenciales inválidas." 

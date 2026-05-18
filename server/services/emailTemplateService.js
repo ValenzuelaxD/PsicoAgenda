@@ -529,7 +529,7 @@ const construirTemplateBienvenidaRegistro = async ({
     statusTone: 'success',
     title: 'Bienvenido a tu PsicoAgenda',
     greeting: `Hola ${limpiarTexto(nombreCompleto, 'psicologa')},`,
-    intro: 'Tu solicitud de registro fue recibida. Te compartimos tus datos de acceso para que los tengas a la mano y puedas compartirlos con tus pacientes cuando lo necesites.',
+    intro: 'Tu solicitud de registro fue recibida y esta en revision. Te compartimos tus datos de acceso para que los tengas a la mano mientras validamos tu informacion.',
     details: [
       { label: 'Correo', value: limpiarTexto(correo, 'no disponible') },
       { label: 'Contrasena', value: limpiarTexto(password, 'no disponible') },
@@ -560,6 +560,58 @@ const construirTemplateBienvenidaRegistro = async ({
     `Correo: ${correo}`,
     `Contrasena: ${password}`,
     `Estado del registro: ${estadoSolicitud}`,
+    '',
+    `Accede a la plataforma: ${APP_WEB_URL}`,
+    `Soporte: ${SUPPORT_EMAIL}`,
+  ].join('\n');
+
+  return {
+    asunto,
+    texto,
+    html,
+  };
+};
+
+const construirTemplateCuentaAprobada = async ({
+  nombre,
+  apellidoPaterno,
+  correo,
+}) => {
+  const nombreCompleto = obtenerNombreCompleto(nombre, apellidoPaterno) || 'psicologa';
+  const asunto = 'PsicoAgenda: tu cuenta ya esta aprobada';
+
+  const html = await renderTransactionalHtml({
+    preview: 'Tu cuenta fue aprobada y ya puedes iniciar sesion',
+    statusLabel: 'Cuenta aprobada',
+    statusTone: 'success',
+    title: 'Tu cuenta ya esta activa',
+    greeting: `Hola ${limpiarTexto(nombreCompleto, 'psicologa')},`,
+    intro: 'Tu registro fue aprobado por el administrador. Ya puedes iniciar sesion en PsicoAgenda con tus credenciales.',
+    details: [
+      { label: 'Correo', value: limpiarTexto(correo, 'no disponible') },
+      { label: 'Perfil', value: 'Psicologa' },
+    ],
+    primaryAction: {
+      label: 'Iniciar sesion',
+      href: APP_WEB_URL,
+    },
+    secondaryAction: {
+      label: 'Contactar soporte',
+      href: `mailto:${SUPPORT_EMAIL}`,
+    },
+    recommendations: [
+      'Inicia sesion para completar tu perfil.',
+      'Comparte tu agenda con tus pacientes desde la plataforma.',
+      'Si necesitas ayuda, responde a este correo o contacta soporte.',
+    ],
+    footerNote: 'Tu cuenta ya esta lista para empezar a atender en PsicoAgenda.',
+  });
+
+  const texto = [
+    `Hola ${nombreCompleto},`,
+    '',
+    'Tu registro fue aprobado y tu cuenta ya esta activa.',
+    `Correo: ${correo}`,
     '',
     `Accede a la plataforma: ${APP_WEB_URL}`,
     `Soporte: ${SUPPORT_EMAIL}`,
@@ -744,6 +796,7 @@ module.exports = {
   construirTemplatesAccesoZoom,
   construirTemplatesCancelacionZoom,
   construirTemplateBienvenidaRegistro,
+  construirTemplateCuentaAprobada,
   construirTemplateBienvenidaPaciente,
   construirTemplateCambioPassword,
   construirTemplateRecuperacionPassword,

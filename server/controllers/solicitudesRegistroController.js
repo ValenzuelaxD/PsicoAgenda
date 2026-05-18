@@ -1,4 +1,6 @@
 const db = require('../db');
+const { isEmailIntegrationEnabled, enviarCorreo } = require('../services/mailService');
+const { construirTemplateCuentaAprobada } = require('../services/emailTemplateService');
 
 const TABLA_SOLICITUDES = 'solicitudesregistropsicologas';
 
@@ -153,6 +155,27 @@ const aprobarSolicitudPsicologa = async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    if (isEmailIntegrationEnabled()) {
+      Promise.resolve()
+        .then(async () => {
+          const template = await construirTemplateCuentaAprobada({
+            nombre: solicitud.nombre,
+            apellidoPaterno: solicitud.apellidopaterno,
+            correo: solicitud.correo,
+          });
+
+          await enviarCorreo({
+            to: solicitud.correo,
+            subject: template.asunto,
+            text: template.texto,
+            html: template.html,
+          });
+        })
+        .catch((emailError) => {
+          console.error('[solicitudes.aprobar] Error enviando correo de aprobacion:', emailError.message);
+        });
+    }
 
     return res.json({
       success: true,
