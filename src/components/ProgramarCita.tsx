@@ -216,7 +216,17 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'No fue posible consultar la disponibilidad.');
+          const message = data.message || 'No fue posible consultar la disponibilidad.';
+          const esAvisoVentana = message.startsWith('Solo puedes consultar disponibilidad dentro de los');
+          if (esAvisoVentana) {
+            setHorariosDisponibles([]);
+            setHora('');
+            toast(message, {
+              className: 'bg-amber-100 text-amber-900 border border-amber-300',
+            });
+            return;
+          }
+          throw new Error(message);
         }
 
         const horarios = Array.isArray(data) ? data : [];

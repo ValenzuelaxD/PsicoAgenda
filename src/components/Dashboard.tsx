@@ -170,6 +170,25 @@ export function Dashboard({
           backdropFilter: 'blur(0px)',
         }}
       >
+        {imagenTema && (
+          <div
+            className="fixed inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url('${imagenTema}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+        )}
+        {imagenTema && (
+          <div
+            className="fixed inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(180deg, rgba(var(--theme-overlay-rgb, 2, 6, 23), var(--theme-overlay-top-alpha, 0.48)), rgba(var(--theme-overlay-rgb, 2, 6, 23), var(--theme-overlay-bottom-alpha, 0.68)))',
+            }}
+          />
+        )}
         {/* Top Bar con Notificaciones */}
         <div
           className="sticky top-0 z-30 backdrop-blur-sm border-b px-3 py-2 sm:py-4"
@@ -204,25 +223,8 @@ export function Dashboard({
         </div>
 
         <div 
-          className="relative p-4 sm:p-6 lg:p-8 h-[calc(100dvh-72px)] min-h-[calc(100dvh-72px)] flex flex-col"
-          style={{
-            backgroundImage: imagenTema ? `url('${imagenTema}')` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: isMobile ? 'scroll' : 'fixed',
-            backgroundRepeat: 'no-repeat',
-          }}
+          className="relative z-10 p-4 sm:p-6 lg:p-8 h-[calc(100svh-72px)] min-h-[calc(100svh-72px)] flex flex-col"
         >
-          {/* Overlay dinámico según el modo */}
-          {imagenTema && (
-            <div 
-              className="absolute inset-0 pointer-events-none" 
-              style={{
-                background: 'linear-gradient(180deg, rgba(var(--theme-overlay-rgb, 2, 6, 23), var(--theme-overlay-top-alpha, 0.48)), rgba(var(--theme-overlay-rgb, 2, 6, 23), var(--theme-overlay-bottom-alpha, 0.68)))',
-              }}
-            />
-          )}
-          
           <div 
             className={`theme-readable relative z-10 flex flex-col flex-1 min-h-0 ${themePreferences.mode === 'light' ? 'theme-light' : ''}`}
             style={{
