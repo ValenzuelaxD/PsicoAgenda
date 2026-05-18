@@ -301,22 +301,28 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
                       <SelectValue placeholder={loadingPacientes ? 'Cargando pacientes...' : 'Selecciona un paciente'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {pacientes.map((paciente: Paciente) => (
-                        <SelectItem key={paciente.pacienteid} value={String(paciente.pacienteid)}>
-                          <div className="flex items-center gap-2">
-                            {paciente.fotoperfil ? (
-                              <img
-                                src={paciente.fotoperfil}
-                                alt={`${paciente.nombre} ${paciente.apellidopaterno}`}
-                                className="w-4 h-4 rounded-full object-cover"
-                              />
-                            ) : (
-                              <User className="w-4 h-4" />
-                            )}
-                            {`${paciente.nombre} ${paciente.apellidopaterno}`}
-                          </div>
+                      {pacientes.length > 0 ? (
+                        pacientes.map((paciente: Paciente) => (
+                          <SelectItem key={paciente.pacienteid} value={String(paciente.pacienteid)}>
+                            <div className="flex items-center gap-2">
+                              {paciente.fotoperfil ? (
+                                <img
+                                  src={paciente.fotoperfil}
+                                  alt={`${paciente.nombre} ${paciente.apellidopaterno}`}
+                                  className="w-4 h-4 rounded-full object-cover"
+                                />
+                              ) : (
+                                <User className="w-4 h-4" />
+                              )}
+                              {`${paciente.nombre} ${paciente.apellidopaterno}`}
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="__sin_pacientes__" disabled className="text-slate-400 italic text-sm">
+                          No hay pacientes disponibles
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
