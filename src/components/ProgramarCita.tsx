@@ -222,7 +222,11 @@ export function ProgramarCita({ onNavigate }: ProgramarCitaProps) {
             setHorariosDisponibles([]);
             setHora('');
             toast(message, {
-              className: 'bg-amber-100 text-amber-900 border border-amber-300',
+              className: 'border border-amber-300',
+              style: {
+                backgroundColor: '#FEF3C7',
+                color: '#92400E',
+              },
             });
             return;
           }
