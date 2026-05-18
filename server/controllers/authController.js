@@ -373,7 +373,7 @@ const forgotPassword = async (req, res) => {
       { expiresIn: `${RESET_TOKEN_EXPIRES_MINUTES}m` }
     );
 
-    const resetUrl = `${APP_WEB_URL}?resetToken=${encodeURIComponent(token)}`;
+    const resetUrl = `${APP_WEB_URL}/app/?resetToken=${encodeURIComponent(token)}`;
     const template = await construirTemplateRecuperacionPassword({
       nombre: usuario.nombre,
       apellidoPaterno: usuario.apellidopaterno,
