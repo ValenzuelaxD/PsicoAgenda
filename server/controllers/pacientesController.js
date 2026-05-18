@@ -39,6 +39,26 @@ function construirFotoDesdeBd(mimeType, dataBuffer) {
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
 }
 
+const getPsicologaIdByUsuario = async (usuarioId) => {
+  const psicologaResult = await db.query('SELECT psicologaid FROM psicologas WHERE usuarioid = $1', [usuarioId]);
+  return psicologaResult.rows[0]?.psicologaid;
+};
+
+const asociarPacienteConPsicologa = async ({ client, psicologaId, pacienteId }) => {
+  if (!psicologaId || !pacienteId) {
+    return;
+  }
+
+  await client.query(
+    `
+      INSERT INTO psicologas_pacientes (psicologaid, pacienteid)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+    `,
+    [psicologaId, pacienteId]
+  );
+};
+
 const getPacientes = async (req, res) => {
   try {
     if (!req.user || !req.user.rol) {
@@ -102,11 +122,17 @@ const getPacientes = async (req, res) => {
           ${usarContadorPersistente ? '' : 'LEFT JOIN citas c ON c.pacienteid = p.pacienteid AND c.psicologaid = $1'}
           WHERE u.rol = 'paciente'
             AND u.activo = true
-            AND EXISTS (
-              SELECT 1
-              FROM citas cx
-              WHERE cx.pacienteid = p.pacienteid
-                AND cx.psicologaid = $1
+            AND (
+              EXISTS (
+                SELECT 1
+                FROM psicologas_pacientes pp
+                WHERE pp.pacienteid = p.pacienteid AND pp.psicologaid = $1
+              )
+              OR EXISTS (
+                SELECT 1
+                FROM citas cx
+                WHERE cx.pacienteid = p.pacienteid AND cx.psicologaid = $1
+              )
             )
           ${usarContadorPersistente ? '' : 'GROUP BY u.usuarioid, p.pacienteid, u.fotoperfil_mime, u.fotoperfil_data'}
         `,
@@ -186,22 +212,60 @@ const getPacientesSelector = async (req, res) => {
       return res.status(403).json({ message: 'No tienes permisos para consultar pacientes.' });
     }
 
-    const result = await db.query(
-      `
-        SELECT
-          p.pacienteid,
-          u.nombre,
-          u.apellidopaterno,
-          u.apellidomaterno,
-          u.fotoperfil_mime,
-          u.fotoperfil_data
-        FROM pacientes p
-        JOIN usuarios u ON u.usuarioid = p.usuarioid
-        WHERE u.rol = 'paciente'
-          AND u.activo = true
-        ORDER BY u.nombre ASC, u.apellidopaterno ASC, u.apellidomaterno ASC
-      `
-    );
+    let result;
+
+    if (req.user.rol === 'psicologa') {
+      const psicologaId = await getPsicologaIdByUsuario(req.user.id);
+      if (!psicologaId) {
+        return res.status(404).json({ message: 'Perfil de psicóloga no encontrado.' });
+      }
+
+      result = await db.query(
+        `
+          SELECT DISTINCT
+            p.pacienteid,
+            u.nombre,
+            u.apellidopaterno,
+            u.apellidomaterno,
+            u.fotoperfil_mime,
+            u.fotoperfil_data
+          FROM pacientes p
+          JOIN usuarios u ON u.usuarioid = p.usuarioid
+          WHERE u.activo = true
+            AND (
+              EXISTS (
+                SELECT 1
+                FROM psicologas_pacientes pp
+                WHERE pp.pacienteid = p.pacienteid AND pp.psicologaid = $1
+              )
+              OR EXISTS (
+                SELECT 1
+                FROM citas cx
+                WHERE cx.pacienteid = p.pacienteid AND cx.psicologaid = $1
+              )
+            )
+          ORDER BY u.nombre ASC, u.apellidopaterno ASC, u.apellidomaterno ASC
+        `,
+        [psicologaId]
+      );
+    } else {
+      result = await db.query(
+        `
+          SELECT
+            p.pacienteid,
+            u.nombre,
+            u.apellidopaterno,
+            u.apellidomaterno,
+            u.fotoperfil_mime,
+            u.fotoperfil_data
+          FROM pacientes p
+          JOIN usuarios u ON u.usuarioid = p.usuarioid
+          WHERE u.rol = 'paciente'
+            AND u.activo = true
+          ORDER BY u.nombre ASC, u.apellidopaterno ASC, u.apellidomaterno ASC
+        `
+      );
+    }
 
     const pacientes = result.rows.map((p) => ({
       pacienteid: p.pacienteid,
@@ -237,36 +301,80 @@ const crearPaciente = async (req, res) => {
     return res.status(400).json({ message: 'Campos requeridos: nombre, apellidoPaterno, correo, password.' });
   }
 
+  const client = await db.getClient();
   try {
+    await client.query('BEGIN');
+
+    let psicologaId = null;
     if (req.user.rol === 'psicologa') {
-      const psicologa = await db.query('SELECT psicologaid FROM psicologas WHERE usuarioid = $1', [req.user.id]);
-      if (psicologa.rows.length === 0) {
+      psicologaId = await getPsicologaIdByUsuario(req.user.id);
+      if (!psicologaId) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ message: 'Perfil de psicóloga no encontrado.' });
       }
     }
 
-    // Verificar si el correo ya existe
-    const existing = await db.query('SELECT usuarioid FROM usuarios WHERE correo = $1', [correoNormalizado]);
+    const existing = await client.query(
+      'SELECT usuarioid, rol FROM usuarios WHERE correo = $1',
+      [correoNormalizado]
+    );
+
     if (existing.rows.length > 0) {
-      return res.status(409).json({ message: 'El correo ya está registrado.' });
+      const existingUser = existing.rows[0];
+      if (existingUser.rol !== 'paciente') {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ message: 'El correo ya está registrado con otro rol.' });
+      }
+
+      const pacienteExistente = await client.query(
+        'SELECT pacienteid FROM pacientes WHERE usuarioid = $1',
+        [existingUser.usuarioid]
+      );
+
+      let pacienteId = pacienteExistente.rows[0]?.pacienteid;
+      if (!pacienteId) {
+        const nuevoPaciente = await client.query(
+          'INSERT INTO pacientes (usuarioid, fechanacimiento, genero, direccion, motivoconsulta, contactoemergencia, telemergencia, fechaalta) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE) RETURNING pacienteid',
+          [existingUser.usuarioid, fechaNacimiento || null, genero || null, direccion || null, motivoConsulta || null, contactoEmergencia || null, telefonoEmergencia || null]
+        );
+        pacienteId = nuevoPaciente.rows[0].pacienteid;
+      }
+
+      if (psicologaId) {
+        await asociarPacienteConPsicologa({ client, psicologaId, pacienteId });
+      }
+
+      await client.query('COMMIT');
+
+      return res.status(200).json({
+        pacienteid: pacienteId,
+        usuarioid: existingUser.usuarioid,
+        nombre,
+        apellidopaterno: apellidoPaterno,
+        correo: correoNormalizado,
+        mensaje: 'Paciente existente asociado correctamente',
+      });
     }
 
-    // Hash contraseña
     const salt = await bcrypt.genSalt(10);
     const contrasenaHash = await bcrypt.hash(password, salt);
 
-    // Crear usuario
-    const newUser = await db.query(
+    const newUser = await client.query(
       'INSERT INTO usuarios (nombre, apellidopaterno, apellidomaterno, correo, contrasenahash, telefono, rol, activo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING usuarioid',
       [nombre, apellidoPaterno, apellidoMaterno || null, correoNormalizado, contrasenaHash, telefono || null, 'paciente', true]
     );
     const usuarioId = newUser.rows[0].usuarioid;
 
-    // Crear paciente
-    const newPaciente = await db.query(
+    const newPaciente = await client.query(
       'INSERT INTO pacientes (usuarioid, fechanacimiento, genero, direccion, motivoconsulta, contactoemergencia, telemergencia, fechaalta) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE) RETURNING pacienteid',
       [usuarioId, fechaNacimiento || null, genero || null, direccion || null, motivoConsulta || null, contactoEmergencia || null, telefonoEmergencia || null]
     );
+
+    if (psicologaId) {
+      await asociarPacienteConPsicologa({ client, psicologaId, pacienteId: newPaciente.rows[0].pacienteid });
+    }
+
+    await client.query('COMMIT');
 
     if (isEmailIntegrationEnabled()) {
       Promise.resolve()
@@ -299,8 +407,11 @@ const crearPaciente = async (req, res) => {
       mensaje: 'Paciente registrado exitosamente',
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error al crear paciente:', error);
     res.status(500).json({ message: 'Error interno del servidor.' });
+  } finally {
+    client.release();
   }
 };
 

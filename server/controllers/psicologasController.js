@@ -44,20 +44,64 @@ const construirFotoDesdeBd = (mimeType, dataBuffer) => {
   return `data:${mimeType};base64,${dataBuffer.toString('base64')}`;
 };
 
+const getPacienteIdByUsuario = async (usuarioId) => {
+  const pacienteResult = await db.query('SELECT pacienteid FROM pacientes WHERE usuarioid = $1', [usuarioId]);
+  return pacienteResult.rows[0]?.pacienteid;
+};
+
 const getPsicologas = async (req, res) => {
   try {
-    const result = await db.query(`
-      SELECT 
-        p.psicologaid, 
-        u.nombre, 
-        u.apellidopaterno, 
-        p.especialidad, 
-        u.fotoperfil_mime,
-        u.fotoperfil_data
-      FROM usuarios u
-      JOIN psicologas p ON u.usuarioid = p.usuarioid
-      WHERE u.rol = 'psicologa' AND u.activo = true
-    `);
+    let result;
+
+    if (req.user?.rol === 'paciente') {
+      const pacienteId = await getPacienteIdByUsuario(req.user.id);
+      if (!pacienteId) {
+        return res.status(404).json({ message: 'Perfil de paciente no encontrado.' });
+      }
+
+      result = await db.query(
+        `
+          SELECT DISTINCT
+            p.psicologaid,
+            u.nombre,
+            u.apellidopaterno,
+            p.especialidad,
+            u.fotoperfil_mime,
+            u.fotoperfil_data
+          FROM psicologas p
+          JOIN usuarios u ON u.usuarioid = p.usuarioid
+          WHERE u.activo = true
+            AND (
+              EXISTS (
+                SELECT 1
+                FROM psicologas_pacientes pp
+                WHERE pp.psicologaid = p.psicologaid AND pp.pacienteid = $1
+              )
+              OR EXISTS (
+                SELECT 1
+                FROM citas c
+                WHERE c.psicologaid = p.psicologaid AND c.pacienteid = $1
+              )
+            )
+          ORDER BY u.nombre ASC, u.apellidopaterno ASC
+        `,
+        [pacienteId]
+      );
+    } else {
+      result = await db.query(`
+        SELECT 
+          p.psicologaid, 
+          u.nombre, 
+          u.apellidopaterno, 
+          p.especialidad, 
+          u.fotoperfil_mime,
+          u.fotoperfil_data
+        FROM usuarios u
+        JOIN psicologas p ON u.usuarioid = p.usuarioid
+        WHERE u.rol = 'psicologa' AND u.activo = true
+        ORDER BY u.nombre ASC, u.apellidopaterno ASC
+      `);
+    }
     
     const psicologas = result.rows.map(row => ({
       psicologaid: row.psicologaid,

@@ -205,6 +205,24 @@ const getPsicologaIdByUsuario = async (usuarioId) => {
   return psicologaResult.rows[0]?.psicologaid;
 };
 
+const existeRelacionPacientePsicologa = async ({ pacienteId, psicologaId }) => {
+  const result = await db.query(
+    `
+      SELECT 1
+      FROM psicologas_pacientes
+      WHERE pacienteid = $1 AND psicologaid = $2
+      UNION
+      SELECT 1
+      FROM citas
+      WHERE pacienteid = $1 AND psicologaid = $2
+      LIMIT 1
+    `,
+    [pacienteId, psicologaId]
+  );
+
+  return result.rows.length > 0;
+};
+
 const construirFechaHora = (fecha, hora) => {
   if (!fecha || !hora) {
     return null;
@@ -540,6 +558,15 @@ const crearCita = async (req, res) => {
       if (!citaPacienteId) {
         return res.status(400).json({ message: 'El paciente es requerido.' });
       }
+    }
+
+    const relacionValida = await existeRelacionPacientePsicologa({
+      pacienteId: citaPacienteId,
+      psicologaId: citaPsicologaId,
+    });
+
+    if (!relacionValida) {
+      return res.status(403).json({ message: 'No puedes agendar citas con este usuario.' });
     }
 
     const fechaHora = construirFechaHora(fecha, hora);
