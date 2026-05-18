@@ -839,12 +839,8 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
                           alt={`Foto de ${cita.paciente_nombre || 'paciente'}`}
                           className="w-full h-full object-cover"
                         />
-                      ) : userType === 'paciente' && cita.psicologa_fotoperfil ? (
-                        <img
-                          src={cita.psicologa_fotoperfil}
-                          alt={`Foto de ${cita.psicologa_nombre || 'psicóloga'}`}
-                          className="w-full h-full object-cover"
-                        />
+                      ) : userType === 'paciente' ? (
+                        <User className="w-8 h-8 text-white stroke-2" />
                       ) : esModalidadEnLinea(cita.modalidad) ? (
                         <Video className="w-8 h-8 text-white stroke-2" />
                       ) : (
@@ -1490,7 +1486,7 @@ export function MisCitas({ userType, onNavigate }: MisCitasProps) {
               </div>
 
               {/* Campos Editables */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
                   <Label className="text-slate-200 flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-teal-400 stroke-2" />
