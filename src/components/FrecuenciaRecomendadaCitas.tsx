@@ -417,29 +417,29 @@ export function FrecuenciaRecomendadaCitas({
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center">
+                  <div className="flex items-center gap-1 w-fit">
                     <Button
                       type="button"
                       variant="outline"
-                      size="icon"
+                      size="sm"
                       onClick={disminuirCantidad}
                       disabled={saving || cadaCantidad <= 1}
-                      className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      className="border-slate-600 text-slate-200 hover:bg-slate-700 h-8 w-8 p-0 flex-shrink-0"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3 h-3" />
                     </Button>
-                    <div className="rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-center text-slate-100 font-semibold">
+                    <div className="rounded-md border border-slate-600 bg-slate-800 px-2 py-1 text-center text-slate-100 font-semibold text-sm min-w-[2rem]">
                       {cadaCantidad}
                     </div>
                     <Button
                       type="button"
                       variant="outline"
-                      size="icon"
+                      size="sm"
                       onClick={incrementarCantidad}
                       disabled={saving || cadaCantidad >= 365}
-                      className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      className="border-slate-600 text-slate-200 hover:bg-slate-700 h-8 w-8 p-0 flex-shrink-0"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
