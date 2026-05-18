@@ -550,7 +550,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="sticky top-1/2 -translate-y-1/2 z-30 w-full flex justify-center px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
