@@ -318,7 +318,8 @@ export function NotificationCenter({ userType, userName, userPhoto, onLogout, on
     <DropdownMenuContent align="end" className={`w-56 bg-slate-900 border-slate-700 text-slate-100 ${isMobile ? 'p-2' : ''}`}>
       {isMobile && (
         <div className="px-3 pb-2 mb-2 border-b border-slate-700 flex flex-col items-center text-center">
-          <Avatar className="size-10 mb-2">
+          <Avatar className="size-10 mb-2 border border-slate-600 bg-slate-700">
+            <AvatarImage src={userPhoto || undefined} alt={userName} className="object-cover" />
             <AvatarFallback className="bg-slate-700 text-slate-200 text-[11px] font-semibold">
               {getInitialesUsuario(userName)}
             </AvatarFallback>
