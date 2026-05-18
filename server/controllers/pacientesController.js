@@ -297,8 +297,8 @@ const crearPaciente = async (req, res) => {
     return res.status(403).json({ message: 'Solo psicólogas o administradores pueden registrar pacientes.' });
   }
 
-  if (!nombre || !apellidoPaterno || !correo || !password) {
-    return res.status(400).json({ message: 'Campos requeridos: nombre, apellidoPaterno, correo, password.' });
+  if (!correo) {
+    return res.status(400).json({ message: 'El correo es requerido.' });
   }
 
   const client = await db.getClient();
@@ -315,7 +315,7 @@ const crearPaciente = async (req, res) => {
     }
 
     const existing = await client.query(
-      'SELECT usuarioid, rol FROM usuarios WHERE correo = $1',
+      'SELECT usuarioid, rol, nombre, apellidopaterno FROM usuarios WHERE correo = $1',
       [correoNormalizado]
     );
 
@@ -349,11 +349,16 @@ const crearPaciente = async (req, res) => {
       return res.status(200).json({
         pacienteid: pacienteId,
         usuarioid: existingUser.usuarioid,
-        nombre,
-        apellidopaterno: apellidoPaterno,
+        nombre: existingUser.nombre,
+        apellidopaterno: existingUser.apellidopaterno,
         correo: correoNormalizado,
         mensaje: 'Paciente existente asociado correctamente',
       });
+    }
+
+    if (!nombre || !apellidoPaterno || !password) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'Campos requeridos: nombre, apellidoPaterno, password.' });
     }
 
     const salt = await bcrypt.genSalt(10);
