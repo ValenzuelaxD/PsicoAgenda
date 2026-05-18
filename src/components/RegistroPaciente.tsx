@@ -109,6 +109,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
     try {
       const payload = modoRegistro === 'nuevo'
         ? {
+          modoRegistro,
           nombre,
           apellidoPaterno: apellidos.split(' ')[0],
           apellidoMaterno: apellidos.split(' ').slice(1).join(' ') || null,
@@ -123,6 +124,7 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
           password,
         }
         : {
+          modoRegistro,
           correo: email.toLowerCase(),
         };
 
@@ -152,6 +154,14 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
         : null);
       setMostrarExito(true);
     } catch (err: any) {
+      const message = String(err?.message || '').toLowerCase();
+      if (message.includes('ya existe')) {
+        toast.error('El paciente ya existe en el sistema', {
+          description: 'Cambia a "Paciente existente" para asociarlo a tu lista.',
+        });
+        setModoRegistro('existente');
+        return;
+      }
       toast.error(err.message || 'Error al registrar el paciente');
     }
   };

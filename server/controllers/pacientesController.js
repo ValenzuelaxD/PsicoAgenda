@@ -283,8 +283,9 @@ const getPacientesSelector = async (req, res) => {
 };
 
 const crearPaciente = async (req, res) => {
-  let { nombre, apellidoPaterno, apellidoMaterno, correo, telefono, fechaNacimiento, genero, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia, password } = req.body;
+  let { nombre, apellidoPaterno, apellidoMaterno, correo, telefono, fechaNacimiento, genero, direccion, motivoConsulta, contactoEmergencia, telefonoEmergencia, password, modoRegistro } = req.body;
   const correoNormalizado = String(correo || '').toLowerCase();
+  const modoRegistroNormalizado = modoRegistro === 'existente' ? 'existente' : 'nuevo';
 
   if (nombre && (!apellidoPaterno || !String(apellidoPaterno).trim())) {
     const nombreDividido = dividirNombreCompleto(nombre);
@@ -320,6 +321,10 @@ const crearPaciente = async (req, res) => {
     );
 
     if (existing.rows.length > 0) {
+      if (modoRegistroNormalizado === 'nuevo') {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ message: 'El paciente ya existe en el sistema.' });
+      }
       const existingUser = existing.rows[0];
       if (existingUser.rol !== 'paciente') {
         await client.query('ROLLBACK');
