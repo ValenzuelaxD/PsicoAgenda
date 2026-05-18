@@ -210,7 +210,13 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 relative">
+        {mostrarDuplicado && (
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-black/35 rounded-2xl z-10 pointer-events-none"
+          />
+        )}
         <Card>
           <CardHeader>
             <CardTitle>Tipo de registro</CardTitle>
@@ -288,6 +294,8 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
+                    autoComplete="email"
                     className="pl-10"
                     placeholder="correo@ejemplo.com"
                   />
@@ -321,6 +329,8 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+                      autoComplete="new-password"
                       className="pl-10"
                       placeholder="Minimo 8 caracteres, mayus, minus y numero"
                     />
@@ -338,6 +348,8 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      onInput={(e) => setConfirmPassword((e.target as HTMLInputElement).value)}
+                      autoComplete="new-password"
                       className="pl-10"
                       placeholder="Repite la contrasena"
                     />
@@ -534,38 +546,42 @@ export function RegistroPaciente({ onNavigate }: RegistroPacienteProps) {
 
       <AnimatePresence>
         {mostrarDuplicado && (
-          <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="sticky top-1/2 -translate-y-1/2 z-30 w-full flex justify-center px-4"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-              onClick={() => setMostrarDuplicado(false)}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20 }}
+              className="bg-slate-800/95 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-8 backdrop-blur"
             >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: 'spring', damping: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-8"
-              >
-                <div className="text-center space-y-4">
-                  <h2 className="text-white text-xl sm:text-2xl">Paciente ya existe</h2>
-                  <p className="text-slate-300">
-                    El paciente ya está registrado. Para asociarlo a tu lista, usa la opción
-                    de "Paciente existente".
-                  </p>
-                  <Button
-                    onClick={handleIrAExistente}
-                    className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800"
-                  >
-                    Ir a Paciente existente
-                  </Button>
-                </div>
-              </motion.div>
+              <div className="text-center space-y-4">
+                <h2 className="text-white text-xl sm:text-2xl">Paciente ya existe</h2>
+                <p className="text-slate-300">
+                  El paciente ya está registrado. Para asociarlo a tu lista, usa la opción
+                  de "Paciente existente".
+                </p>
+                <Button
+                  onClick={handleIrAExistente}
+                  className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800"
+                >
+                  Ir a Paciente existente
+                </Button>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setMostrarDuplicado(false)}
+                  className="w-full text-slate-300 hover:text-white"
+                >
+                  Cerrar
+                </Button>
+              </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
